@@ -12,11 +12,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-paroquia-vinho: #9C3238;
+  --color-paroquia-marrom: #925F30;
+  --color-paroquia-dourado: #FCBE26;
+  --color-paroquia-creme: #FFEAB6;
 }
 
 body {

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import NovoEventoForm from './NovoEventoForm'
 
@@ -25,18 +26,20 @@ export default async function EventosPage() {
                 {eventos?.map((evento) => (
                     <li
                         key={evento.id}
-                        className="border border-gray-200 rounded-lg p-4"
+                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
                     >
-                        <p className="font-medium">{evento.titulo}</p>
-                        <p className="text-sm text-gray-500">
-                            {new Date(evento.data_hora).toLocaleString('pt-BR', {
-                                weekday: 'long',
-                                day: '2-digit',
-                                month: 'long',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })}
-                        </p>
+                        <Link href={`/eventos/${evento.id}`} className="block">
+                            <p className="font-medium">{evento.titulo}</p>
+                            <p className="text-sm text-gray-500">
+                                {new Date(evento.data_hora).toLocaleString('pt-BR', {
+                                    weekday: 'long',
+                                    day: '2-digit',
+                                    month: 'long',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                })}
+                            </p>
+                        </Link>
                     </li>
                 ))}
             </ul>

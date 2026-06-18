@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 type Membro = {
@@ -35,6 +35,7 @@ export default function MembroItem({ membro }: { membro: Membro }) {
 
         setErroData('')
         setProcessando(true)
+        const supabase = createClient()
         await supabase
             .from('members')
             .update({ suspenso_ate: dataSuspensao })
@@ -47,6 +48,7 @@ export default function MembroItem({ membro }: { membro: Membro }) {
 
     async function reativar() {
         setProcessando(true)
+        const supabase = createClient()
         await supabase
             .from('members')
             .update({ suspenso_ate: null })

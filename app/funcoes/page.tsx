@@ -1,7 +1,9 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import NovaFuncaoForm from './NovaFuncaoForm'
 
 export default async function FuncoesPage() {
+    const supabase = await createClient()
+
     // Busca as funções já com o nome do grupo associado
     const { data: funcoes, error } = await supabase
         .from('roles')

@@ -1,7 +1,9 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import NovoGrupoForm from './NovoGrupoForm'
 
 export default async function GruposPage() {
+    const supabase = await createClient()
+
     const { data: grupos, error } = await supabase
         .from('groups')
         .select('*')

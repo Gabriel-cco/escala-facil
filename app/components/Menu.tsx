@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import BotaoSair from './BotaoSair'
 
 const itens = [
     { href: '/', label: 'Início' },
@@ -8,7 +10,15 @@ const itens = [
     { href: '/funcoes', label: 'Funções' },
 ]
 
-export default function Menu() {
+export default async function Menu() {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    // Sem usuário (ex: na tela de login), não mostra o menu
+    if (!user) return null
+
     return (
         <header className="bg-paroquia-marrom text-white border-b-4 border-paroquia-dourado">
             <nav className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-6">
@@ -25,6 +35,10 @@ export default function Menu() {
                             {item.label}
                         </Link>
                     ))}
+                </div>
+                <div className="ml-auto flex items-center gap-4 text-sm">
+                    <span className="text-white/70 hidden sm:inline">{user.email}</span>
+                    <BotaoSair />
                 </div>
             </nav>
         </header>

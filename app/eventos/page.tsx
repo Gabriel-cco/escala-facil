@@ -1,8 +1,10 @@
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import NovoEventoForm from './NovoEventoForm'
 
 export default async function EventosPage() {
+    const supabase = await createClient()
+
     const { data: eventos, error } = await supabase
         .from('events')
         .select('*')

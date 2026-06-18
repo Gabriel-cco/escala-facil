@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function NovoGrupoForm() {
@@ -20,6 +20,8 @@ export default function NovoGrupoForm() {
         }
 
         setSalvando(true)
+
+        const supabase = createClient()
 
         const { error } = await supabase.from('groups').insert({
             nome: nome,

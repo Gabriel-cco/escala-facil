@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 type Funcao = { id: string; nome: string }
@@ -59,6 +59,8 @@ export default function AtribuicoesManager({
 
         setSalvando(true)
 
+        const supabase = createClient()
+
         const { error } = await supabase.from('assignments').insert({
             event_id: eventId,
             role_id: funcaoId,
@@ -84,6 +86,7 @@ export default function AtribuicoesManager({
 
     async function removerAtribuicao(id: string) {
         setRemovendoId(id)
+        const supabase = createClient()
         await supabase.from('assignments').delete().eq('id', id)
         setRemovendoId(null)
         router.refresh()

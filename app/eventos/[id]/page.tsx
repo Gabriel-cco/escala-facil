@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import AtribuicoesManager from './AtribuicoesManager'
 
 export default async function EventoDetalhePage({
@@ -8,6 +8,8 @@ export default async function EventoDetalhePage({
     params: Promise<{ id: string }>
 }) {
     const { id } = await params
+
+    const supabase = await createClient()
 
     const { data: evento, error } = await supabase
         .from('events')

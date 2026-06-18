@@ -1,8 +1,10 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import NovoMembroForm from './NovoMembroForm'
 import MembroItem from './MembroItem'
 
 export default async function MembrosPage() {
+    const supabase = await createClient()
+
     const { data: membros, error } = await supabase
         .from('members')
         .select('*, groups(nome)')

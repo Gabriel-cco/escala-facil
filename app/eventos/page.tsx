@@ -10,11 +10,16 @@ export default async function EventosPage() {
         .select('*')
         .order('data_hora', { ascending: true })
 
+    const { data: grupos } = await supabase
+        .from('groups')
+        .select('id, nome')
+        .order('nome', { ascending: true })
+
     return (
         <main className="p-8 max-w-2xl mx-auto">
             <h1 className="text-2xl font-bold mb-6">Eventos</h1>
 
-            <NovoEventoForm />
+            <NovoEventoForm grupos={grupos ?? []} />
 
             {error && (
                 <p className="text-red-600">Erro: {error.message}</p>

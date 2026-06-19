@@ -4,9 +4,12 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-export default function NovoEventoForm() {
+type Grupo = { id: string; nome: string }
+
+export default function NovoEventoForm({ grupos }: { grupos: Grupo[] }) {
     const [titulo, setTitulo] = useState('')
     const [dataHora, setDataHora] = useState('')
+    const [grupoId, setGrupoId] = useState('')
     const [salvando, setSalvando] = useState(false)
     const [erro, setErro] = useState('')
     const router = useRouter()
@@ -14,8 +17,8 @@ export default function NovoEventoForm() {
     async function criarEvento() {
         setErro('')
 
-        if (!titulo || !dataHora) {
-            setErro('Preencha o título e a data/hora.')
+        if (!titulo || !dataHora || !grupoId) {
+            setErro('Preencha o título, a data/hora e selecione um grupo.')
             return
         }
 
@@ -24,10 +27,9 @@ export default function NovoEventoForm() {
         const supabase = createClient()
 
         const { error } = await supabase.from('events').insert({
-            organization_id: crypto.randomUUID(),
-            group_id: crypto.randomUUID(),
             titulo: titulo,
             data_hora: dataHora,
+            group_id: grupoId,
         })
 
         setSalvando(false)
@@ -39,6 +41,7 @@ export default function NovoEventoForm() {
 
         setTitulo('')
         setDataHora('')
+        setGrupoId('')
         router.refresh()
     }
 
@@ -61,6 +64,19 @@ export default function NovoEventoForm() {
                     onChange={(e) => setDataHora(e.target.value)}
                     className="border border-gray-300 rounded px-3 py-2"
                 />
+
+                <select
+                    value={grupoId}
+                    onChange={(e) => setGrupoId(e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-2"
+                >
+                    <option value="">Selecione um grupo...</option>
+                    {grupos.map((grupo) => (
+                        <option key={grupo.id} value={grupo.id}>
+                            {grupo.nome}
+                        </option>
+                    ))}
+                </select>
 
                 {erro && <p className="text-red-600 text-sm">{erro}</p>}
 

@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/*
+ * Escala Fácil — design tokens (handoff: minimalista em tons de cinza).
+ * Cores e tipografia conforme o protótipo de alta fidelidade.
+ */
 @theme {
-  --color-paroquia-vinho: #9C3238;
-  --color-paroquia-marrom: #925F30;
-  --color-paroquia-dourado: #FCBE26;
-  --color-paroquia-creme: #FFEAB6;
+  /* Superfícies */
+  --color-screen: #f1f1ef; /* fundo da tela (mobile) */
+  --color-app: #eaeae7; /* fundo do app (web/desktop) */
+  --color-surface: #e7e7e4; /* cartão / superfície suave */
+  --color-paper: #fafafa; /* superfície "branca" */
+
+  /* Tinta / primário */
+  --color-ink: #1b1b1b; /* escuro / botões / ativos */
+  --color-ink-soft: #6f6f6f; /* texto secundário */
+  --color-muted: #8a8a86; /* texto terciário */
+  --color-faint: #9a9a96; /* labels */
+  --color-tab-off: #a9a9a6; /* aba inativa */
+
+  /* Avatares e trilhas */
+  --color-avatar: #e0e0dc;
+  --color-avatar-ink: #4a4a47;
+  --color-track: #d2d2ce; /* trilha de progresso clara */
+
+  /* Destaque destrutivo */
+  --color-danger: #b23b3b;
+
+  /* Tipografia: títulos em serifa, corpo em sans do sistema.
+     --font-newsreader é injetada pelo next/font no <html>. */
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-screen);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Esconde a barra de rolagem mantendo o scroll (como no protótipo). */
+.ef-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Sheets sobem a partir da base — transform, não opacity (ver handoff). */
+@keyframes ef-rise {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes ef-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ef-sheet {
+  animation: ef-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ef-backdrop {
+  animation: ef-fade 0.2s ease;
+}
+
+/* Modais (web): entram com transform+scale, não fade puro (ver handoff). */
+@keyframes ef-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ef-pop {
+  animation: ef-pop 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
 }

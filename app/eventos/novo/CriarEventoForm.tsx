@@ -86,30 +86,33 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
         <div className="mb-2.5 text-[12px] font-semibold text-muted">
           GRUPO ENVOLVIDO
         </div>
-        <div className="flex flex-wrap gap-2">
-          {grupos.map((grupo) => {
-            const sel = grupoId === grupo.id;
-            return (
-              <button
-                key={grupo.id}
-                type="button"
-                onClick={() => setGrupoId(sel ? "" : grupo.id)}
-                className={`rounded-full border px-4 py-2.5 text-[13px] font-medium ${
-                  sel
-                    ? "border-ink bg-ink text-paper"
-                    : "border-black/10 bg-transparent text-ink"
-                }`}
-              >
-                {grupo.nome}
-              </button>
-            );
-          })}
-          {grupos.length === 0 && (
-            <p className="text-[13px] text-muted">
-              Cadastre um grupo antes de criar eventos.
-            </p>
-          )}
-        </div>
+        {grupos.length === 0 ? (
+          <p className="text-[13px] text-muted">
+            Cadastre um grupo antes de criar eventos.
+          </p>
+        ) : (
+          <div className="relative">
+            <select
+              value={grupoId}
+              onChange={(e) => setGrupoId(e.target.value)}
+              className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${
+                grupoId ? "text-ink" : "text-muted"
+              }`}
+            >
+              <option value="" disabled>
+                Selecione um grupo
+              </option>
+              {grupos.map((grupo) => (
+                <option key={grupo.id} value={grupo.id}>
+                  {grupo.nome}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+              ▾
+            </span>
+          </div>
+        )}
       </div>
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}

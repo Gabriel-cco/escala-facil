@@ -58,7 +58,7 @@ export default function LoginPage() {
           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-track text-[12px] font-bold text-[#5a5a57]">
             G
           </span>
-          {carregando ? "Redirecionando..." : "Continue com o Gmail"}
+          {carregando ? "Redirecionando..." : "Continuar com Google"}
         </button>
       </div>
     </main>

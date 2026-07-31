@@ -7,8 +7,8 @@ export default async function NovaFuncaoModal() {
   const supabase = await createClient();
   const { data: grupos } = await supabase
     .from("groups")
-    .select("id, nome")
-    .order("nome", { ascending: true });
+    .select("id, name")
+    .order("name", { ascending: true });
 
   return (
     <Modal title="Nova função">

@@ -15,7 +15,7 @@ export default async function EventoDetalhePage({
 
   const { data: evento, error } = await supabase
     .from("events")
-    .select("id, titulo, data_hora, group_id, groups(nome)")
+    .select("id, name, date, time, group_id, groups(name)")
     .eq("id", id)
     .single();
 
@@ -40,57 +40,61 @@ export default async function EventoDetalhePage({
 
   const grupo = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
 
-  // Data do evento (só a parte da data) para avaliar a suspensão dos membros.
-  const dataEvento = new Date(evento.data_hora).toISOString().split("T")[0];
-
   // Funções do grupo do evento.
   const { data: funcoes } = await supabase
     .from("roles")
-    .select("id, nome")
+    .select("id, name")
     .eq("group_id", evento.group_id)
-    .order("nome", { ascending: true });
+    .order("name", { ascending: true });
 
   // Membros elegíveis: mesmo grupo, ativos e não suspensos na data do evento.
-  const { data: membros } = await supabase
-    .from("members")
-    .select("id, nome")
+  const { data: accounts } = await supabase
+    .from("accounts")
+    .select("id, user:users(name)")
     .eq("group_id", evento.group_id)
-    .eq("ativo", true)
-    .or(`suspenso_ate.is.null,suspenso_ate.lt.${dataEvento}`)
-    .order("nome", { ascending: true });
+    .eq("active", true)
+    .or(`suspended_until.is.null,suspended_until.lt.${evento.date}`);
+
+  const membros = (accounts ?? [])
+    .map((a) => {
+      const u = Array.isArray(a.user) ? a.user[0] : a.user;
+      return { id: a.id, nome: u?.name ?? "—" };
+    })
+    .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
 
   // Atribuições já feitas para o evento.
   const { data: atribuicoes } = await supabase
     .from("assignments")
-    .select("id, role_id, member_id, members(nome)")
+    .select("id, role_id, account_id, account:accounts(user:users(name))")
     .eq("event_id", id);
 
   // Uma atribuição por função (semântica do protótipo): pega a primeira.
   const porFuncao = new Map<
     string,
-    { assignmentId: string; memberId: string; memberName: string }
+    { assignmentId: string; accountId: string; accountName: string }
   >();
   atribuicoes?.forEach((a) => {
     if (porFuncao.has(a.role_id)) return;
-    const m = Array.isArray(a.members) ? a.members[0] : a.members;
+    const acc = Array.isArray(a.account) ? a.account[0] : a.account;
+    const u = acc && (Array.isArray(acc.user) ? acc.user[0] : acc.user);
     porFuncao.set(a.role_id, {
       assignmentId: a.id,
-      memberId: a.member_id,
-      memberName: m?.nome ?? "—",
+      accountId: a.account_id,
+      accountName: u?.name ?? "—",
     });
   });
 
   return (
     <>
-      <Header variant="back" title={evento.titulo} />
+      <Header variant="back" title={evento.name} />
       <main className="flex flex-1 flex-col px-[18px] pb-7 pt-0.5 md:p-0">
         <AtribuicoesManager
           eventId={evento.id}
-          grupoNome={grupo?.nome ?? "Grupo"}
-          dataLabel={rotuloData(evento.data_hora)}
-          horaLabel={rotuloHora(evento.data_hora)}
-          funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.nome }))}
-          membros={(membros ?? []).map((m) => ({
+          grupoNome={grupo?.name ?? "Grupo"}
+          dataLabel={rotuloData(evento.date)}
+          horaLabel={rotuloHora(evento.time)}
+          funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name }))}
+          membros={membros.map((m) => ({
             id: m.id,
             nome: m.nome,
             iniciais: iniciais(m.nome),
@@ -100,8 +104,8 @@ export default async function EventoDetalhePage({
             return {
               roleId: f.id,
               assignmentId: a?.assignmentId ?? null,
-              memberId: a?.memberId ?? null,
-              memberName: a?.memberName ?? null,
+              accountId: a?.accountId ?? null,
+              accountName: a?.accountName ?? null,
             };
           })}
         />

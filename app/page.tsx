@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "./components/shell/Header";
 import { rotuloData, rotuloHora } from "@/lib/datas";
 
@@ -8,23 +9,34 @@ const pillEscuro =
 
 export default async function Home() {
   const supabase = await createClient();
+  const activeGroupId = await getActiveGroupId();
 
-  const { data: grupos } = await supabase
+  let gruposQuery = supabase
     .from("groups")
-    .select("id, nome")
-    .order("nome", { ascending: true });
+    .select("id, name")
+    .order("name", { ascending: true });
+  if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
+  const { data: grupos } = await gruposQuery;
 
   // Dados para o dashboard web (stats + próximos eventos).
-  const { data: eventos } = await supabase
+  let eventosQuery = supabase
     .from("events")
-    .select("id, titulo, data_hora, group_id, groups(nome)")
-    .order("data_hora", { ascending: true });
+    .select("id, name, date, time, group_id, groups(name)")
+    .order("date", { ascending: true })
+    .order("time", { ascending: true });
+  if (activeGroupId) eventosQuery = eventosQuery.eq("group_id", activeGroupId);
+  const { data: eventos } = await eventosQuery;
 
-  const { count: totalMembros } = await supabase
-    .from("members")
-    .select("id", { count: "exact", head: true });
+  let membrosQuery = supabase
+    .from("accounts")
+    .select("id", { count: "exact", head: true })
+    .eq("profile", "member");
+  if (activeGroupId) membrosQuery = membrosQuery.eq("group_id", activeGroupId);
+  const { count: totalMembros } = await membrosQuery;
 
-  const { data: funcoes } = await supabase.from("roles").select("id, group_id");
+  let funcoesQuery = supabase.from("roles").select("id, group_id");
+  if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
+  const { data: funcoes } = await funcoesQuery;
   const totalPorGrupo = new Map<string, number>();
   funcoes?.forEach((f) => {
     totalPorGrupo.set(f.group_id, (totalPorGrupo.get(f.group_id) ?? 0) + 1);
@@ -127,7 +139,7 @@ export default async function Home() {
                 href={`/grupos/${grupo.id}`}
                 className="rounded-full border border-black/10 px-[15px] py-[9px] text-[12.5px] font-medium text-ink"
               >
-                {grupo.nome}
+                {grupo.name}
               </Link>
             ))}
             {(!grupos || grupos.length === 0) && (
@@ -208,11 +220,11 @@ export default async function Home() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="font-serif text-[17px] font-semibold text-ink">
-                      {evento.titulo}
+                      {evento.name}
                     </div>
                     <div className="mt-0.5 text-[12.5px] text-muted">
-                      {rotuloData(evento.data_hora)} ·{" "}
-                      {rotuloHora(evento.data_hora)} — {grupo?.nome ?? "Sem grupo"}
+                      {rotuloData(evento.date)} · {rotuloHora(evento.time)} —{" "}
+                      {grupo?.name ?? "Sem grupo"}
                     </div>
                   </div>
                   <div className="flex w-40 flex-none items-center gap-2.5">

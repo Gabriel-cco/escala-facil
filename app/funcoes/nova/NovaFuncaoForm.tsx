@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Grupo = { id: string; nome: string };
+type Grupo = { id: string; name: string };
 
 export default function NovaFuncaoForm({ grupos }: { grupos: Grupo[] }) {
   const [nome, setNome] = useState("");
@@ -23,7 +23,7 @@ export default function NovaFuncaoForm({ grupos }: { grupos: Grupo[] }) {
     const supabase = createClient();
     const { error } = await supabase
       .from("roles")
-      .insert({ nome: nome.trim(), group_id: grupoId });
+      .insert({ name: nome.trim(), group_id: grupoId });
 
     if (error) {
       setSalvando(false);
@@ -65,7 +65,7 @@ export default function NovaFuncaoForm({ grupos }: { grupos: Grupo[] }) {
                     : "border-black/10 bg-transparent text-ink"
                 }`}
               >
-                {grupo.nome}
+                {grupo.name}
               </button>
             );
           })}

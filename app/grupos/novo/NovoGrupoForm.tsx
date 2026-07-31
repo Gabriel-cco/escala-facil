@@ -21,7 +21,7 @@ export default function NovoGrupoForm() {
     const supabase = createClient();
     const { error } = await supabase
       .from("groups")
-      .insert({ nome: nome.trim(), descricao: descricao.trim() || null });
+      .insert({ name: nome.trim(), description: descricao.trim() || null });
 
     if (error) {
       setSalvando(false);

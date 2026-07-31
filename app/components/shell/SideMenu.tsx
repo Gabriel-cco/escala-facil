@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { ShellUser } from "./AppShell";
+import { ROTULO_PERFIL } from "./AppShell";
+import SeletorGrupo from "./SeletorGrupo";
 
 /** Menu lateral em bottom-sheet (handoff): perfil + ações + Sair. */
 export default function SideMenu({
@@ -48,10 +50,13 @@ export default function SideMenu({
                 {user.nome}
               </div>
               <div className="text-[12.5px] text-muted">
-                Coordenador · Paróquia
+                {user.perfil ? ROTULO_PERFIL[user.perfil] : ""}
               </div>
             </div>
           </div>
+
+          {/* Grupo ativo (dropdown para admin; fixo para os demais) */}
+          <SeletorGrupo className="mb-1 mt-2 px-1" />
 
           <button
             onClick={onClose}

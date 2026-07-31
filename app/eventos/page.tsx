@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "../components/shell/Header";
 import { rotuloData, rotuloHora, rotuloMes, chaveMes } from "@/lib/datas";
 import DeleteEventoButton from "./DeleteEventoButton";
@@ -15,19 +16,25 @@ export default async function EventosPage({
   const vistaCalendario = vista === "calendario";
 
   const supabase = await createClient();
+  const activeGroupId = await getActiveGroupId();
 
-  const { data: eventos, error } = await supabase
+  let eventosQuery = supabase
     .from("events")
-    .select("id, titulo, data_hora, group_id, groups(nome)")
-    .order("data_hora", { ascending: true });
+    .select("id, name, date, time, group_id, groups(name)")
+    .order("date", { ascending: true })
+    .order("time", { ascending: true });
+  if (activeGroupId) eventosQuery = eventosQuery.eq("group_id", activeGroupId);
+  const { data: eventos, error } = await eventosQuery;
 
   type Evento = NonNullable<typeof eventos>[number];
 
   // Grupos para o filtro (chips).
-  const { data: grupos } = await supabase
+  let gruposQuery = supabase
     .from("groups")
-    .select("id, nome")
-    .order("nome", { ascending: true });
+    .select("id, name")
+    .order("name", { ascending: true });
+  if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
+  const { data: grupos } = await gruposQuery;
 
   // Grupo selecionado no filtro (null = todos). Valida contra os grupos reais.
   const grupoFiltro =
@@ -52,7 +59,9 @@ export default async function EventosPage({
   }
 
   // Total de funções por grupo (para o denominador do progresso).
-  const { data: funcoes } = await supabase.from("roles").select("id, group_id");
+  let funcoesQuery = supabase.from("roles").select("id, group_id");
+  if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
+  const { data: funcoes } = await funcoesQuery;
   const totalPorGrupo = new Map<string, number>();
   funcoes?.forEach((f) => {
     totalPorGrupo.set(f.group_id, (totalPorGrupo.get(f.group_id) ?? 0) + 1);
@@ -69,15 +78,18 @@ export default async function EventosPage({
     atribuidasPorEvento.set(a.event_id, set);
   });
 
-  // Eventos cuja data já passou ficam ocultos por padrão (a partir da
-  // meia-noite de hoje — eventos de hoje permanecem visíveis o dia todo).
-  const inicioHoje = new Date();
-  inicioHoje.setHours(0, 0, 0, 0);
+  // Data de hoje como "AAAA-MM-DD" (local) para comparar com events.date.
+  const agora = new Date();
+  const hojeStr = `${agora.getFullYear()}-${String(
+    agora.getMonth() + 1
+  ).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+
   const todos = eventos ?? [];
   const filtrados = grupoFiltro
     ? todos.filter((e) => e.group_id === grupoFiltro)
     : todos;
-  const ehFuturo = (e: Evento) => new Date(e.data_hora) >= inicioHoje;
+  // Eventos de hoje permanecem visíveis o dia todo (>= hoje).
+  const ehFuturo = (e: Evento) => e.date >= hojeStr;
   const totalPassados = filtrados.filter((e) => !ehFuturo(e)).length;
   const visiveis = mostrarPassados ? filtrados : filtrados.filter(ehFuturo);
 
@@ -86,9 +98,10 @@ export default async function EventosPage({
     const g = Array.isArray(e.groups) ? e.groups[0] : e.groups;
     return {
       id: e.id,
-      titulo: e.titulo,
-      dataHora: e.data_hora,
-      grupoNome: g?.nome ?? "Sem grupo",
+      nome: e.name,
+      date: e.date,
+      time: e.time,
+      grupoNome: g?.name ?? "Sem grupo",
       atribuidas: atribuidasPorEvento.get(e.id)?.size ?? 0,
       total: totalPorGrupo.get(e.group_id) ?? 0,
     };
@@ -99,12 +112,12 @@ export default async function EventosPage({
     [];
   const indiceMes = new Map<string, number>();
   visiveis.forEach((e) => {
-    const chave = chaveMes(e.data_hora);
+    const chave = chaveMes(e.date);
     let i = indiceMes.get(chave);
     if (i === undefined) {
       i = gruposPorMes.length;
       indiceMes.set(chave, i);
-      gruposPorMes.push({ chave, rotulo: rotuloMes(e.data_hora), eventos: [] });
+      gruposPorMes.push({ chave, rotulo: rotuloMes(e.date), eventos: [] });
     }
     gruposPorMes[i].eventos.push(e);
   });
@@ -131,14 +144,14 @@ export default async function EventosPage({
           >
             <div className="flex items-start justify-between gap-2.5">
               <div className="font-serif text-[18px] font-semibold leading-tight text-ink">
-                {evento.titulo}
+                {evento.name}
               </div>
               <div className="whitespace-nowrap pt-0.5 text-[12px] font-semibold text-ink-soft">
-                {rotuloData(evento.data_hora)} · {rotuloHora(evento.data_hora)}
+                {rotuloData(evento.date)} · {rotuloHora(evento.time)}
               </div>
             </div>
             <div className="text-[12px] text-muted">
-              {grupo?.nome ?? "Sem grupo"}
+              {grupo?.name ?? "Sem grupo"}
             </div>
             <div className="flex items-center gap-2.5">
               <div className="h-[5px] flex-1 overflow-hidden rounded-[3px] bg-surface">
@@ -153,7 +166,7 @@ export default async function EventosPage({
             </div>
           </Link>
           <div className="flex flex-none items-center pr-2">
-            <DeleteEventoButton eventId={evento.id} titulo={evento.titulo} />
+            <DeleteEventoButton eventId={evento.id} titulo={evento.name} />
           </div>
         </div>
 
@@ -165,14 +178,14 @@ export default async function EventosPage({
           >
             <div className="min-w-0 flex-1">
               <div className="font-serif text-[18px] font-semibold text-ink">
-                {evento.titulo}
+                {evento.name}
               </div>
               <div className="mt-1 text-[12.5px] text-muted">
-                {grupo?.nome ?? "Sem grupo"}
+                {grupo?.name ?? "Sem grupo"}
               </div>
             </div>
             <div className="w-[120px] flex-none text-[13px] font-semibold text-ink-soft">
-              {rotuloData(evento.data_hora)} · {rotuloHora(evento.data_hora)}
+              {rotuloData(evento.date)} · {rotuloHora(evento.time)}
             </div>
             <div className="flex w-[170px] flex-none items-center gap-2.5">
               <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface">
@@ -187,7 +200,7 @@ export default async function EventosPage({
             </div>
             <div className="flex-none text-[20px] text-[#bdbdb9]">›</div>
           </Link>
-          <DeleteEventoButton eventId={evento.id} titulo={evento.titulo} />
+          <DeleteEventoButton eventId={evento.id} titulo={evento.name} />
         </div>
       </div>
     );
@@ -240,7 +253,7 @@ export default async function EventosPage({
                       : "border-black/10 bg-transparent text-ink"
                   }`}
                 >
-                  {g.nome}
+                  {g.name}
                 </Link>
               );
             })}

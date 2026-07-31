@@ -34,10 +34,18 @@ export default async function RootLayout({
       (user.user_metadata?.name as string | undefined) ??
       user.email ??
       "Usuário";
+
+    const { data: rows } = await supabase.rpc("get_account_by_auth_id", {
+      p_auth_id: user.id,
+    });
+    const perfil =
+      (rows?.[0]?.profile as ShellUser["perfil"] | undefined) ?? null;
+
     shellUser = {
       nome,
       email: user.email ?? "",
       iniciais: iniciais(nome),
+      perfil,
     };
   }
 

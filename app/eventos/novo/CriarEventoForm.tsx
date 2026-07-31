@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Grupo = { id: string; nome: string };
+type Grupo = { id: string; name: string };
 
 const labelInput = "mb-2 text-[12px] font-semibold text-muted";
 const baseInput =
@@ -27,15 +27,26 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
     setErro("");
     setSalvando(true);
 
-    // Combina data + hora num timestamp (hora default 00:00 se vazia).
-    const dataHora = data
-      ? `${data}T${hora || "00:00"}:00`
-      : new Date().toISOString();
+    // events.date e events.time são separados e obrigatórios: aplicamos
+    // defaults (hoje / 00:00) quando o usuário não preenche.
+    const hoje = new Date();
+    const dataFinal =
+      data ||
+      `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(hoje.getDate()).padStart(2, "0")}`;
+    const horaFinal = `${hora || "00:00"}:00`;
 
     const supabase = createClient();
     const { data: criado, error } = await supabase
       .from("events")
-      .insert({ titulo: nome.trim(), data_hora: dataHora, group_id: grupoId })
+      .insert({
+        name: nome.trim(),
+        date: dataFinal,
+        time: horaFinal,
+        group_id: grupoId,
+      })
       .select("id")
       .single();
 
@@ -104,7 +115,7 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
               </option>
               {grupos.map((grupo) => (
                 <option key={grupo.id} value={grupo.id}>
-                  {grupo.nome}
+                  {grupo.name}
                 </option>
               ))}
             </select>

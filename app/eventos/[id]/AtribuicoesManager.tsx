@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Funcao = { id: string; nome: string };
+// `id` é o id do account elegível.
 type Membro = { id: string; nome: string; iniciais: string };
 type Atribuicao = {
   roleId: string;
   assignmentId: string | null;
-  memberId: string | null;
-  memberName: string | null;
+  accountId: string | null;
+  accountName: string | null;
 };
 
 export default function AtribuicoesManager({
@@ -37,13 +38,13 @@ export default function AtribuicoesManager({
 
   const porFuncao = new Map(atribuicoes.map((a) => [a.roleId, a]));
   const total = funcoes.length;
-  const atribuidas = atribuicoes.filter((a) => a.memberId).length;
+  const atribuidas = atribuicoes.filter((a) => a.accountId).length;
   const pct = total ? Math.round((atribuidas / total) * 100) : 0;
 
   const funcaoSheet = funcoes.find((f) => f.id === sheetRoleId);
   const atribuicaoSheet = sheetRoleId ? porFuncao.get(sheetRoleId) : undefined;
 
-  async function atribuir(membroId: string) {
+  async function atribuir(accountId: string) {
     if (!sheetRoleId || ocupado) return;
     setOcupado(true);
     const supabase = createClient();
@@ -57,7 +58,7 @@ export default function AtribuicoesManager({
     await supabase.from("assignments").insert({
       event_id: eventId,
       role_id: sheetRoleId,
-      member_id: membroId,
+      account_id: accountId,
     });
 
     setOcupado(false);
@@ -114,7 +115,7 @@ export default function AtribuicoesManager({
           <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-2.5">
           {funcoes.map((f) => {
             const a = porFuncao.get(f.id);
-            const atribuido = !!a?.memberId;
+            const atribuido = !!a?.accountId;
             return (
               <button
                 key={f.id}
@@ -133,7 +134,7 @@ export default function AtribuicoesManager({
                   </div>
                   {atribuido && (
                     <div className="text-[12px] text-white/60">
-                      {a?.memberName}
+                      {a?.accountName}
                     </div>
                   )}
                 </div>
@@ -198,7 +199,7 @@ export default function AtribuicoesManager({
                 ))}
               </div>
 
-              {atribuicaoSheet?.memberId && (
+              {atribuicaoSheet?.accountId && (
                 <button
                   onClick={remover}
                   disabled={ocupado}

@@ -7,8 +7,9 @@ import DeleteEventoButton from "./DeleteEventoButton";
 
 export type EventoCal = {
   id: string;
-  titulo: string;
-  dataHora: string;
+  nome: string;
+  date: string; // "AAAA-MM-DD"
+  time: string; // "HH:MM:SS"
   grupoNome: string;
   atribuidas: number;
   total: number;
@@ -50,13 +51,13 @@ export default function CalendarioEventos({
   const [mes, setMes] = useState(hoje.getMonth());
   const [diaSelecionado, setDiaSelecionado] = useState(chaveHoje);
 
-  // Eventos indexados por dia (data local).
+  // Eventos indexados por dia. events.date já é "AAAA-MM-DD" (a mesma chave
+  // gerada por chaveDia), então usamos direto — sem passar por new Date().
   const porDia = useMemo(() => {
     const mapa = new Map<string, EventoCal[]>();
     eventos.forEach((e) => {
-      const d = new Date(e.dataHora);
-      if (Number.isNaN(d.getTime())) return;
-      const k = chaveDia(d);
+      const k = e.date;
+      if (!k) return;
       const lista = mapa.get(k) ?? [];
       lista.push(e);
       mapa.set(k, lista);
@@ -192,11 +193,11 @@ export default function CalendarioEventos({
               className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-4 pr-2"
             >
               <div className="w-[46px] flex-none text-[13px] font-semibold text-ink-soft">
-                {rotuloHora(e.dataHora)}
+                {rotuloHora(e.time)}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate font-serif text-[16px] font-semibold text-ink">
-                  {e.titulo}
+                  {e.nome}
                 </div>
                 <div className="text-[12px] text-muted">
                   {e.grupoNome} · {e.atribuidas}/{e.total}
@@ -204,7 +205,7 @@ export default function CalendarioEventos({
               </div>
             </Link>
             <div className="flex flex-none items-center pr-2">
-              <DeleteEventoButton eventId={e.id} titulo={e.titulo} />
+              <DeleteEventoButton eventId={e.id} titulo={e.nome} />
             </div>
           </div>
         ))}

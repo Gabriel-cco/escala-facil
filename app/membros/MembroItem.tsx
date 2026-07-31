@@ -6,12 +6,10 @@ import { useRouter } from "next/navigation";
 import { iniciais } from "@/lib/iniciais";
 
 type Membro = {
-  id: string;
+  id: string; // id do account
   nome: string;
-  telefone: string | null;
-  ativo: boolean;
-  suspenso_ate: string | null;
-  groups: { nome: string } | { nome: string }[] | null;
+  grupoNome: string;
+  suspensoAte: string | null;
 };
 
 export default function MembroItem({ membro }: { membro: Membro }) {
@@ -21,11 +19,9 @@ export default function MembroItem({ membro }: { membro: Membro }) {
   const [erroData, setErroData] = useState("");
   const router = useRouter();
 
-  const grupo = Array.isArray(membro.groups) ? membro.groups[0] : membro.groups;
-
-  // Suspenso AGORA se suspenso_ate é hoje ou futuro.
+  // Suspenso AGORA se suspended_until é hoje ou futuro.
   const hoje = new Date().toISOString().split("T")[0];
-  const estaSuspenso = membro.suspenso_ate != null && membro.suspenso_ate >= hoje;
+  const estaSuspenso = membro.suspensoAte != null && membro.suspensoAte >= hoje;
 
   async function suspender() {
     if (!dataSuspensao) return;
@@ -37,8 +33,8 @@ export default function MembroItem({ membro }: { membro: Membro }) {
     setProcessando(true);
     const supabase = createClient();
     await supabase
-      .from("members")
-      .update({ suspenso_ate: dataSuspensao })
+      .from("accounts")
+      .update({ suspended_until: dataSuspensao })
       .eq("id", membro.id);
     setProcessando(false);
     setMostrarSuspensao(false);
@@ -50,8 +46,8 @@ export default function MembroItem({ membro }: { membro: Membro }) {
     setProcessando(true);
     const supabase = createClient();
     await supabase
-      .from("members")
-      .update({ suspenso_ate: null })
+      .from("accounts")
+      .update({ suspended_until: null })
       .eq("id", membro.id);
     setProcessando(false);
     router.refresh();
@@ -73,14 +69,11 @@ export default function MembroItem({ membro }: { membro: Membro }) {
           <div className="text-[14.5px] font-semibold text-ink">
             {membro.nome}
           </div>
-          <div className="text-[12px] text-muted">
-            {grupo?.nome ?? "Sem grupo"}
-            {membro.telefone ? ` · ${membro.telefone}` : ""}
-          </div>
+          <div className="text-[12px] text-muted">{membro.grupoNome}</div>
           {estaSuspenso && (
             <div className="text-[12px] text-danger">
               Suspenso até{" "}
-              {new Date(membro.suspenso_ate + "T00:00").toLocaleDateString(
+              {new Date(membro.suspensoAte + "T00:00").toLocaleDateString(
                 "pt-BR"
               )}
             </div>

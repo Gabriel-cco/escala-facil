@@ -4,17 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Grupo = { id: string; nome: string };
+type Grupo = { id: string; name: string };
 
 export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
   const [nome, setNome] = useState("");
-  // O schema atual associa o membro a um único grupo (members.group_id).
+  const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
+  // Cada membro pertence a um único grupo (accounts.group_id).
   const [grupoId, setGrupoId] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const router = useRouter();
 
-  const podeSalvar = nome.trim().length > 0 && grupoId !== "";
+  const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const podeSalvar = nome.trim().length > 0 && emailValido && grupoId !== "";
 
   async function salvar() {
     if (!podeSalvar || salvando) return;
@@ -22,13 +25,34 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
     setSalvando(true);
 
     const supabase = createClient();
-    const { error } = await supabase
-      .from("members")
-      .insert({ nome: nome.trim(), group_id: grupoId });
 
-    if (error) {
+    // 1) Cria o usuário (auth_id fica nulo até o primeiro login vincular).
+    const { data: usuario, error: erroUser } = await supabase
+      .from("users")
+      .insert({
+        name: nome.trim(),
+        email: email.trim(),
+        cpf: cpf.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (erroUser || !usuario) {
       setSalvando(false);
-      setErro("Erro ao salvar: " + error.message);
+      setErro("Erro ao salvar: " + (erroUser?.message ?? "desconhecido"));
+      return;
+    }
+
+    // 2) Cria o account (papel na aplicação) vinculado ao grupo.
+    const { error: erroAccount } = await supabase.from("accounts").insert({
+      user_id: usuario.id,
+      profile: "member",
+      group_id: grupoId,
+    });
+
+    if (erroAccount) {
+      setSalvando(false);
+      setErro("Erro ao salvar o acesso: " + erroAccount.message);
       return;
     }
 
@@ -46,6 +70,32 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="Ex.: Maria Oliveira"
+          className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+        />
+      </div>
+
+      <div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">E-MAIL</div>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="maria@exemplo.com"
+          className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+        />
+        <p className="mt-1.5 text-[11.5px] text-muted">
+          Usado para vincular o acesso quando a pessoa entrar com o Google.
+        </p>
+      </div>
+
+      <div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">
+          CPF (OPCIONAL)
+        </div>
+        <input
+          value={cpf}
+          onChange={(e) => setCpf(e.target.value)}
+          placeholder="000.000.000-00"
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
       </div>
@@ -70,7 +120,7 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
               </option>
               {grupos.map((grupo) => (
                 <option key={grupo.id} value={grupo.id}>
-                  {grupo.nome}
+                  {grupo.name}
                 </option>
               ))}
             </select>

@@ -13,7 +13,7 @@ export default async function GrupoDetalhePage({
 
   const { data: grupo, error } = await supabase
     .from("groups")
-    .select("id, nome")
+    .select("id, name")
     .eq("id", id)
     .single();
 
@@ -38,19 +38,27 @@ export default async function GrupoDetalhePage({
 
   const { data: funcoes } = await supabase
     .from("roles")
-    .select("id, nome")
+    .select("id, name")
     .eq("group_id", id)
-    .order("nome", { ascending: true });
+    .order("name", { ascending: true });
 
-  const { data: membros } = await supabase
-    .from("members")
-    .select("id, nome")
+  // Membros do grupo via accounts + users (perfil "member").
+  const { data: accounts } = await supabase
+    .from("accounts")
+    .select("id, user:users(id, name)")
     .eq("group_id", id)
-    .order("nome", { ascending: true });
+    .eq("profile", "member");
+
+  const membros = (accounts ?? [])
+    .map((a) => {
+      const u = Array.isArray(a.user) ? a.user[0] : a.user;
+      return { id: a.id, nome: u?.name ?? "—" };
+    })
+    .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
 
   return (
     <>
-      <Header variant="back" title={grupo.nome} />
+      <Header variant="back" title={grupo.name} />
       <main className="flex flex-1 flex-col gap-[22px] px-[18px] pb-6 pt-0.5 md:grid md:grid-cols-2 md:items-start md:gap-8 md:p-0">
         <section>
           <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-[1.2px] text-faint">
@@ -62,7 +70,7 @@ export default async function GrupoDetalhePage({
                 key={f.id}
                 className="rounded-full border border-black/10 px-[15px] py-[9px] text-[13px] text-ink"
               >
-                {f.nome}
+                {f.name}
               </div>
             ))}
             {(!funcoes || funcoes.length === 0) && (
@@ -76,7 +84,7 @@ export default async function GrupoDetalhePage({
             Membros
           </div>
           <div className="flex flex-col gap-2.5">
-            {membros?.map((m) => (
+            {membros.map((m) => (
               <div
                 key={m.id}
                 className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper px-3.5 py-2.5"
@@ -89,7 +97,7 @@ export default async function GrupoDetalhePage({
                 </div>
               </div>
             ))}
-            {(!membros || membros.length === 0) && (
+            {membros.length === 0 && (
               <p className="text-[13px] text-muted">Nenhum membro neste grupo.</p>
             )}
           </div>

@@ -1,17 +1,29 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "../components/shell/Header";
 
 export default async function GruposPage() {
   const supabase = await createClient();
+  const activeGroupId = await getActiveGroupId();
 
-  const { data: grupos, error } = await supabase
+  let gruposQuery = supabase
     .from("groups")
-    .select("id, nome")
-    .order("nome", { ascending: true });
+    .select("id, name")
+    .order("name", { ascending: true });
+  if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
+  const { data: grupos, error } = await gruposQuery;
 
-  const { data: membros } = await supabase.from("members").select("group_id");
-  const { data: funcoes } = await supabase.from("roles").select("group_id");
+  let membrosQuery = supabase
+    .from("accounts")
+    .select("group_id")
+    .eq("profile", "member");
+  if (activeGroupId) membrosQuery = membrosQuery.eq("group_id", activeGroupId);
+  const { data: membros } = await membrosQuery;
+
+  let funcoesQuery = supabase.from("roles").select("group_id");
+  if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
+  const { data: funcoes } = await funcoesQuery;
 
   const membrosPorGrupo = new Map<string, number>();
   membros?.forEach((m) =>
@@ -55,7 +67,7 @@ export default async function GruposPage() {
             >
               <div className="flex flex-col gap-[3px] md:gap-1.5">
                 <div className="font-serif text-[18px] font-semibold text-ink md:text-[20px]">
-                  {grupo.nome}
+                  {grupo.name}
                 </div>
                 <div className="text-[12px] text-muted md:text-[12.5px]">
                   {membrosPorGrupo.get(grupo.id) ?? 0} membros ·{" "}

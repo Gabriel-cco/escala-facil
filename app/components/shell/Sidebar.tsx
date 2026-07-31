@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { ShellUser } from "./AppShell";
+import { ROTULO_PERFIL } from "./AppShell";
+import SeletorGrupo from "./SeletorGrupo";
 
 // Navegação web: todos os itens (handoff), incluindo Funções.
 const itens = [
@@ -56,6 +58,9 @@ export default function Sidebar({
         </span>
       </Link>
 
+      {/* Grupo ativo (dropdown para admin; fixo para os demais) */}
+      <SeletorGrupo className="mb-4 px-1" />
+
       {/* Navegação */}
       <nav className="flex flex-col gap-[3px]">
         {itens.map((item) => {
@@ -92,7 +97,9 @@ export default function Sidebar({
           <div className="truncate text-[13.5px] font-semibold text-ink">
             {user.nome}
           </div>
-          <div className="text-[11.5px] text-muted">Coordenador</div>
+          <div className="text-[11.5px] text-muted">
+            {user.perfil ? ROTULO_PERFIL[user.perfil] : ""}
+          </div>
         </div>
         <button
           onClick={sair}

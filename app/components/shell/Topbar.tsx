@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
+import { useGroup } from "@/contexts/GroupContext";
 
 /**
  * Topbar (72px) do layout web: título em serifa + voltar (detalhes) +
@@ -11,6 +12,17 @@ import { useShell } from "./menu-context";
 export default function Topbar({ className = "" }: { className?: string }) {
   const router = useRouter();
   const { chrome } = useShell();
+  const { activeGroupName, isGlobalView, canSwitchGroup, isLoading } =
+    useGroup();
+
+  // Rótulo do grupo ativo: admin em visão geral vê "Visão geral".
+  const grupoLabel = isLoading
+    ? null
+    : isGlobalView
+    ? canSwitchGroup
+      ? "Visão geral"
+      : null
+    : activeGroupName;
 
   return (
     <header
@@ -29,6 +41,11 @@ export default function Topbar({ className = "" }: { className?: string }) {
         <div className="font-serif text-[25px] font-semibold text-ink">
           {chrome.title}
         </div>
+        {grupoLabel && (
+          <span className="rounded-full border border-black/10 bg-paper px-3 py-1 text-[12px] font-medium text-ink-soft">
+            {grupoLabel}
+          </span>
+        )}
       </div>
 
       {chrome.actionLabel && chrome.actionHref && (

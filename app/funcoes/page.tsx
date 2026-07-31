@@ -1,24 +1,30 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "../components/shell/Header";
 
 export default async function FuncoesPage() {
   const supabase = await createClient();
+  const activeGroupId = await getActiveGroupId();
 
-  const { data: grupos } = await supabase
+  let gruposQuery = supabase
     .from("groups")
-    .select("id, nome")
-    .order("nome", { ascending: true });
+    .select("id, name")
+    .order("name", { ascending: true });
+  if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
+  const { data: grupos } = await gruposQuery;
 
-  const { data: funcoes, error } = await supabase
+  let funcoesQuery = supabase
     .from("roles")
-    .select("id, nome, group_id")
-    .order("nome", { ascending: true });
+    .select("id, name, group_id")
+    .order("name", { ascending: true });
+  if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
+  const { data: funcoes, error } = await funcoesQuery;
 
   const funcoesPorGrupo = new Map<string, { id: string; nome: string }[]>();
   funcoes?.forEach((f) => {
     const lista = funcoesPorGrupo.get(f.group_id) ?? [];
-    lista.push({ id: f.id, nome: f.nome });
+    lista.push({ id: f.id, nome: f.name });
     funcoesPorGrupo.set(f.group_id, lista);
   });
 
@@ -52,7 +58,7 @@ export default async function FuncoesPage() {
                 className="md:rounded-[18px] md:border md:border-black/[0.06] md:bg-paper md:p-5"
               >
                 <div className="mb-2.5 font-serif text-[18px] font-semibold text-ink md:mb-3">
-                  {grupo.nome}
+                  {grupo.name}
                 </div>
                 <div className="flex flex-col gap-[7px] md:gap-0">
                   {lista.map((f) => (

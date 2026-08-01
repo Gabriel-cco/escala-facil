@@ -2,27 +2,52 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ShellUser } from "./AppShell";
 
-// Abas inferiores (handoff): só Início, Eventos, Membros, Grupos.
-const abas = [
+type Aba = { href: string; label: string };
+
+const ABAS_ADMIN: Aba[] = [
   { href: "/", label: "Início" },
   { href: "/eventos", label: "Eventos" },
   { href: "/membros", label: "Membros" },
   { href: "/grupos", label: "Grupos" },
 ];
 
-// Telas raiz onde a barra de abas é visível.
-const telasRaiz = ["/", "/eventos", "/membros", "/grupos", "/funcoes"];
+const ABAS_COORDINATOR: Aba[] = [
+  { href: "/", label: "Início" },
+  { href: "/eventos", label: "Eventos" },
+  { href: "/membros", label: "Membros" },
+  { href: "/funcoes", label: "Funções" },
+];
+
+const ABAS_MEMBER: Aba[] = [
+  { href: "/minha-escala", label: "Minha Escala" },
+];
+
+const TELAS_RAIZ = [
+  "/", "/eventos", "/membros", "/grupos", "/funcoes", "/usuarios", "/minha-escala",
+];
 
 function abaAtiva(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export default function TabBar() {
+export default function TabBar({
+  perfil,
+}: {
+  perfil: ShellUser["perfil"];
+}) {
   const pathname = usePathname();
 
-  if (!telasRaiz.includes(pathname)) return null;
+  if (!TELAS_RAIZ.includes(pathname)) return null;
+
+  const abas =
+    perfil === "member"
+      ? ABAS_MEMBER
+      : perfil === "coordinator"
+      ? ABAS_COORDINATOR
+      : ABAS_ADMIN;
 
   return (
     <nav className="sticky bottom-0 z-30 flex border-t border-black/10 bg-screen px-2 pb-7 pt-2.5 md:hidden">

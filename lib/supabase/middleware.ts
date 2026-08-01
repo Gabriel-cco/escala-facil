@@ -43,5 +43,29 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
+    // Proteção de rotas por perfil (lê cookie ef_profile — gravado no callback)
+    if (user) {
+        const perfil = request.cookies.get('ef_profile')?.value
+        const pathname = request.nextUrl.pathname
+
+        // /usuarios: somente admin
+        if (pathname.startsWith('/usuarios') && perfil && perfil !== 'admin') {
+            const url = request.nextUrl.clone()
+            url.pathname = '/'
+            return NextResponse.redirect(url)
+        }
+
+        // member: só pode acessar /minha-escala e rotas de sistema
+        if (perfil === 'member') {
+            const rotasMember = ['/minha-escala', '/auth', '/acesso-pendente', '/login', '/selecionar-grupo']
+            const ehRotaMember = rotasMember.some(r => pathname === r || pathname.startsWith(r + '/'))
+            if (!ehRotaMember) {
+                const url = request.nextUrl.clone()
+                url.pathname = '/minha-escala'
+                return NextResponse.redirect(url)
+            }
+        }
+    }
+
     return supabaseResponse
 }

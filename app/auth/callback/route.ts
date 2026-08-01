@@ -37,9 +37,18 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/acesso-pendente`);
   }
 
-  if (account.profile === "admin") {
-    return NextResponse.redirect(`${origin}/selecionar-grupo`);
-  }
+  const destino =
+    account.profile === "admin"
+      ? `${origin}/selecionar-grupo`
+      : account.profile === "member"
+      ? `${origin}/minha-escala`
+      : `${origin}${next}`;
 
-  return NextResponse.redirect(`${origin}${next}`);
+  const response = NextResponse.redirect(destino);
+  response.cookies.set("ef_profile", account.profile, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+  return response;
 }

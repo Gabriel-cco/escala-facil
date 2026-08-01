@@ -8,13 +8,24 @@ import type { ShellUser } from "./AppShell";
 import { ROTULO_PERFIL } from "./AppShell";
 import SeletorGrupo from "./SeletorGrupo";
 
-// Navegação web: todos os itens (handoff), incluindo Funções.
-const itens = [
+const ITENS_ADMIN = [
   { href: "/", label: "Início" },
-  { href: "/eventos", label: "Eventos" },
-  { href: "/membros", label: "Membros" },
   { href: "/grupos", label: "Grupos" },
+  { href: "/membros", label: "Membros" },
   { href: "/funcoes", label: "Funções" },
+  { href: "/eventos", label: "Eventos" },
+  { href: "/usuarios", label: "Usuários" },
+];
+
+const ITENS_COORDINATOR = [
+  { href: "/", label: "Início" },
+  { href: "/membros", label: "Membros" },
+  { href: "/funcoes", label: "Funções" },
+  { href: "/eventos", label: "Eventos" },
+];
+
+const ITENS_MEMBER = [
+  { href: "/minha-escala", label: "Minha Escala" },
 ];
 
 function itemAtivo(pathname: string, href: string): boolean {
@@ -63,7 +74,12 @@ export default function Sidebar({
 
       {/* Navegação */}
       <nav className="flex flex-col gap-[3px]">
-        {itens.map((item) => {
+        {(user.perfil === "member"
+          ? ITENS_MEMBER
+          : user.perfil === "coordinator"
+          ? ITENS_COORDINATOR
+          : ITENS_ADMIN
+        ).map((item) => {
           const ativo = itemAtivo(pathname, item.href);
           return (
             <Link

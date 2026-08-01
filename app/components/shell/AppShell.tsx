@@ -83,7 +83,7 @@ export default function AppShell({
               <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col md:max-w-[980px] md:px-10 md:py-8">
                 {children}
               </div>
-              <TabBar />
+              <TabBar perfil={user?.perfil ?? null} />
             </div>
           </div>
         </div>

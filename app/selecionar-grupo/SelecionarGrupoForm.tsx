@@ -15,7 +15,7 @@ function gravarCookie(valor: string | null) {
 export default function SelecionarGrupoForm({
   grupos,
 }: {
-  grupos: { id: string; name: string }[];
+  grupos: { id: string; name: string; membroCount: number }[];
 }) {
   const router = useRouter();
 
@@ -36,7 +36,7 @@ export default function SelecionarGrupoForm({
     <main className="flex min-h-dvh flex-col items-center justify-center px-8 pb-10 md:p-6">
       <div className="flex w-full max-w-[480px] flex-col md:rounded-[24px] md:border md:border-black/[0.07] md:bg-paper md:p-12 md:shadow-[0_24px_70px_rgba(0,0,0,0.10)]">
         <h1 className="font-serif text-[26px] font-semibold text-ink">
-          Selecionar grupo
+          Em qual área você quer atuar?
         </h1>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
           Escolha um grupo para filtrar a visão, ou acesse a visão geral com
@@ -48,9 +48,14 @@ export default function SelecionarGrupoForm({
             onClick={() => selecionar(null)}
             className="flex items-center justify-between rounded-2xl border border-black/[0.08] bg-paper px-5 py-4 text-left transition-colors hover:bg-surface"
           >
-            <span className="font-serif text-[17px] font-semibold text-ink">
-              Todos os grupos
-            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-serif text-[17px] font-semibold text-ink">
+                Visão geral
+              </span>
+              <span className="text-[12px] text-muted">
+                Todos os grupos
+              </span>
+            </div>
             <span className="text-[20px] text-[#bdbdb9]">›</span>
           </button>
 
@@ -60,9 +65,14 @@ export default function SelecionarGrupoForm({
               onClick={() => selecionar(grupo.id)}
               className="flex items-center justify-between rounded-2xl border border-black/[0.08] bg-paper px-5 py-4 text-left transition-colors hover:bg-surface"
             >
-              <span className="font-serif text-[17px] font-semibold text-ink">
-                {grupo.name}
-              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-serif text-[17px] font-semibold text-ink">
+                  {grupo.name}
+                </span>
+                <span className="text-[12px] text-muted">
+                  {grupo.membroCount} membro{grupo.membroCount !== 1 ? "s" : ""}
+                </span>
+              </div>
               <span className="text-[20px] text-[#bdbdb9]">›</span>
             </button>
           ))}

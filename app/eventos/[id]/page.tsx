@@ -40,11 +40,12 @@ export default async function EventoDetalhePage({
 
   const grupo = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
 
-  // Funções do grupo do evento.
+  // Funções ativas do grupo do evento (inativas não entram em escalas novas).
   const { data: funcoes } = await supabase
     .from("roles")
     .select("id, name")
     .eq("group_id", evento.group_id)
+    .eq("active", true)
     .order("name", { ascending: true });
 
   // Membros elegíveis: mesmo grupo, ativos e não suspensos na data do evento.
@@ -65,22 +66,24 @@ export default async function EventoDetalhePage({
   // Atribuições já feitas para o evento.
   const { data: atribuicoes } = await supabase
     .from("assignments")
-    .select("id, role_id, account_id, account:accounts(user:users(name))")
+    .select("id, role_id, account_id, account:accounts(suspended_until, user:users(name))")
     .eq("event_id", id);
 
   // Uma atribuição por função (semântica do protótipo): pega a primeira.
   const porFuncao = new Map<
     string,
-    { assignmentId: string; accountId: string; accountName: string }
+    { assignmentId: string; accountId: string; accountName: string; suspendedNaData: boolean }
   >();
   atribuicoes?.forEach((a) => {
     if (porFuncao.has(a.role_id)) return;
     const acc = Array.isArray(a.account) ? a.account[0] : a.account;
     const u = acc && (Array.isArray(acc.user) ? acc.user[0] : acc.user);
+    const suspendedUntil = (acc as { suspended_until?: string | null } | null)?.suspended_until ?? null;
     porFuncao.set(a.role_id, {
       assignmentId: a.id,
       accountId: a.account_id,
       accountName: u?.name ?? "—",
+      suspendedNaData: suspendedUntil != null && suspendedUntil >= evento.date,
     });
   });
 
@@ -106,6 +109,7 @@ export default async function EventoDetalhePage({
               assignmentId: a?.assignmentId ?? null,
               accountId: a?.accountId ?? null,
               accountName: a?.accountName ?? null,
+              suspendedNaData: a?.suspendedNaData ?? false,
             };
           })}
         />

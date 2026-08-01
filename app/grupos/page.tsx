@@ -2,26 +2,50 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "../components/shell/Header";
+import GrupoItem from "./GrupoItem";
 
-export default async function GruposPage() {
+export default async function GruposPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ inativos?: string }>;
+}) {
+  const { inativos } = await searchParams;
+  const mostrarInativos = inativos === "1";
+
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
+  // Perfil do usuário logado para controle de botões (server-side).
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  const { data: pRows } = authUser
+    ? await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id })
+    : { data: null };
+  const perfil = pRows?.[0]?.profile as string | undefined;
+  const podeGerenciar = perfil === "admin";
+
   let gruposQuery = supabase
     .from("groups")
-    .select("id, name")
+    .select("id, name, active")
     .order("name", { ascending: true });
   if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
+  if (!mostrarInativos) gruposQuery = gruposQuery.eq("active", true);
   const { data: grupos, error } = await gruposQuery;
 
+  // Counts (sempre só ativos para refletir estado atual).
   let membrosQuery = supabase
     .from("accounts")
     .select("group_id")
-    .eq("profile", "member");
+    .eq("profile", "member")
+    .eq("active", true);
   if (activeGroupId) membrosQuery = membrosQuery.eq("group_id", activeGroupId);
   const { data: membros } = await membrosQuery;
 
-  let funcoesQuery = supabase.from("roles").select("group_id");
+  let funcoesQuery = supabase
+    .from("roles")
+    .select("group_id")
+    .eq("active", true);
   if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
   const { data: funcoes } = await funcoesQuery;
 
@@ -33,6 +57,8 @@ export default async function GruposPage() {
   funcoes?.forEach((f) =>
     funcoesPorGrupo.set(f.group_id, (funcoesPorGrupo.get(f.group_id) ?? 0) + 1)
   );
+
+  const totalInativos = (grupos ?? []).filter((g) => !g.active).length;
 
   return (
     <>
@@ -54,28 +80,56 @@ export default async function GruposPage() {
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
         )}
 
+        {/* Toggle mostrar inativos */}
+        {podeGerenciar && (
+          <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
+            <div className="text-[12px] text-muted">
+              {mostrarInativos ? "Mostrando ativos e inativos" : "Apenas grupos ativos"}
+            </div>
+            <Link
+              href={mostrarInativos ? "/grupos" : "/grupos?inativos=1"}
+              scroll={false}
+              className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
+            >
+              <span
+                className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
+                  mostrarInativos ? "bg-ink" : "bg-black/15"
+                }`}
+              >
+                <span
+                  className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
+                    mostrarInativos ? "left-[14px]" : "left-[2px]"
+                  }`}
+                />
+              </span>
+              Mostrar inativos
+            </Link>
+          </div>
+        )}
+
         {grupos && grupos.length === 0 && (
-          <p className="text-[13px] text-muted">Nenhum grupo cadastrado ainda.</p>
+          <p className="text-[13px] text-muted">
+            {mostrarInativos
+              ? "Nenhum grupo cadastrado ainda."
+              : totalInativos > 0
+              ? `Nenhum grupo ativo. Há ${totalInativos} inativo${totalInativos > 1 ? "s" : ""} — ative o toggle acima para ver.`
+              : "Nenhum grupo cadastrado ainda."}
+          </p>
         )}
 
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] md:gap-3.5">
           {grupos?.map((grupo) => (
-            <Link
+            <GrupoItem
               key={grupo.id}
-              href={`/grupos/${grupo.id}`}
-              className="flex items-center justify-between gap-2.5 rounded-2xl border border-black/[0.06] bg-paper px-[18px] py-4 md:rounded-[18px] md:p-[22px]"
-            >
-              <div className="flex flex-col gap-[3px] md:gap-1.5">
-                <div className="font-serif text-[18px] font-semibold text-ink md:text-[20px]">
-                  {grupo.name}
-                </div>
-                <div className="text-[12px] text-muted md:text-[12.5px]">
-                  {membrosPorGrupo.get(grupo.id) ?? 0} membros ·{" "}
-                  {funcoesPorGrupo.get(grupo.id) ?? 0} funções
-                </div>
-              </div>
-              <div className="text-[22px] text-[#bdbdb9] md:hidden">›</div>
-            </Link>
+              grupo={{
+                id: grupo.id,
+                name: grupo.name,
+                active: grupo.active,
+                membroCount: membrosPorGrupo.get(grupo.id) ?? 0,
+                funcaoCount: funcoesPorGrupo.get(grupo.id) ?? 0,
+              }}
+              podeGerenciar={podeGerenciar}
+            />
           ))}
         </div>
       </main>

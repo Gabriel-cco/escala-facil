@@ -4,16 +4,35 @@ import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "../components/shell/Header";
 import MembroItem from "./MembroItem";
 
-export default async function MembrosPage() {
+export default async function MembrosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ inativos?: string }>;
+}) {
+  const { inativos } = await searchParams;
+  const mostrarInativos = inativos === "1";
+
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
-  // Membros = accounts (perfil "member") + dados do usuário e do grupo.
+  // Perfil do usuário logado para controle de botões.
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  const { data: pRows } = authUser
+    ? await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id })
+    : { data: null };
+  const perfil = pRows?.[0]?.profile as string | undefined;
+  const podeGerenciar = perfil === "admin" || perfil === "coordinator";
+
   let query = supabase
     .from("accounts")
-    .select("id, suspended_until, user:users(name), group:groups(name)")
+    .select(
+      "id, active, suspended_until, user:users(id, name), group:groups(name)"
+    )
     .eq("profile", "member");
   if (activeGroupId) query = query.eq("group_id", activeGroupId);
+  if (!mostrarInativos) query = query.eq("active", true);
   const { data: accounts, error } = await query;
 
   const membros = (accounts ?? [])
@@ -22,8 +41,10 @@ export default async function MembrosPage() {
       const g = Array.isArray(a.group) ? a.group[0] : a.group;
       return {
         id: a.id,
+        userId: u?.id ?? "",
         nome: u?.name ?? "—",
         grupoNome: g?.name ?? "Sem grupo",
+        active: a.active,
         suspensoAte: a.suspended_until as string | null,
       };
     })
@@ -49,6 +70,35 @@ export default async function MembrosPage() {
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
         )}
 
+        {/* Toggle mostrar inativos */}
+        {podeGerenciar && (
+          <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
+            <div className="text-[12px] text-muted">
+              {mostrarInativos
+                ? "Mostrando ativos e inativos"
+                : "Apenas membros ativos"}
+            </div>
+            <Link
+              href={mostrarInativos ? "/membros" : "/membros?inativos=1"}
+              scroll={false}
+              className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
+            >
+              <span
+                className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
+                  mostrarInativos ? "bg-ink" : "bg-black/15"
+                }`}
+              >
+                <span
+                  className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
+                    mostrarInativos ? "left-[14px]" : "left-[2px]"
+                  }`}
+                />
+              </span>
+              Mostrar inativos
+            </Link>
+          </div>
+        )}
+
         {membros.length === 0 && (
           <p className="text-[13px] text-muted">
             Nenhum membro cadastrado ainda.
@@ -57,7 +107,11 @@ export default async function MembrosPage() {
 
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] md:items-start md:gap-3.5">
           {membros.map((membro) => (
-            <MembroItem key={membro.id} membro={membro} />
+            <MembroItem
+              key={membro.id}
+              membro={membro}
+              podeGerenciar={podeGerenciar}
+            />
           ))}
         </div>
       </main>

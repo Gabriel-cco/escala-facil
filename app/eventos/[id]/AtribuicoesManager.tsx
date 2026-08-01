@@ -12,6 +12,7 @@ type Atribuicao = {
   assignmentId: string | null;
   accountId: string | null;
   accountName: string | null;
+  suspendedNaData: boolean;
 };
 
 export default function AtribuicoesManager({
@@ -135,6 +136,11 @@ export default function AtribuicoesManager({
                   {atribuido && (
                     <div className="text-[12px] text-white/60">
                       {a?.accountName}
+                    </div>
+                  )}
+                  {atribuido && a?.suspendedNaData && (
+                    <div className="text-[11px] font-semibold text-[#fbbf24]">
+                      ⚠ suspenso na data
                     </div>
                   )}
                 </div>

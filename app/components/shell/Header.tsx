@@ -24,16 +24,16 @@ type HeaderProps =
  */
 export default function Header(props: HeaderProps) {
   const router = useRouter();
-  const { openMenu, userIniciais, userNome, setChrome } = useShell();
+  const { openMenu, userIniciais, setChrome } = useShell();
 
   // Título exibido na topbar web conforme a variante.
-  const primeiroNome = userNome.trim().split(/\s+/)[0] || "";
   let chromeTitle = "";
   let showBack = false;
   let actionLabel: string | undefined;
   let actionHref: string | undefined;
   if (props.variant === "home") {
-    chromeTitle = primeiroNome ? `Olá, ${primeiroNome}` : "Início";
+    // A saudação "Olá, {nome}" vive no conteúdo do dashboard — topbar limpa.
+    chromeTitle = "";
   } else if (props.variant === "root") {
     chromeTitle = props.title;
     actionLabel = props.actionLabel;

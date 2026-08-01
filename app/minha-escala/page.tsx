@@ -80,7 +80,6 @@ export default async function MinhaEscalaPage({
 
   const firstDay = `${ano}-${String(mesNum).padStart(2, "0")}-01`;
   const lastDay = `${ano}-${String(mesNum).padStart(2, "0")}-${new Date(ano, mesNum, 0).getDate()}`;
-  const mesAno = `${ano}-${String(mesNum).padStart(2, "0")}`;
 
   // Grupo
   const { data: grupo } = await supabase
@@ -181,11 +180,6 @@ export default async function MinhaEscalaPage({
               const minhaAtribuicao = atribuicoes.find(
                 (a) => a.account_id === accountId
               );
-              const minhaFuncao = minhaAtribuicao?.role;
-              const minhaFuncaoNome = Array.isArray(minhaFuncao)
-                ? minhaFuncao[0]?.name
-                : (minhaFuncao as { name?: string } | null)?.name;
-
               const euEstouEscalado = !!minhaAtribuicao;
 
               return (

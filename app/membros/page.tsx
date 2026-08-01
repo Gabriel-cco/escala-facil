@@ -52,19 +52,31 @@ export default async function MembrosPage({
 
   return (
     <>
-      <Header
-        variant="root"
-        title="Membros"
-        actionLabel="+ Cadastrar membro"
-        actionHref="/membros/novo"
-      />
-      <main className="flex flex-1 flex-col gap-2.5 px-[18px] pb-6 pt-0.5 md:p-0">
-        <Link
-          href="/membros/novo"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
-        >
-          + Cadastrar membro
-        </Link>
+      <Header variant="root" title="Membros" />
+      <main className="flex flex-1 flex-col gap-4 px-[18px] pb-6 pt-0.5 md:gap-5 md:p-0">
+        {/* Contagem + cadastrar (desktop) */}
+        <div className="flex items-center justify-between">
+          <div className="text-[13px] text-muted">
+            {membros.length} membro{membros.length !== 1 ? "s" : ""}
+          </div>
+          {podeGerenciar && (
+            <Link
+              href="/membros/novo"
+              className="hidden flex-none items-center gap-2 rounded-[14px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover md:inline-flex"
+            >
+              + Cadastrar membro
+            </Link>
+          )}
+        </div>
+
+        {podeGerenciar && (
+          <Link
+            href="/membros/novo"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
+          >
+            + Cadastrar membro
+          </Link>
+        )}
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
@@ -105,7 +117,7 @@ export default async function MembrosPage({
           </p>
         )}
 
-        <div className="flex flex-col gap-2.5 md:grid md:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] md:items-start md:gap-3.5">
+        <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 md:items-start md:gap-3.5">
           {membros.map((membro) => (
             <MembroItem
               key={membro.id}

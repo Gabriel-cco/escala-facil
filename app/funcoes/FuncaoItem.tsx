@@ -11,15 +11,8 @@ type Funcao = {
   active: boolean;
 };
 
-const iconeLapis = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-
 const iconeArquivar = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="21 8 21 21 3 21 3 8" />
     <rect x="1" y="3" width="22" height="5" />
     <line x1="10" y1="12" x2="14" y2="12" />
@@ -57,49 +50,48 @@ export default function FuncaoItem({
   return (
     <>
       <div
-        className={`group flex items-center gap-2 rounded-xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3 md:rounded-none md:border-0 md:border-t md:border-black/[0.06] md:bg-transparent md:px-0 md:py-[9px] ${
-          !funcao.active ? "opacity-55" : ""
+        className={`group inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] transition-colors ${
+          funcao.active
+            ? "border-black/[0.12] bg-paper text-ink"
+            : "border-black/[0.08] bg-paper text-muted opacity-70"
         }`}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="text-[13.5px] text-ink md:text-[#374151]">
+        {podeGerenciar ? (
+          <Link
+            href={`/funcoes/editar/${funcao.id}`}
+            className="font-medium hover:text-primary"
+            title="Editar função"
+          >
             {funcao.nome}
+          </Link>
+        ) : (
+          <span className="font-medium">{funcao.nome}</span>
+        )}
+
+        {!funcao.active && (
+          <span className="text-[10.5px] font-semibold text-[#6b7280]">
+            · inativa
           </span>
-          {!funcao.active && (
-            <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
-              Inativo
-            </span>
-          )}
-        </div>
+        )}
 
-        {podeGerenciar && (
-          <div className="flex flex-none items-center gap-0.5 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
-            <Link
-              href={`/funcoes/editar/${funcao.id}`}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink"
-              title="Editar função"
-            >
-              {iconeLapis}
-            </Link>
-
-            {funcao.active ? (
-              <button
-                onClick={() => setConfirmando(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-[#8a6200]"
-                title="Arquivar função"
-              >
-                {iconeArquivar}
-              </button>
-            ) : (
-              <button
-                onClick={reativar}
-                disabled={processando}
-                className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50"
-              >
-                Reativar
-              </button>
-            )}
-          </div>
+        {podeGerenciar && funcao.active && (
+          <button
+            onClick={() => setConfirmando(true)}
+            title="Arquivar função"
+            className="ml-0.5 flex h-4 w-4 flex-none items-center justify-center rounded-full text-faint hover:text-[#b45309] md:opacity-0 md:transition-opacity md:group-hover:opacity-100"
+          >
+            {iconeArquivar}
+          </button>
+        )}
+        {podeGerenciar && !funcao.active && (
+          <button
+            onClick={reativar}
+            disabled={processando}
+            title="Reativar função"
+            className="ml-0.5 flex-none text-[11px] font-semibold text-primary disabled:opacity-50"
+          >
+            Reativar
+          </button>
         )}
       </div>
 

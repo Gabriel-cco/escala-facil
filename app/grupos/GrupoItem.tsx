@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 type Grupo = {
   id: string;
   name: string;
+  description: string | null;
   active: boolean;
   membroCount: number;
   funcaoCount: number;
@@ -59,26 +60,35 @@ export default function GrupoItem({
   return (
     <>
       <div
-        className={`group flex items-center gap-2.5 rounded-2xl border border-black/[0.06] bg-paper shadow-card px-[18px] py-4 md:rounded-[18px] md:p-[22px] ${
+        className={`group flex items-start gap-2.5 rounded-2xl border border-black/[0.06] bg-paper shadow-card transition-shadow hover:shadow-hover px-[18px] py-[18px] md:rounded-[18px] md:px-[22px] md:py-[20px] ${
           !grupo.active ? "opacity-55" : ""
         }`}
       >
-        <Link
-          href={`/grupos/${grupo.id}`}
-          className="flex min-w-0 flex-1 flex-col gap-[3px] md:gap-1.5"
-        >
-          <div className="font-serif text-[18px] font-semibold text-ink md:text-[20px]">
-            {grupo.name}
-          </div>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted md:text-[12.5px]">
-            <span>
-              {grupo.membroCount} membros · {grupo.funcaoCount} funções
+        <Link href={`/grupos/${grupo.id}`} className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[17px] font-semibold text-ink md:text-[18px]">
+              {grupo.name}
             </span>
             {!grupo.active && (
               <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
                 Inativo
               </span>
             )}
+          </div>
+          {grupo.description && (
+            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted">
+              {grupo.description}
+            </p>
+          )}
+          <div className="mt-3 flex items-center gap-4 text-[12.5px] text-muted">
+            <span>
+              <span className="font-semibold text-ink">{grupo.membroCount}</span>{" "}
+              membros
+            </span>
+            <span>
+              <span className="font-semibold text-ink">{grupo.funcaoCount}</span>{" "}
+              funções
+            </span>
           </div>
         </Link>
 

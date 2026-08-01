@@ -56,8 +56,12 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
       return;
     }
 
-    // Vai direto para montar a escala; replace para o "voltar" cair na lista.
-    router.replace(`/eventos/${criado.id}`);
+    // Navegação "dura" de propósito: este form abre num modal interceptor
+    // (@modal/(.)novo) e um router.replace não desmonta o slot paralelo de
+    // forma confiável — o modal fica preso com o botão travado. Trocar o
+    // documento fecha o modal com certeza, leva à escala e o "voltar" cai
+    // na lista.
+    window.location.replace(`/eventos/${criado.id}`);
   }
 
   return (

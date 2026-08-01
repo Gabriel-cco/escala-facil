@@ -11,6 +11,7 @@ type Conta = {
   group_id: string | null;
   suspended_until: string | null;
   active: boolean;
+  pendente: boolean;
   userName: string;
   userEmail: string;
   userId: string;
@@ -45,22 +46,6 @@ function badgePerfil(profile: string) {
   );
 }
 
-const iconeLapis = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-
-const iconeLixo = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14H6L5 6" />
-    <path d="M10 11v6M14 11v6" />
-    <path d="M9 6V4h6v2" />
-  </svg>
-);
-
 type ModalAdicionarState = {
   nome: string;
   email: string;
@@ -85,8 +70,6 @@ export default function UsuariosManager({
 }) {
   const router = useRouter();
 
-  const [busca, setBusca] = useState("");
-  const [filtroPerfil, setFiltroPerfil] = useState<string | null>(null);
   const [mostrarInativos, setMostrarInativos] = useState(false);
 
   // Modal adicionar
@@ -113,17 +96,7 @@ export default function UsuariosManager({
   const [erro, setErro] = useState("");
 
   // --- Filtro ---
-  const contasFiltradas = contas.filter((c) => {
-    const termo = busca.toLowerCase();
-    const matchBusca =
-      !termo ||
-      c.userName.toLowerCase().includes(termo) ||
-      c.userEmail.toLowerCase().includes(termo);
-    const matchPerfil = !filtroPerfil || c.profile === filtroPerfil;
-    const matchAtivo = mostrarInativos || c.active;
-    return matchBusca && matchPerfil && matchAtivo;
-  });
-
+  const contasFiltradas = contas.filter((c) => mostrarInativos || c.active);
   const temInativos = contas.some((c) => !c.active);
 
   // --- Adicionar ---
@@ -267,49 +240,17 @@ export default function UsuariosManager({
 
   return (
     <>
-      {/* Toolbar */}
-      <div className="mb-3 flex flex-col gap-2.5 pt-0.5">
-        <input
-          type="search"
-          placeholder="Buscar por nome ou e-mail…"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="w-full rounded-[13px] border border-black/10 bg-paper px-4 py-2.5 text-[14px] text-ink placeholder-muted outline-none"
-        />
-
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-          <button
-            onClick={() => setFiltroPerfil(null)}
-            className={`flex-none rounded-full border px-3 py-1.5 text-[12.5px] font-semibold ${
-              !filtroPerfil
-                ? "border-primary bg-primary text-paper"
-                : "border-black/10 text-ink-soft"
-            }`}
-          >
-            Todos
-          </button>
-          {PERFIS.map((p) => (
-            <button
-              key={p.value}
-              onClick={() => setFiltroPerfil(filtroPerfil === p.value ? null : p.value)}
-              className={`flex-none rounded-full border px-3 py-1.5 text-[12.5px] font-semibold ${
-                filtroPerfil === p.value
-                  ? "border-primary bg-primary text-paper"
-                  : "border-black/10 text-ink-soft"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-
-          {/* Botão adicionar — desktop */}
-          <button
-            onClick={abrirAdicionar}
-            className="ml-auto hidden flex-none rounded-full bg-primary px-4 py-1.5 text-[12.5px] font-semibold text-paper md:flex"
-          >
-            + Adicionar usuário
-          </button>
+      {/* Contagem + adicionar (desktop) */}
+      <div className="mb-3 flex items-center justify-between pt-0.5">
+        <div className="text-[13px] text-muted">
+          {contas.length} usuário{contas.length !== 1 ? "s" : ""}
         </div>
+        <button
+          onClick={abrirAdicionar}
+          className="hidden flex-none items-center gap-2 rounded-[14px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover md:inline-flex"
+        >
+          + Adicionar usuário
+        </button>
       </div>
 
       {/* Botão adicionar mobile */}
@@ -351,19 +292,23 @@ export default function UsuariosManager({
           {contasFiltradas.map((conta) => (
             <div
               key={conta.id}
-              className={`group flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3 ${
+              className={`flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-paper shadow-card px-4 py-3 ${
                 !conta.active ? "opacity-55" : ""
               }`}
             >
               <div className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-full bg-avatar text-[14px] font-semibold text-avatar-ink">
                 {iniciais(conta.userName)}
               </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[14px] font-semibold text-ink">
                     {conta.userName}
                   </span>
-                  {badgePerfil(conta.profile)}
+                  {conta.pendente && (
+                    <span className="rounded-full bg-[#fef3c7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400e]">
+                      Pendente
+                    </span>
+                  )}
                   {!conta.active && (
                     <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-muted">
                       Inativo
@@ -371,26 +316,32 @@ export default function UsuariosManager({
                   )}
                 </div>
                 <div className="text-[12px] text-muted">{conta.userEmail}</div>
-                {conta.groupName && (
-                  <div className="text-[12px] text-muted">{conta.groupName}</div>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {badgePerfil(conta.profile)}
+                  {conta.groupName && (
+                    <span className="text-[12px] text-muted">
+                      {conta.groupName}
+                    </span>
+                  )}
+                </div>
               </div>
               {conta.active ? (
-                <div className="ml-auto flex flex-none items-center gap-0.5 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
+                <div className="ml-auto flex flex-none items-center gap-1.5">
                   <button
                     onClick={() => abrirEditar(conta)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink"
-                    title="Editar usuário"
+                    className="rounded-lg border border-black/10 px-3 py-1.5 text-[12.5px] font-semibold text-ink hover:bg-surface"
                   >
-                    {iconeLapis}
+                    Editar
                   </button>
                   {conta.id !== adminAccountId && (
                     <button
-                      onClick={() => { setErro(""); setContaRemovendo(conta); }}
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-danger"
-                      title="Remover acesso"
+                      onClick={() => {
+                        setErro("");
+                        setContaRemovendo(conta);
+                      }}
+                      className="rounded-lg border border-danger/30 px-3 py-1.5 text-[12.5px] font-semibold text-danger hover:bg-danger/5"
                     >
-                      {iconeLixo}
+                      Remover
                     </button>
                   )}
                 </div>
@@ -398,7 +349,7 @@ export default function UsuariosManager({
                 <button
                   onClick={() => reativar(conta)}
                   disabled={processando}
-                  className="ml-auto flex-none whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50"
+                  className="ml-auto flex-none whitespace-nowrap rounded-lg border border-black/10 px-3 py-1.5 text-[12.5px] font-semibold text-ink disabled:opacity-50"
                 >
                   Reativar
                 </button>

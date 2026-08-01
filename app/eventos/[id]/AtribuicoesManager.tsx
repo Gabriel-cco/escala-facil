@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { iniciais } from "@/lib/iniciais";
 
 type Funcao = { id: string; nome: string };
 // `id` é o id do account elegível.
@@ -81,25 +82,44 @@ export default function AtribuicoesManager({
     router.refresh();
   }
 
+  // Remove direto pela linha da função (botão "Remover"), sem abrir o sheet.
+  async function removerRole(roleId: string) {
+    if (ocupado) return;
+    setOcupado(true);
+    const supabase = createClient();
+    await supabase
+      .from("assignments")
+      .delete()
+      .eq("event_id", eventId)
+      .eq("role_id", roleId);
+    setOcupado(false);
+    router.refresh();
+  }
+
+  const completo = total > 0 && atribuidas >= total;
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-[22px]">
       {/* Resumo / progresso */}
-      <div className="rounded-[18px] bg-surface p-[18px] md:flex md:items-center md:gap-6 md:border md:border-black/[0.06] md:bg-paper md:px-6 md:py-5">
-        <div className="md:flex-1">
-          <div className="mb-1.5 text-[12.5px] font-semibold text-ink-soft md:mb-0 md:text-[13px]">
+      <div className="flex items-center gap-4 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-4 py-3.5 md:px-6 md:py-4">
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-semibold text-ink">
             {dataLabel} · {horaLabel}
           </div>
-          <div className="mt-2 text-[12px] text-[#6b7280] md:order-last md:mt-1 md:text-[13px] md:text-muted">
-            {atribuidas} de {total} funções atribuídas
-          </div>
+          <div className="mt-0.5 text-[12px] text-muted">{grupoNome}</div>
         </div>
-        <div className="mt-1 flex items-center gap-2.5 md:mt-0 md:w-[260px] md:flex-none">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-track md:h-2 md:bg-surface">
+        <div className="flex flex-none items-center gap-2.5">
+          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-track md:w-40">
             <div
-              className="h-full rounded-[3px] bg-ink"
+              className={`h-full rounded-full ${
+                completo ? "bg-success" : "bg-primary"
+              }`}
               style={{ width: `${pct}%` }}
             />
           </div>
+          <span className="whitespace-nowrap text-[12px] font-semibold text-ink-soft">
+            {atribuidas} de {total} funções
+          </span>
         </div>
       </div>
 
@@ -109,58 +129,77 @@ export default function AtribuicoesManager({
           Nenhuma função cadastrada para o grupo deste evento.
         </p>
       ) : (
-        <div>
-          <div className="mb-2 px-1 pt-1 text-[11px] font-semibold uppercase tracking-[1.2px] text-faint md:mb-2.5 md:px-0 md:pt-0">
-            {grupoNome}
-          </div>
-          <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-2.5">
+        <div className="flex flex-col gap-2">
           {funcoes.map((f) => {
             const a = porFuncao.get(f.id);
             const atribuido = !!a?.accountId;
             return (
-              <button
+              <div
                 key={f.id}
-                onClick={() => setSheetRoleId(f.id)}
-                className={`flex w-full items-center justify-between gap-2.5 rounded-[14px] border border-black/[0.06] px-[15px] py-3.5 text-left ${
-                  atribuido ? "bg-ink" : "bg-paper"
-                }`}
+                className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-4 py-3"
               >
-                <div className="flex flex-col gap-[3px]">
-                  <div
-                    className={`text-[14px] font-semibold ${
-                      atribuido ? "text-paper" : "text-ink"
-                    }`}
-                  >
-                    {f.nome}
-                  </div>
-                  {atribuido && (
-                    <div className="text-[12px] text-white/60">
-                      {a?.accountName}
-                    </div>
-                  )}
-                  {atribuido && a?.suspendedNaData && (
-                    <div className="text-[11px] font-semibold text-[#f59e0b]">
-                      ⚠ suspenso na data
-                    </div>
+                <div className="w-[74px] flex-none text-[13.5px] font-semibold text-ink md:w-28">
+                  {f.nome}
+                </div>
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  {atribuido ? (
+                    <>
+                      <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-avatar text-[11px] font-semibold text-avatar-ink">
+                        {iniciais(a?.accountName ?? "?")}
+                      </div>
+                      <span className="truncate text-[13.5px] text-ink">
+                        {a?.accountName}
+                      </span>
+                      {a?.suspendedNaData && (
+                        <span
+                          className="flex-none text-[12px] font-semibold text-warning"
+                          title="Suspenso na data do evento"
+                        >
+                          ⚠
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[13px] italic text-faint">
+                      Ninguém escalado ainda
+                    </span>
                   )}
                 </div>
-                <div
-                  className={`whitespace-nowrap text-[12px] font-semibold ${
-                    atribuido ? "text-white/60" : "text-ink-soft"
-                  }`}
-                >
-                  {atribuido ? "Trocar" : "Atribuir +"}
+                <div className="flex flex-none items-center gap-1.5">
+                  {atribuido ? (
+                    <>
+                      <button
+                        onClick={() => setSheetRoleId(f.id)}
+                        className="rounded-lg border border-black/10 px-3 py-1.5 text-[12.5px] font-semibold text-ink hover:bg-surface"
+                      >
+                        Trocar
+                      </button>
+                      <button
+                        onClick={() => removerRole(f.id)}
+                        disabled={ocupado}
+                        className="hidden rounded-lg border border-danger/30 px-3 py-1.5 text-[12.5px] font-semibold text-danger hover:bg-danger/5 disabled:opacity-50 md:inline-flex"
+                      >
+                        Remover
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setSheetRoleId(f.id)}
+                      className="rounded-lg bg-primary px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-primary-hover"
+                    >
+                      Atribuir
+                    </button>
+                  )}
                 </div>
-              </button>
+              </div>
             );
           })}
-          </div>
         </div>
       )}
 
       <button
         onClick={() => router.back()}
-        className="mt-1.5 w-full rounded-2xl bg-ink py-3.5 text-[14.5px] font-semibold text-paper md:hidden"
+        className="mt-1.5 w-full rounded-2xl bg-primary py-3.5 text-[14.5px] font-semibold text-white md:hidden"
       >
         Concluir
       </button>

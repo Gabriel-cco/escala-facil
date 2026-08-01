@@ -7,22 +7,12 @@ import { rotuloData, rotuloHora } from "@/lib/datas";
 // Depende de cookies (grupo ativo) — sempre renderizado sob demanda.
 export const dynamic = "force-dynamic";
 
-const pillEscuro =
-  "inline-flex items-center justify-center gap-2 rounded-full bg-primary px-[18px] py-[11px] text-[13px] font-semibold text-paper";
-
 export default async function Home() {
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
-  // Monta os builders das queries (sem await) para rodar em paralelo — todas
-  // dependem apenas do activeGroupId (cookie), não uma da outra. Sequencial
-  // aqui somava 5 round-trips ao Supabase e estourava o timeout na Vercel.
-  let gruposQuery = supabase
-    .from("groups")
-    .select("id, name")
-    .order("name", { ascending: true });
-  if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
-
+  // Builders das queries (sem await) para rodar em paralelo — dependem só do
+  // activeGroupId (cookie), não uma da outra. Sequencial estourava o timeout.
   let eventosQuery = supabase
     .from("events")
     .select("id, name, date, time, group_id, groups(name)")
@@ -44,18 +34,25 @@ export default async function Home() {
     .select("event_id, role_id");
 
   const [
-    { data: grupos },
+    { data: userData },
     { data: eventos },
     { count: totalMembros },
     { data: funcoes },
     { data: atribuicoes },
   ] = await Promise.all([
-    gruposQuery,
+    supabase.auth.getUser(),
     eventosQuery,
     membrosQuery,
     funcoesQuery,
     atribuicoesQuery,
   ]);
+
+  const nomeCompleto =
+    (userData?.user?.user_metadata?.full_name as string | undefined) ??
+    (userData?.user?.user_metadata?.name as string | undefined) ??
+    userData?.user?.email ??
+    "";
+  const primeiroNome = nomeCompleto.trim().split(/\s+/)[0] || "";
 
   const totalPorGrupo = new Map<string, number>();
   funcoes?.forEach((f) => {
@@ -79,10 +76,7 @@ export default async function Home() {
   const stats = [
     { value: String(eventos?.length ?? 0), label: "Eventos agendados" },
     { value: String(totalMembros ?? 0), label: "Membros cadastrados" },
-    {
-      value: `${totalAtribuidas}/${totalFuncoes}`,
-      label: "Funções atribuídas",
-    },
+    { value: `${totalAtribuidas}/${totalFuncoes}`, label: "Funções atribuídas" },
   ];
 
   const proximos = (eventos ?? []).slice(0, 5);
@@ -90,126 +84,59 @@ export default async function Home() {
   return (
     <>
       <Header variant="home" />
-
-      {/* ===== Mobile: hub de cartões ===== */}
-      <main className="flex flex-1 flex-col gap-3.5 px-[18px] pb-6 pt-1 md:hidden">
-        {/* Cartão intro */}
-        <section className="rounded-[22px] bg-surface p-5">
-          <p className="mb-4 text-[13.5px] leading-relaxed text-[#6b7280]">
-            Organize as escalas de serviço dos grupos da paróquia em um só
-            lugar. Comece criando um evento e atribuindo os membros às funções.
-          </p>
-          <Link href="/eventos" className={pillEscuro}>
-            Ir para eventos →
+      <main className="flex flex-1 flex-col gap-6 px-[18px] pb-6 pt-1 md:gap-7 md:p-0">
+        {/* Saudação + criar evento (desktop) */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-[24px] font-bold tracking-tight text-ink md:text-[28px]">
+              {primeiroNome ? `Olá, ${primeiroNome}` : "Olá"}
+            </h1>
+            <p className="mt-1 text-[13.5px] text-muted md:text-[14px]">
+              Aqui está o panorama da sua paróquia.
+            </p>
+          </div>
+          <Link
+            href="/eventos/novo"
+            className="hidden flex-none items-center gap-2 rounded-[14px] bg-primary px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary-hover md:inline-flex"
+          >
+            + Criar evento
           </Link>
-        </section>
+        </div>
 
-        {/* Cartão Eventos */}
-        <section className="rounded-[22px] bg-surface px-5 py-6 text-center">
-          <div className="mb-1.5 text-[11px] tracking-[1.5px] text-faint">
-            AGENDA
-          </div>
-          <div className="mb-4 font-serif text-2xl font-semibold text-ink">
-            Eventos
-          </div>
-          <div className="flex flex-wrap justify-center gap-2.5">
-            <Link href="/eventos/novo" className={pillEscuro}>
-              Criar evento
-            </Link>
-            <Link href="/eventos" className={pillEscuro}>
-              Montar escalas
-            </Link>
-          </div>
-        </section>
-
-        {/* Cartão Membros */}
-        <section className="rounded-[22px] bg-surface px-5 py-6 text-center">
-          <div className="mb-1.5 text-[11px] tracking-[1.5px] text-faint">
-            PESSOAS
-          </div>
-          <div className="mb-4 font-serif text-2xl font-semibold text-ink">
-            Membros
-          </div>
-          <div className="flex flex-wrap justify-center gap-2.5">
-            <Link href="/membros/novo" className={pillEscuro}>
-              Cadastrar membro
-            </Link>
-            <Link href="/membros" className={pillEscuro}>
-              Gerir participantes
-            </Link>
-          </div>
-        </section>
-
-        {/* Cartão Grupos */}
-        <section className="rounded-[22px] bg-surface px-5 py-6 text-center">
-          <div className="mb-1.5 text-[11px] tracking-[1.5px] text-faint">
-            EQUIPES
-          </div>
-          <div className="mb-4 font-serif text-2xl font-semibold text-ink">
-            Grupos
-          </div>
-          <div className="flex flex-wrap justify-center gap-2">
-            {grupos?.map((grupo) => (
-              <Link
-                key={grupo.id}
-                href={`/grupos/${grupo.id}`}
-                className="rounded-full border border-black/10 px-[15px] py-[9px] text-[12.5px] font-medium text-ink"
-              >
-                {grupo.name}
-              </Link>
-            ))}
-            {(!grupos || grupos.length === 0) && (
-              <Link
-                href="/grupos"
-                className="rounded-full border border-black/10 px-[15px] py-[9px] text-[12.5px] font-medium text-muted"
-              >
-                Cadastrar grupos →
-              </Link>
-            )}
-          </div>
-        </section>
-
-        {/* Cartão Funções (escuro) */}
-        <Link
-          href="/funcoes"
-          className="rounded-[22px] bg-primary px-5 py-6 text-center transition-colors hover:bg-primary-hover"
-        >
-          <div className="mb-1.5 text-[11px] tracking-[1.5px] text-white/70">
-            PAPÉIS
-          </div>
-          <div className="mb-1.5 font-serif text-2xl font-semibold text-white">
-            Funções
-          </div>
-          <div className="text-[12.5px] text-white/60">
-            Papéis dentro de cada grupo
-          </div>
-        </Link>
-      </main>
-
-      {/* ===== Web: dashboard ===== */}
-      <main className="hidden flex-1 flex-col gap-[26px] md:flex">
-        <div className="grid grid-cols-3 gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
           {stats.map((s) => (
             <div
               key={s.label}
-              className="rounded-[18px] border border-black/[0.06] bg-paper shadow-card p-[22px]"
+              className="rounded-2xl border border-black/[0.06] bg-paper shadow-card p-4 md:rounded-[18px] md:p-[22px]"
             >
-              <div className="font-serif text-[38px] font-semibold leading-none text-ink">
+              <div className="text-[26px] font-bold leading-none text-ink md:text-[34px]">
                 {s.value}
               </div>
-              <div className="mt-2 text-[13px] text-muted">{s.label}</div>
+              <div className="mt-1.5 text-[11.5px] leading-tight text-muted md:mt-2 md:text-[13px]">
+                {s.label}
+              </div>
             </div>
           ))}
         </div>
 
+        {/* Criar evento (mobile, largura total) */}
+        <Link
+          href="/eventos/novo"
+          className="flex items-center justify-center gap-2 rounded-[14px] bg-primary py-3.5 text-[14.5px] font-semibold text-white transition-colors hover:bg-primary-hover md:hidden"
+        >
+          + Criar evento
+        </Link>
+
+        {/* Próximos eventos */}
         <div>
-          <div className="mb-3.5 flex items-center justify-between">
-            <div className="font-serif text-[20px] font-semibold text-ink">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-[17px] font-bold text-ink md:text-[19px]">
               Próximos eventos
-            </div>
+            </h2>
             <Link
               href="/eventos"
-              className="text-[13px] font-semibold text-ink-soft"
+              className="text-[13px] font-semibold text-primary hover:text-primary-hover"
             >
               Ver todos →
             </Link>
@@ -228,30 +155,37 @@ export default async function Home() {
               const total = totalPorGrupo.get(evento.group_id) ?? 0;
               const atribuidas = atribuidasPorEvento.get(evento.id)?.size ?? 0;
               const pct = total ? Math.round((atribuidas / total) * 100) : 0;
+              const completo = total > 0 && atribuidas >= total;
               return (
                 <Link
                   key={evento.id}
                   href={`/eventos/${evento.id}`}
-                  className="flex items-center gap-5 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-5 py-4"
+                  className="flex items-center gap-4 rounded-2xl border border-black/[0.06] bg-paper shadow-card px-4 py-3.5 transition-shadow hover:shadow-hover md:rounded-[14px] md:px-5 md:py-4"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="font-serif text-[17px] font-semibold text-ink">
+                    <div className="truncate text-[15px] font-semibold text-ink">
                       {evento.name}
                     </div>
-                    <div className="mt-0.5 text-[12.5px] text-muted">
-                      {rotuloData(evento.date)} · {rotuloHora(evento.time)} —{" "}
-                      {grupo?.name ?? "Sem grupo"}
+                    <div className="mt-0.5 text-[12px] text-muted">
+                      {grupo?.name ?? "Sem grupo"} · {rotuloHora(evento.time)}
                     </div>
                   </div>
-                  <div className="flex w-40 flex-none items-center gap-2.5">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface">
-                      <div
-                        className="h-full rounded-[3px] bg-primary"
-                        style={{ width: `${pct}%` }}
-                      />
+                  <div className="flex flex-none flex-col items-end gap-1.5">
+                    <div className="whitespace-nowrap text-[12px] text-muted">
+                      {rotuloData(evento.date)}
                     </div>
-                    <div className="whitespace-nowrap text-[12px] font-semibold text-ink-soft">
-                      {atribuidas}/{total}
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-track md:w-32">
+                        <div
+                          className={`h-full rounded-full ${
+                            completo ? "bg-success" : "bg-primary"
+                          }`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="w-9 text-right text-[11.5px] font-semibold text-ink-soft">
+                        {atribuidas}/{total}
+                      </span>
                     </div>
                   </div>
                 </Link>

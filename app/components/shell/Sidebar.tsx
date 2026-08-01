@@ -33,6 +33,67 @@ function itemAtivo(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
+/** Ícone de cada item da navegação (herda a cor via currentColor). */
+function IconeNav({ href }: { href: string }) {
+  const p = {
+    width: 18,
+    height: 18,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  switch (href) {
+    case "/":
+      return (
+        <svg {...p}>
+          <path d="M3 10.6 12 3l9 7.6" />
+          <path d="M5.2 9.3V21h13.6V9.3" />
+        </svg>
+      );
+    case "/grupos":
+      return (
+        <svg {...p}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 3v9h9" />
+        </svg>
+      );
+    case "/membros":
+      return (
+        <svg {...p}>
+          <circle cx="9" cy="8" r="3.2" />
+          <path d="M15.4 5.3a3.2 3.2 0 0 1 0 6.4" />
+          <path d="M3.3 20c.5-3.3 2.9-5.2 5.7-5.2s5.2 1.9 5.7 5.2" />
+          <path d="M16 15c2.3.3 4 2.2 4.5 5" />
+        </svg>
+      );
+    case "/funcoes":
+      return (
+        <svg {...p}>
+          <path d="M12 3.2l1.9 5.1L19 10l-5.1 1.7L12 17l-1.9-5.3L5 10l5.1-1.7z" />
+        </svg>
+      );
+    case "/eventos":
+      return (
+        <svg {...p}>
+          <rect x="3.5" y="5" width="17" height="15.5" rx="2.2" />
+          <path d="M3.5 9.5h17M8 3.2v3.6M16 3.2v3.6" />
+        </svg>
+      );
+    case "/usuarios":
+      return (
+        <svg {...p}>
+          <circle cx="12" cy="8" r="3.4" />
+          <path d="M5.5 20c.5-3.6 3.2-5.6 6.5-5.6s6 2 6.5 5.6" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 /** Sidebar fixa (248px) do layout web: logo + navegação + usuário/Sair. */
 export default function Sidebar({
   className = "",
@@ -59,14 +120,10 @@ export default function Sidebar({
     >
       {/* Logo */}
       <Link href="/" className="flex items-center gap-[11px] px-2 pb-[22px] pt-1">
-        <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full bg-primary-light text-center font-serif text-[9px] font-semibold leading-none text-primary">
-          esc
-          <br />
-          fác
+        <span className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[10px] bg-primary text-[17px] font-bold leading-none text-white">
+          E
         </span>
-        <span className="font-serif text-[19px] font-semibold text-ink">
-          Escala Fácil
-        </span>
+        <span className="text-[18px] font-bold text-ink">Escala Fácil</span>
       </Link>
 
       {/* Grupo ativo (dropdown para admin; fixo para os demais) */}
@@ -85,17 +142,15 @@ export default function Sidebar({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-[11px] rounded-lg px-[13px] py-[11px] text-[14px] transition-colors ${
+              className={`flex items-center gap-[11px] rounded-lg px-[13px] py-[10px] text-[14px] transition-colors ${
                 ativo
                   ? "bg-primary-light font-semibold text-primary"
-                  : "font-medium text-muted hover:bg-surface"
+                  : "font-medium text-muted hover:bg-surface hover:text-ink"
               }`}
             >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  ativo ? "bg-primary" : "bg-transparent"
-                }`}
-              />
+              <span className={ativo ? "text-primary" : "text-faint"}>
+                <IconeNav href={item.href} />
+              </span>
               {item.label}
             </Link>
           );

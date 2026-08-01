@@ -12,10 +12,6 @@ const MESES_LONGOS = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
-const MESES_CURTO = [
-  "jan", "fev", "mar", "abr", "mai", "jun",
-  "jul", "ago", "set", "out", "nov", "dez",
-];
 
 type Grupo = { id: string; name: string };
 type Padrao = { id: string; nome: string; diaSemana: number; horario: string };
@@ -49,12 +45,6 @@ function getDatesForWeekday(year: number, month: number, weekday: number): strin
     }
   }
   return dates;
-}
-
-function formatarData(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return `${DIAS_CURTO[date.getDay()]}, ${d} ${MESES_CURTO[m - 1]}`;
 }
 
 function rotuloMesAno(mesAno: string): string {
@@ -431,26 +421,38 @@ export default function GerarEventosForm({
 
       {/* Lista de eventos */}
       <div className="flex flex-col gap-2">
-        {previewEventos.map((evento) =>
-          evento.jaExiste ? (
-            <div
-              key={evento.key}
-              className="flex w-full items-center gap-3 rounded-[14px] border border-black/[0.04] bg-paper px-4 py-3 opacity-50"
-            >
-              <div className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-[5px] border-[1.5px] border-black/20" />
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-ink">
+        {previewEventos.map((evento) => {
+          const [y, m, d] = evento.date.split("-").map(Number);
+          const dia = d;
+          const sem = DIAS_CURTO[new Date(y, m - 1, d).getDay()].toUpperCase();
+
+          if (evento.jaExiste) {
+            return (
+              <div
+                key={evento.key}
+                className="flex w-full items-center gap-3 rounded-[14px] border border-black/[0.04] bg-paper px-4 py-3 opacity-50"
+              >
+                <div className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-[5px] border-[1.5px] border-black/20" />
+                <div className="w-9 flex-none text-center">
+                  <div className="text-[16px] font-bold leading-none text-ink">
+                    {dia}
+                  </div>
+                  <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-faint">
+                    {sem}
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1 text-[13.5px] text-ink">
+                  <span className="font-semibold">{evento.horario}</span> ·{" "}
                   {evento.nome}
                 </div>
-                <div className="mt-0.5 text-[12px] text-muted">
-                  {formatarData(evento.date)} · {evento.horario}
-                </div>
+                <span className="flex-none rounded-full bg-[#fef3c7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400e]">
+                  Já existe
+                </span>
               </div>
-              <span className="flex-none rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-muted">
-                Já existe
-              </span>
-            </div>
-          ) : (
+            );
+          }
+
+          return (
             <button
               key={evento.key}
               type="button"
@@ -470,17 +472,21 @@ export default function GerarEventosForm({
               >
                 {evento.selecionado && "✓"}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-ink">
-                  {evento.nome}
+              <div className="w-9 flex-none text-center">
+                <div className="text-[16px] font-bold leading-none text-ink">
+                  {dia}
                 </div>
-                <div className="mt-0.5 text-[12px] text-muted">
-                  {formatarData(evento.date)} · {evento.horario}
+                <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-faint">
+                  {sem}
                 </div>
               </div>
+              <div className="min-w-0 flex-1 text-[13.5px] text-ink">
+                <span className="font-semibold">{evento.horario}</span> ·{" "}
+                {evento.nome}
+              </div>
             </button>
-          )
-        )}
+          );
+        })}
       </div>
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}

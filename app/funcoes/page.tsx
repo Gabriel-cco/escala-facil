@@ -53,19 +53,27 @@ export default async function FuncoesPage({
 
   return (
     <>
-      <Header
-        variant="root"
-        title="Funções"
-        actionLabel="+ Nova função"
-        actionHref="/funcoes/nova"
-      />
+      <Header variant="root" title="Funções" />
       <main className="flex flex-1 flex-col gap-4 px-[18px] pb-6 pt-0.5 md:gap-5 md:p-0">
-        <Link
-          href="/funcoes/nova"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
-        >
-          + Nova função
-        </Link>
+        {podeGerenciar && (
+          <div className="hidden justify-end md:flex">
+            <Link
+              href="/funcoes/nova"
+              className="flex-none items-center gap-2 rounded-[14px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover md:inline-flex"
+            >
+              + Criar função
+            </Link>
+          </div>
+        )}
+
+        {podeGerenciar && (
+          <Link
+            href="/funcoes/nova"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
+          >
+            + Nova função
+          </Link>
+        )}
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
@@ -100,19 +108,16 @@ export default async function FuncoesPage({
           </div>
         )}
 
-        <div className="flex flex-col gap-5 md:grid md:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] md:items-start md:gap-5">
+        <div className="flex flex-col gap-6">
           {grupos?.map((grupo) => {
             const lista = funcoesPorGrupo.get(grupo.id) ?? [];
             if (lista.length === 0) return null;
             return (
-              <section
-                key={grupo.id}
-                className="md:rounded-[18px] md:border md:border-black/[0.06] md:bg-paper md:p-5"
-              >
-                <div className="mb-2.5 font-serif text-[18px] font-semibold text-ink md:mb-3">
+              <section key={grupo.id}>
+                <div className="mb-2.5 text-[15px] font-bold text-ink">
                   {grupo.name}
                 </div>
-                <div className="flex flex-col gap-[7px] md:gap-0">
+                <div className="flex flex-wrap gap-2">
                   {lista.map((f) => (
                     <FuncaoItem
                       key={f.id}

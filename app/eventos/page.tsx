@@ -259,9 +259,29 @@ export default async function EventosPage({
         >
           + Criar evento
         </Link>
+        {podeGerenciar && (
+          <Link
+            href="/eventos/gerar"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
+          >
+            Gerar mês
+          </Link>
+        )}
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
+        )}
+
+        {/* Botão "Gerar mês" no desktop */}
+        {podeGerenciar && (
+          <div className="hidden md:flex md:justify-end">
+            <Link
+              href="/eventos/gerar"
+              className="rounded-[11px] border border-black/10 px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:text-ink"
+            >
+              Gerar mês
+            </Link>
+          </div>
         )}
 
         {/* Filtro por grupo (chips, dirigido por ?grupo=<id>) */}

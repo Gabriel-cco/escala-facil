@@ -29,7 +29,9 @@ export default function NovoGrupoForm() {
       return;
     }
 
-    router.replace("/grupos");
+    // Fecha o modal interceptor (router.back) e revalida a lista. Usar
+    // replace("/grupos") não desmonta o slot @modal de forma confiável.
+    router.back();
     router.refresh();
   }
 

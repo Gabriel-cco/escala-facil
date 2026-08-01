@@ -31,7 +31,9 @@ export default function NovaFuncaoForm({ grupos }: { grupos: Grupo[] }) {
       return;
     }
 
-    router.replace("/funcoes");
+    // Fecha o modal interceptor (router.back) e revalida a lista. Usar
+    // replace("/funcoes") não desmonta o slot @modal de forma confiável.
+    router.back();
     router.refresh();
   }
 

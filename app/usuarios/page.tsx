@@ -20,7 +20,7 @@ export default async function UsuariosPage() {
   // Busca todos accounts com user e grupo
   const { data: rawAccounts } = await supabase
     .from("accounts")
-    .select("id, profile, group_id, suspended_until, user:users(id, name, email), group:groups(id, name)")
+    .select("id, profile, group_id, suspended_until, active, user:users(id, name, email), group:groups(id, name)")
     .order("id");
 
   type AccountRow = {
@@ -28,6 +28,7 @@ export default async function UsuariosPage() {
     profile: string;
     group_id: string | null;
     suspended_until: string | null;
+    active: boolean;
     user: { id: string; name: string; email: string } | { id: string; name: string; email: string }[] | null;
     group: { id: string; name: string } | { id: string; name: string }[] | null;
   };
@@ -52,6 +53,7 @@ export default async function UsuariosPage() {
       profile: a.profile,
       group_id: a.group_id,
       suspended_until: a.suspended_until,
+      active: a.active,
       userName: user?.name ?? "",
       userEmail: user?.email ?? "",
       userId: user?.id ?? "",

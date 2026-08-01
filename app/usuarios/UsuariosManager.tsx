@@ -10,6 +10,7 @@ type Conta = {
   profile: string;
   group_id: string | null;
   suspended_until: string | null;
+  active: boolean;
   userName: string;
   userEmail: string;
   userId: string;
@@ -86,6 +87,7 @@ export default function UsuariosManager({
 
   const [busca, setBusca] = useState("");
   const [filtroPerfil, setFiltroPerfil] = useState<string | null>(null);
+  const [mostrarInativos, setMostrarInativos] = useState(false);
 
   // Modal adicionar
   const [showAdicionar, setShowAdicionar] = useState(false);
@@ -118,8 +120,11 @@ export default function UsuariosManager({
       c.userName.toLowerCase().includes(termo) ||
       c.userEmail.toLowerCase().includes(termo);
     const matchPerfil = !filtroPerfil || c.profile === filtroPerfil;
-    return matchBusca && matchPerfil;
+    const matchAtivo = mostrarInativos || c.active;
+    return matchBusca && matchPerfil && matchAtivo;
   });
+
+  const temInativos = contas.some((c) => !c.active);
 
   // --- Adicionar ---
   function abrirAdicionar() {
@@ -221,7 +226,7 @@ export default function UsuariosManager({
     router.refresh();
   }
 
-  // --- Remover ---
+  // --- Remover acesso (soft delete: active=false, reversível) ---
   async function confirmarRemover() {
     if (!contaRemovendo) return;
     setProcessando(true);
@@ -229,7 +234,7 @@ export default function UsuariosManager({
     const supabase = createClient();
     const { error: accErr } = await supabase
       .from("accounts")
-      .delete()
+      .update({ active: false })
       .eq("id", contaRemovendo.id);
     if (accErr) {
       setErro(accErr.message);
@@ -238,6 +243,23 @@ export default function UsuariosManager({
     }
     setProcessando(false);
     setContaRemovendo(null);
+    router.refresh();
+  }
+
+  // --- Reativar acesso ---
+  async function reativar(conta: Conta) {
+    setProcessando(true);
+    setErro("");
+    const supabase = createClient();
+    const { error: accErr } = await supabase
+      .from("accounts")
+      .update({ active: true })
+      .eq("id", conta.id);
+    setProcessando(false);
+    if (accErr) {
+      setErro(accErr.message);
+      return;
+    }
     router.refresh();
   }
 
@@ -298,6 +320,29 @@ export default function UsuariosManager({
         + Adicionar usuário
       </button>
 
+      {/* Toggle mostrar inativos */}
+      {temInativos && (
+        <div className="mb-3 flex items-center justify-end">
+          <button
+            onClick={() => setMostrarInativos((v) => !v)}
+            className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
+          >
+            <span
+              className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
+                mostrarInativos ? "bg-primary" : "bg-black/15"
+              }`}
+            >
+              <span
+                className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
+                  mostrarInativos ? "left-[14px]" : "left-[2px]"
+                }`}
+              />
+            </span>
+            Mostrar inativos
+          </button>
+        </div>
+      )}
+
       {/* Lista */}
       {contasFiltradas.length === 0 ? (
         <p className="text-[13px] text-muted">Nenhum usuário encontrado.</p>
@@ -306,41 +351,58 @@ export default function UsuariosManager({
           {contasFiltradas.map((conta) => (
             <div
               key={conta.id}
-              className="group flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3"
+              className={`group flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3 ${
+                !conta.active ? "opacity-55" : ""
+              }`}
             >
               <div className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-full bg-avatar text-[14px] font-semibold text-avatar-ink">
                 {iniciais(conta.userName)}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[14px] font-semibold text-ink">
                     {conta.userName}
                   </span>
                   {badgePerfil(conta.profile)}
+                  {!conta.active && (
+                    <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-muted">
+                      Inativo
+                    </span>
+                  )}
                 </div>
                 <div className="text-[12px] text-muted">{conta.userEmail}</div>
                 {conta.groupName && (
                   <div className="text-[12px] text-muted">{conta.groupName}</div>
                 )}
               </div>
-              <div className="ml-auto flex flex-none items-center gap-0.5 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
-                <button
-                  onClick={() => abrirEditar(conta)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink"
-                  title="Editar usuário"
-                >
-                  {iconeLapis}
-                </button>
-                {conta.id !== adminAccountId && (
+              {conta.active ? (
+                <div className="ml-auto flex flex-none items-center gap-0.5 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
                   <button
-                    onClick={() => { setErro(""); setContaRemovendo(conta); }}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-danger"
-                    title="Remover acesso"
+                    onClick={() => abrirEditar(conta)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink"
+                    title="Editar usuário"
                   >
-                    {iconeLixo}
+                    {iconeLapis}
                   </button>
-                )}
-              </div>
+                  {conta.id !== adminAccountId && (
+                    <button
+                      onClick={() => { setErro(""); setContaRemovendo(conta); }}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-danger"
+                      title="Remover acesso"
+                    >
+                      {iconeLixo}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => reativar(conta)}
+                  disabled={processando}
+                  className="ml-auto flex-none whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50"
+                >
+                  Reativar
+                </button>
+              )}
             </div>
           ))}
         </div>

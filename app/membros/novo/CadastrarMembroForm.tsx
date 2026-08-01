@@ -56,7 +56,9 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
       return;
     }
 
-    router.replace("/membros");
+    // Fecha o modal interceptor (router.back) e revalida a lista. Usar
+    // replace("/membros") não desmonta o slot @modal de forma confiável.
+    router.back();
     router.refresh();
   }
 

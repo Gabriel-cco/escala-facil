@@ -13,7 +13,8 @@ export default async function UsuariosPage() {
   const { data: rpcData } = await supabase.rpc("get_account_by_auth_id", {
     p_auth_id: authUser.id,
   });
-  const perfil = (rpcData as { profile?: string } | null)?.profile;
+  // A RPC retorna um array (setof) — o perfil está no primeiro registro.
+  const perfil = (rpcData as { profile?: string }[] | null)?.[0]?.profile;
   if (perfil !== "admin") redirect("/");
 
   // Busca todos accounts com user e grupo

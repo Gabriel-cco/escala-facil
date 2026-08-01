@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Newsreader } from "next/font/google";
+import { Inter } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import AppShell, { type ShellUser } from "./components/shell/AppShell";
 import { iniciais } from "@/lib/iniciais";
 import "./globals.css";
 
-// Serifa dos títulos/nomes próprios (Newsreader, conforme handoff).
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+// Inter em todo o app (design system). Hierarquia por tamanho e peso.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -50,8 +50,8 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="pt-BR" className={`${newsreader.variable} h-full`}>
-      <body className="min-h-full">
+    <html lang="pt-BR" className={`${inter.variable} h-full`}>
+      <body className="min-h-full font-sans">
         <AppShell user={shellUser}>{children}</AppShell>
       </body>
     </html>

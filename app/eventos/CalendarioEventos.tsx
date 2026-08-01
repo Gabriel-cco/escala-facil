@@ -120,7 +120,7 @@ export default function CalendarioEventos({
       </div>
 
       {/* Grade do calendário */}
-      <div className="rounded-[18px] border border-black/[0.06] bg-paper p-3 md:p-4">
+      <div className="rounded-[18px] border border-black/[0.06] bg-paper shadow-card p-3 md:p-4">
         <div className="mb-1 grid grid-cols-7">
           {DIAS_SEMANA.map((d) => (
             <div
@@ -145,9 +145,9 @@ export default function CalendarioEventos({
                 onClick={() => setDiaSelecionado(k)}
                 className={`relative flex aspect-square flex-col items-center justify-center rounded-[11px] text-[13.5px] transition-colors ${
                   selecionado
-                    ? "bg-ink font-semibold text-paper"
+                    ? "bg-primary font-semibold text-paper"
                     : ehHoje
-                    ? "border border-ink/30 font-semibold text-ink"
+                    ? "border border-primary/30 font-semibold text-ink"
                     : "hover:bg-black/[0.04]"
                 } ${
                   noMes
@@ -163,7 +163,7 @@ export default function CalendarioEventos({
                 {temEventos && (
                   <span
                     className={`absolute bottom-[5px] h-1 w-1 rounded-full ${
-                      selecionado ? "bg-paper" : "bg-ink"
+                      selecionado ? "bg-paper" : "bg-primary"
                     }`}
                   />
                 )}
@@ -186,7 +186,7 @@ export default function CalendarioEventos({
         {eventosDoDia.map((e) => (
           <div
             key={e.id}
-            className="flex items-stretch rounded-[14px] border border-black/[0.06] bg-paper"
+            className="flex items-stretch rounded-[14px] border border-black/[0.06] bg-paper shadow-card"
           >
             <Link
               href={`/eventos/${e.id}`}

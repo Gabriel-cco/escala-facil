@@ -63,7 +63,7 @@ export default function Header(props: HeaderProps) {
         <button
           onClick={openMenu}
           aria-label="Abrir menu"
-          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-ink text-[13px] font-semibold text-paper"
+          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
         >
           {userIniciais || "··"}
         </button>

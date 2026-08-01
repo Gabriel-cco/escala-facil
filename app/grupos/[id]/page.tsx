@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Header from "../../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
+import CompartilharEscala from "./CompartilharEscala";
 
 const iconeLapis = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -77,15 +78,20 @@ export default async function GrupoDetalhePage({
     <>
       <Header variant="back" title={grupo.name} />
       <main className="flex flex-1 flex-col gap-[22px] px-[18px] pb-6 pt-0.5 md:grid md:grid-cols-2 md:items-start md:gap-8 md:p-0">
-        {podeEditarGrupo && (
-          <div className="col-span-2 flex justify-end md:-mt-2">
-            <Link
-              href={`/grupos/editar/${grupo.id}`}
-              className="flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft hover:text-ink"
-            >
-              {iconeLapis}
-              Editar grupo
-            </Link>
+        {(podeEditarGrupo || podeEditarMembro) && (
+          <div className="col-span-2 flex flex-wrap items-start justify-end gap-2.5 md:-mt-2">
+            {podeEditarGrupo && (
+              <Link
+                href={`/grupos/editar/${grupo.id}`}
+                className="flex items-center gap-1.5 rounded-full border border-black/10 px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft hover:text-ink"
+              >
+                {iconeLapis}
+                Editar grupo
+              </Link>
+            )}
+            {podeEditarMembro && (
+              <CompartilharEscala groupId={grupo.id} groupName={grupo.name} />
+            )}
           </div>
         )}
 
@@ -116,7 +122,7 @@ export default async function GrupoDetalhePage({
             {membros.map((m) => (
               <div
                 key={m.id}
-                className="group flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper px-3.5 py-2.5"
+                className="group flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-3.5 py-2.5"
               >
                 <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-avatar text-[13px] font-semibold text-avatar-ink">
                   {iniciais(m.nome)}

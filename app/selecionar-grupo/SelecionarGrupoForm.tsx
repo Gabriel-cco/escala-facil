@@ -56,7 +56,7 @@ export default function SelecionarGrupoForm({
                 Todos os grupos
               </span>
             </div>
-            <span className="text-[20px] text-[#bdbdb9]">›</span>
+            <span className="text-[20px] text-[#9ca3af]">›</span>
           </button>
 
           {grupos.map((grupo) => (
@@ -73,7 +73,7 @@ export default function SelecionarGrupoForm({
                   {grupo.membroCount} membro{grupo.membroCount !== 1 ? "s" : ""}
                 </span>
               </div>
-              <span className="text-[20px] text-[#bdbdb9]">›</span>
+              <span className="text-[20px] text-[#9ca3af]">›</span>
             </button>
           ))}
         </div>

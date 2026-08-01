@@ -26,7 +26,7 @@ export default function Topbar({ className = "" }: { className?: string }) {
 
   return (
     <header
-      className={`h-[72px] flex-none items-center justify-between border-b border-black/[0.06] bg-[#f3f3f1] px-10 ${className}`}
+      className={`h-[72px] flex-none items-center justify-between border-b border-border bg-paper px-10 ${className}`}
     >
       <div className="flex items-center gap-3.5">
         {chrome.showBack && (
@@ -51,7 +51,7 @@ export default function Topbar({ className = "" }: { className?: string }) {
       {chrome.actionLabel && chrome.actionHref && (
         <Link
           href={chrome.actionHref}
-          className="rounded-[11px] bg-ink px-5 py-[11px] text-[13.5px] font-semibold text-paper"
+          className="rounded-lg bg-primary px-5 py-[11px] text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover"
         >
           {chrome.actionLabel}
         </Link>

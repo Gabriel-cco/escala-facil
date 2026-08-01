@@ -89,7 +89,7 @@ export default function AtribuicoesManager({
           <div className="mb-1.5 text-[12.5px] font-semibold text-ink-soft md:mb-0 md:text-[13px]">
             {dataLabel} · {horaLabel}
           </div>
-          <div className="mt-2 text-[12px] text-[#7a7a77] md:order-last md:mt-1 md:text-[13px] md:text-muted">
+          <div className="mt-2 text-[12px] text-[#6b7280] md:order-last md:mt-1 md:text-[13px] md:text-muted">
             {atribuidas} de {total} funções atribuídas
           </div>
         </div>
@@ -139,7 +139,7 @@ export default function AtribuicoesManager({
                     </div>
                   )}
                   {atribuido && a?.suspendedNaData && (
-                    <div className="text-[11px] font-semibold text-[#fbbf24]">
+                    <div className="text-[11px] font-semibold text-[#f59e0b]">
                       ⚠ suspenso na data
                     </div>
                   )}
@@ -173,7 +173,7 @@ export default function AtribuicoesManager({
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
-            <div className="ef-sheet mx-auto mt-auto flex max-h-[76vh] w-full max-w-[440px] flex-col rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-h-[80vh] md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
+            <div className="ef-sheet mx-auto mt-auto flex max-h-[76vh] w-full max-w-[440px] flex-col rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-h-[80vh] md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
                 ATRIBUIR
@@ -193,7 +193,7 @@ export default function AtribuicoesManager({
                     key={m.id}
                     onClick={() => atribuir(m.id)}
                     disabled={ocupado}
-                    className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper px-3.5 py-2.5 text-left disabled:opacity-50"
+                    className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-3.5 py-2.5 text-left disabled:opacity-50"
                   >
                     <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-avatar text-[13px] font-semibold text-avatar-ink">
                       {m.iniciais}

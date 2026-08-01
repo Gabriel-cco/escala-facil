@@ -5,7 +5,7 @@ import Header from "./components/shell/Header";
 import { rotuloData, rotuloHora } from "@/lib/datas";
 
 const pillEscuro =
-  "inline-flex items-center justify-center gap-2 rounded-full bg-ink px-[18px] py-[11px] text-[13px] font-semibold text-paper";
+  "inline-flex items-center justify-center gap-2 rounded-full bg-primary px-[18px] py-[11px] text-[13px] font-semibold text-paper";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -79,7 +79,7 @@ export default async function Home() {
       <main className="flex flex-1 flex-col gap-3.5 px-[18px] pb-6 pt-1 md:hidden">
         {/* Cartão intro */}
         <section className="rounded-[22px] bg-surface p-5">
-          <p className="mb-4 text-[13.5px] leading-relaxed text-[#5d5d5a]">
+          <p className="mb-4 text-[13.5px] leading-relaxed text-[#6b7280]">
             Organize as escalas de serviço dos grupos da paróquia em um só
             lugar. Comece criando um evento e atribuindo os membros às funções.
           </p>
@@ -156,15 +156,15 @@ export default async function Home() {
         {/* Cartão Funções (escuro) */}
         <Link
           href="/funcoes"
-          className="rounded-[22px] bg-ink px-5 py-6 text-center"
+          className="rounded-[22px] bg-primary px-5 py-6 text-center transition-colors hover:bg-primary-hover"
         >
-          <div className="mb-1.5 text-[11px] tracking-[1.5px] text-[#7d7d7a]">
+          <div className="mb-1.5 text-[11px] tracking-[1.5px] text-white/70">
             PAPÉIS
           </div>
-          <div className="mb-1.5 font-serif text-2xl font-semibold text-paper">
+          <div className="mb-1.5 font-serif text-2xl font-semibold text-white">
             Funções
           </div>
-          <div className="text-[12.5px] text-[#9b9b98]">
+          <div className="text-[12.5px] text-white/60">
             Papéis dentro de cada grupo
           </div>
         </Link>
@@ -176,7 +176,7 @@ export default async function Home() {
           {stats.map((s) => (
             <div
               key={s.label}
-              className="rounded-[18px] border border-black/[0.06] bg-paper p-[22px]"
+              className="rounded-[18px] border border-black/[0.06] bg-paper shadow-card p-[22px]"
             >
               <div className="font-serif text-[38px] font-semibold leading-none text-ink">
                 {s.value}
@@ -216,7 +216,7 @@ export default async function Home() {
                 <Link
                   key={evento.id}
                   href={`/eventos/${evento.id}`}
-                  className="flex items-center gap-5 rounded-[14px] border border-black/[0.06] bg-paper px-5 py-4"
+                  className="flex items-center gap-5 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-5 py-4"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="font-serif text-[17px] font-semibold text-ink">
@@ -230,7 +230,7 @@ export default async function Home() {
                   <div className="flex w-40 flex-none items-center gap-2.5">
                     <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface">
                       <div
-                        className="h-full rounded-[3px] bg-ink"
+                        className="h-full rounded-[3px] bg-primary"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

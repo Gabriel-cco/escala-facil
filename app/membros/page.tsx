@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "../components/shell/Header";
@@ -85,7 +85,7 @@ export default async function MembrosPage({
             >
               <span
                 className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
-                  mostrarInativos ? "bg-ink" : "bg-black/15"
+                  mostrarInativos ? "bg-primary" : "bg-black/15"
                 }`}
               >
                 <span

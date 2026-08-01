@@ -103,7 +103,7 @@ export default function MembroItem({
   return (
     <>
       <div
-        className={`group rounded-2xl border border-black/[0.06] bg-paper px-[15px] py-3 ${
+        className={`group rounded-2xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3 ${
           !membro.active ? "opacity-55" : ""
         }`}
       >
@@ -119,7 +119,7 @@ export default function MembroItem({
             <div className="text-[12px] text-muted">{membro.grupoNome}</div>
             <div className="flex flex-wrap gap-1.5">
               {!membro.active && (
-                <span className="rounded-full bg-[#e8e8e5] px-2 py-0.5 text-[10.5px] font-semibold text-[#6e6e6b]">
+                <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
                   Inativo
                 </span>
               )}
@@ -203,7 +203,7 @@ export default function MembroItem({
             <button
               onClick={suspender}
               disabled={processando || !dataSuspensao}
-              className="rounded-full bg-ink px-4 py-2 text-[13px] font-semibold text-paper disabled:opacity-50"
+              className="rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-paper disabled:opacity-50"
             >
               Confirmar
             </button>
@@ -219,7 +219,7 @@ export default function MembroItem({
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
-            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
                 ARQUIVAR
@@ -227,7 +227,7 @@ export default function MembroItem({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Arquivar membro?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#5d5d5a]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
                 &ldquo;{membro.nome}&rdquo; ficará inativo e não será elegível
                 para escalas, mas poderá ser reativado depois.
               </p>

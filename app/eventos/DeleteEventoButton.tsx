@@ -67,7 +67,7 @@ export default function DeleteEventoButton({
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
-            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
                 REMOVER
@@ -75,7 +75,7 @@ export default function DeleteEventoButton({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Apagar evento?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#5d5d5a]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
                 &ldquo;{titulo}&rdquo; e todas as suas atribuições serão
                 removidos. Esta ação não pode ser desfeita.
               </p>

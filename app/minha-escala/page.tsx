@@ -193,7 +193,7 @@ export default async function MinhaEscalaPage({
                   key={evento.id}
                   className={`rounded-[18px] border bg-paper px-[18px] py-4 ${
                     euEstouEscalado
-                      ? "border-[#a3a3ff]/40 bg-[#f5f5ff]"
+                      ? "border-[#4f46e5]/40 bg-[#eef2ff]"
                       : "border-black/[0.06]"
                   }`}
                 >
@@ -208,7 +208,7 @@ export default async function MinhaEscalaPage({
                       </div>
                     </div>
                     {euEstouEscalado && (
-                      <span className="flex-none rounded-full bg-[#e0e0ff] px-2.5 py-1 text-[11px] font-semibold text-[#4040c0]">
+                      <span className="flex-none rounded-full bg-[#eef2ff] px-2.5 py-1 text-[11px] font-semibold text-[#4f46e5]">
                         Você
                       </span>
                     )}
@@ -242,7 +242,7 @@ export default async function MinhaEscalaPage({
                               )}
                             </div>
                             {isMine && (
-                              <span className="text-[11px] font-semibold text-[#4040c0]">
+                              <span className="text-[11px] font-semibold text-[#4f46e5]">
                                 você
                               </span>
                             )}

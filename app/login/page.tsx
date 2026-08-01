@@ -24,7 +24,7 @@ export default function LoginPage() {
       <div className="contents md:flex md:w-[420px] md:max-w-full md:flex-col md:rounded-[24px] md:border md:border-black/[0.07] md:bg-paper md:p-12 md:shadow-[0_24px_70px_rgba(0,0,0,0.10)]">
         {/* Logo tipográfico */}
         <div className="flex flex-1 items-center justify-center md:flex-none md:flex-col md:gap-0">
-          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-[#c6c6c2] text-center font-serif text-[19px] font-medium leading-[1.15] text-[#3a3a38] md:h-[104px] md:w-[104px] md:text-[17px]">
+          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary-light text-center font-serif text-[19px] font-semibold leading-[1.15] text-primary md:h-[104px] md:w-[104px] md:text-[17px]">
             escala
             <br />
             fácil
@@ -55,7 +55,7 @@ export default function LoginPage() {
           disabled={carregando}
           className="flex w-full items-center justify-center gap-3 rounded-2xl border border-black/10 bg-paper p-4 text-[15px] font-semibold text-ink shadow-[0_1px_3px_rgba(0,0,0,0.05)] disabled:opacity-50 md:bg-white"
         >
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-track text-[12px] font-bold text-[#5a5a57]">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-track text-[12px] font-bold text-[#6b7280]">
             G
           </span>
           {carregando ? "Redirecionando..." : "Continuar com Google"}

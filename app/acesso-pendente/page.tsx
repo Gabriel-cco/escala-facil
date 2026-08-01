@@ -19,7 +19,7 @@ export default function AcessoPendentePage() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-8 pb-10 md:p-6">
       <div className="flex w-full max-w-[420px] flex-col items-center text-center md:rounded-[24px] md:border md:border-black/[0.07] md:bg-paper md:p-12 md:shadow-[0_24px_70px_rgba(0,0,0,0.10)]">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#c6c6c2] text-[30px] text-[#3a3a38]">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary-light text-[30px] text-primary">
           ⏳
         </div>
 

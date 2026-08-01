@@ -38,11 +38,11 @@ export default function SideMenu({
         className="ef-backdrop fixed inset-0 z-40 bg-black/30"
       />
       <div className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[440px]">
-        <div className="ef-sheet rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5">
+        <div className="ef-sheet rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5">
           <div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-black/20" />
 
           <div className="mb-2 flex items-center gap-3 border-b border-black/10 px-1 pb-4 pt-1.5">
-            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-paper">
+            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-primary-light text-[15px] font-semibold text-primary">
               {user.iniciais || "··"}
             </div>
             <div>

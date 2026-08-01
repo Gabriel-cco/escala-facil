@@ -50,7 +50,7 @@ export default function TabBar({
       : ABAS_ADMIN;
 
   return (
-    <nav className="sticky bottom-0 z-30 flex border-t border-black/10 bg-screen px-2 pb-7 pt-2.5 md:hidden">
+    <nav className="sticky bottom-0 z-30 flex border-t border-border bg-paper px-2 pb-7 pt-2.5 md:hidden">
       {abas.map((aba) => {
         const ativa = abaAtiva(pathname, aba.href);
         return (
@@ -61,12 +61,12 @@ export default function TabBar({
           >
             <span
               className={`h-[5px] w-[5px] rounded-full ${
-                ativa ? "bg-ink" : "bg-transparent"
+                ativa ? "bg-primary" : "bg-transparent"
               }`}
             />
             <span
               className={`text-[11.5px] ${
-                ativa ? "font-bold text-ink" : "font-medium text-tab-off"
+                ativa ? "font-bold text-primary" : "font-medium text-tab-off"
               }`}
             >
               {aba.label}

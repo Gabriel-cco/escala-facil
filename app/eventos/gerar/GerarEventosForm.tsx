@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -370,7 +370,7 @@ export default function GerarEventosForm({
           <button
             onClick={irParaPreview}
             disabled={!podePrevisualizar || carregando}
-            className="w-full rounded-2xl bg-ink py-4 text-[15px] font-semibold text-paper transition-opacity disabled:pointer-events-none disabled:opacity-40 md:w-auto md:rounded-[11px] md:px-6 md:py-3 md:text-[14px]"
+            className="w-full rounded-2xl bg-primary py-4 text-[15px] font-semibold text-paper transition-opacity disabled:pointer-events-none disabled:opacity-40 md:w-auto md:rounded-[11px] md:px-6 md:py-3 md:text-[14px]"
           >
             {carregando ? "Verificando..." : "Pré-visualizar →"}
           </button>
@@ -435,7 +435,7 @@ export default function GerarEventosForm({
             <div
               className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-[5px] border-[1.5px] text-[11px] font-bold ${
                 evento.selecionado
-                  ? "border-ink bg-ink text-paper"
+                  ? "border-primary bg-primary text-paper"
                   : "border-black/25"
               }`}
             >
@@ -465,7 +465,7 @@ export default function GerarEventosForm({
         <button
           onClick={confirmar}
           disabled={nSel === 0 || carregando}
-          className="w-full rounded-2xl bg-ink py-4 text-[15px] font-semibold text-paper transition-opacity disabled:pointer-events-none disabled:opacity-40 md:w-auto md:rounded-[11px] md:px-6 md:py-3 md:text-[14px]"
+          className="w-full rounded-2xl bg-primary py-4 text-[15px] font-semibold text-paper transition-opacity disabled:pointer-events-none disabled:opacity-40 md:w-auto md:rounded-[11px] md:px-6 md:py-3 md:text-[14px]"
         >
           {carregando
             ? "Criando..."

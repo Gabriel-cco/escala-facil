@@ -27,18 +27,18 @@ const PERFIS = [
 function badgePerfil(profile: string) {
   if (profile === "admin")
     return (
-      <span className="rounded-full bg-[#e0e0ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4040c0]">
+      <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
         Admin
       </span>
     );
   if (profile === "coordinator")
     return (
-      <span className="rounded-full bg-[#e8e8e5] px-2 py-0.5 text-[10.5px] font-semibold text-[#3a3a38]">
+      <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#374151]">
         Coordenador
       </span>
     );
   return (
-    <span className="rounded-full bg-[#f0f0ed] px-2 py-0.5 text-[10.5px] font-semibold text-[#6e6e6b]">
+    <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
       Membro
     </span>
   );
@@ -260,7 +260,7 @@ export default function UsuariosManager({
             onClick={() => setFiltroPerfil(null)}
             className={`flex-none rounded-full border px-3 py-1.5 text-[12.5px] font-semibold ${
               !filtroPerfil
-                ? "border-ink bg-ink text-paper"
+                ? "border-primary bg-primary text-paper"
                 : "border-black/10 text-ink-soft"
             }`}
           >
@@ -272,7 +272,7 @@ export default function UsuariosManager({
               onClick={() => setFiltroPerfil(filtroPerfil === p.value ? null : p.value)}
               className={`flex-none rounded-full border px-3 py-1.5 text-[12.5px] font-semibold ${
                 filtroPerfil === p.value
-                  ? "border-ink bg-ink text-paper"
+                  ? "border-primary bg-primary text-paper"
                   : "border-black/10 text-ink-soft"
               }`}
             >
@@ -283,7 +283,7 @@ export default function UsuariosManager({
           {/* Botão adicionar — desktop */}
           <button
             onClick={abrirAdicionar}
-            className="ml-auto hidden flex-none rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-semibold text-paper md:flex"
+            className="ml-auto hidden flex-none rounded-full bg-primary px-4 py-1.5 text-[12.5px] font-semibold text-paper md:flex"
           >
             + Adicionar usuário
           </button>
@@ -306,7 +306,7 @@ export default function UsuariosManager({
           {contasFiltradas.map((conta) => (
             <div
               key={conta.id}
-              className="group flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-paper px-[15px] py-3"
+              className="group flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3"
             >
               <div className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-full bg-avatar text-[14px] font-semibold text-avatar-ink">
                 {iniciais(conta.userName)}
@@ -354,7 +354,7 @@ export default function UsuariosManager({
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
-            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[480px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-7">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[480px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-7">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">NOVO USUÁRIO</div>
               <h2 className="mb-5 font-serif text-[20px] font-semibold text-ink">
@@ -426,7 +426,7 @@ export default function UsuariosManager({
                   <button
                     onClick={confirmarAdicionar}
                     disabled={processando}
-                    className="rounded-[14px] bg-ink py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
+                    className="rounded-[14px] bg-primary py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
                   >
                     {processando ? "Adicionando…" : "Adicionar"}
                   </button>
@@ -445,7 +445,7 @@ export default function UsuariosManager({
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
-            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[480px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-7">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[480px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-7">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">EDITAR USUÁRIO</div>
               <h2 className="mb-5 font-serif text-[20px] font-semibold text-ink">
@@ -505,7 +505,7 @@ export default function UsuariosManager({
                   <button
                     onClick={confirmarEditar}
                     disabled={processando}
-                    className="rounded-[14px] bg-ink py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
+                    className="rounded-[14px] bg-primary py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
                   >
                     {processando ? "Salvando…" : "Salvar"}
                   </button>
@@ -524,13 +524,13 @@ export default function UsuariosManager({
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
-            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">REMOVER ACESSO</div>
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Remover acesso?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#5d5d5a]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
                 &ldquo;{contaRemovendo.userName}&rdquo; perderá o acesso ao sistema.
                 O cadastro de usuário permanece e pode ser reativado.
               </p>

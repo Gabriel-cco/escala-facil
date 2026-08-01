@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 /**
  * Modal usado pelas rotas interceptadas dos formulários (handoff web).
- * Responsivo: no desktop é um card centralizado (#f4f4f2) sobre backdrop;
+ * Responsivo: no desktop é um card centralizado (#ffffff) sobre backdrop;
  * no mobile ocupa a tela inteira com header de voltar, imitando a página.
  * Fechar = voltar na pilha (router.back), restaurando a rota interceptada.
  */
@@ -51,7 +51,7 @@ export default function Modal({
         </header>
 
         <div className="ef-scroll flex-1 overflow-y-auto px-[22px] pb-6 md:flex-none md:overflow-visible md:p-0">
-          <div className="md:w-[460px] md:max-w-full md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:bg-[#f4f4f2] md:p-7 md:shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
+          <div className="md:w-[460px] md:max-w-full md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:bg-[#ffffff] md:p-7 md:shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
             <div className="mb-5 hidden font-serif text-[22px] font-semibold text-ink md:block">
               {title}
             </div>

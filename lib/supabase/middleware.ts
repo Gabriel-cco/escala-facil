@@ -31,7 +31,7 @@ export async function updateSession(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     // Rotas públicas (não exigem login)
-    const rotasPublicas = ['/login', '/auth']
+    const rotasPublicas = ['/login', '/auth', '/escala']
     const ehRotaPublica = rotasPublicas.some((rota) =>
         request.nextUrl.pathname.startsWith(rota)
     )
@@ -57,7 +57,7 @@ export async function updateSession(request: NextRequest) {
 
         // member: só pode acessar /minha-escala e rotas de sistema
         if (perfil === 'member') {
-            const rotasMember = ['/minha-escala', '/auth', '/acesso-pendente', '/login', '/selecionar-grupo']
+            const rotasMember = ['/minha-escala', '/auth', '/acesso-pendente', '/login', '/selecionar-grupo', '/escala']
             const ehRotaMember = rotasMember.some(r => pathname === r || pathname.startsWith(r + '/'))
             if (!ehRotaMember) {
                 const url = request.nextUrl.clone()

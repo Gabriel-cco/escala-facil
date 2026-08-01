@@ -152,7 +152,7 @@ export default async function EventosPage({
     return (
       <div
         key={evento.id}
-        className="rounded-[18px] border border-black/[0.06] bg-paper md:rounded-2xl"
+        className="rounded-[18px] border border-black/[0.06] bg-paper shadow-card md:rounded-2xl"
       >
         {/* Mobile: cartão empilhado */}
         <div className="flex items-stretch md:hidden">
@@ -174,7 +174,7 @@ export default async function EventosPage({
             <div className="flex items-center gap-2.5">
               <div className="h-[5px] flex-1 overflow-hidden rounded-[3px] bg-surface">
                 <div
-                  className="h-full rounded-[3px] bg-ink"
+                  className="h-full rounded-[3px] bg-primary"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -217,7 +217,7 @@ export default async function EventosPage({
             <div className="flex w-[170px] flex-none items-center gap-2.5">
               <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface">
                 <div
-                  className="h-full rounded-[3px] bg-ink"
+                  className="h-full rounded-[3px] bg-primary"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -225,7 +225,7 @@ export default async function EventosPage({
                 {atribuidas}/{total}
               </div>
             </div>
-            <div className="flex-none text-[20px] text-[#bdbdb9]">›</div>
+            <div className="flex-none text-[20px] text-[#9ca3af]">›</div>
           </Link>
           {podeGerenciar && (
             <div className="flex items-center gap-0.5">
@@ -292,7 +292,7 @@ export default async function EventosPage({
               scroll={false}
               className={`whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-medium ${
                 grupoFiltro === null
-                  ? "border-ink bg-ink text-paper"
+                  ? "border-primary bg-primary text-paper"
                   : "border-black/10 bg-transparent text-ink"
               }`}
             >
@@ -307,7 +307,7 @@ export default async function EventosPage({
                   scroll={false}
                   className={`whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-medium ${
                     sel
-                      ? "border-ink bg-ink text-paper"
+                      ? "border-primary bg-primary text-paper"
                       : "border-black/10 bg-transparent text-ink"
                   }`}
                 >
@@ -326,7 +326,7 @@ export default async function EventosPage({
                 href={montarHref({ vista: null })}
                 scroll={false}
                 className={`rounded-full px-4 py-1.5 text-[12.5px] font-semibold ${
-                  vistaCalendario ? "text-ink-soft" : "bg-ink text-paper"
+                  vistaCalendario ? "text-ink-soft" : "bg-primary text-paper"
                 }`}
               >
                 Lista
@@ -335,7 +335,7 @@ export default async function EventosPage({
                 href={montarHref({ vista: "calendario" })}
                 scroll={false}
                 className={`rounded-full px-4 py-1.5 text-[12.5px] font-semibold ${
-                  vistaCalendario ? "bg-ink text-paper" : "text-ink-soft"
+                  vistaCalendario ? "bg-primary text-paper" : "text-ink-soft"
                 }`}
               >
                 Calendário
@@ -379,7 +379,7 @@ export default async function EventosPage({
               >
                 <span
                   className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
-                    mostrarPassados ? "bg-ink" : "bg-black/15"
+                    mostrarPassados ? "bg-primary" : "bg-black/15"
                   }`}
                 >
                   <span

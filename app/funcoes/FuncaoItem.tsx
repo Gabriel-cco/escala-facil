@@ -57,16 +57,16 @@ export default function FuncaoItem({
   return (
     <>
       <div
-        className={`group flex items-center gap-2 rounded-xl border border-black/[0.06] bg-paper px-[15px] py-3 md:rounded-none md:border-0 md:border-t md:border-black/[0.06] md:bg-transparent md:px-0 md:py-[9px] ${
+        className={`group flex items-center gap-2 rounded-xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3 md:rounded-none md:border-0 md:border-t md:border-black/[0.06] md:bg-transparent md:px-0 md:py-[9px] ${
           !funcao.active ? "opacity-55" : ""
         }`}
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="text-[13.5px] text-ink md:text-[#3a3a38]">
+          <span className="text-[13.5px] text-ink md:text-[#374151]">
             {funcao.nome}
           </span>
           {!funcao.active && (
-            <span className="rounded-full bg-[#e8e8e5] px-2 py-0.5 text-[10.5px] font-semibold text-[#6e6e6b]">
+            <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
               Inativo
             </span>
           )}
@@ -110,7 +110,7 @@ export default function FuncaoItem({
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
-            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#f4f4f2] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
                 ARQUIVAR
@@ -118,7 +118,7 @@ export default function FuncaoItem({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Arquivar função?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#5d5d5a]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
                 &ldquo;{funcao.nome}&rdquo; ficará inativa e não aparecerá nas
                 escalas, mas poderá ser reativada depois.
               </p>

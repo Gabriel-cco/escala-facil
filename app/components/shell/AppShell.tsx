@@ -50,7 +50,8 @@ export default function AppShell({
   const ehBare =
     pathname === "/login" ||
     pathname === "/acesso-pendente" ||
-    pathname === "/selecionar-grupo";
+    pathname === "/selecionar-grupo" ||
+    pathname.startsWith("/escala/");
 
   const contextValue = {
     openMenu,

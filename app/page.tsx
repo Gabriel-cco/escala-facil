@@ -4,6 +4,9 @@ import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "./components/shell/Header";
 import { rotuloData, rotuloHora } from "@/lib/datas";
 
+// Depende de cookies (grupo ativo) — sempre renderizado sob demanda.
+export const dynamic = "force-dynamic";
+
 const pillEscuro =
   "inline-flex items-center justify-center gap-2 rounded-full bg-primary px-[18px] py-[11px] text-[13px] font-semibold text-paper";
 
@@ -11,40 +14,53 @@ export default async function Home() {
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
+  // Monta os builders das queries (sem await) para rodar em paralelo — todas
+  // dependem apenas do activeGroupId (cookie), não uma da outra. Sequencial
+  // aqui somava 5 round-trips ao Supabase e estourava o timeout na Vercel.
   let gruposQuery = supabase
     .from("groups")
     .select("id, name")
     .order("name", { ascending: true });
   if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
-  const { data: grupos } = await gruposQuery;
 
-  // Dados para o dashboard web (stats + próximos eventos).
   let eventosQuery = supabase
     .from("events")
     .select("id, name, date, time, group_id, groups(name)")
     .order("date", { ascending: true })
     .order("time", { ascending: true });
   if (activeGroupId) eventosQuery = eventosQuery.eq("group_id", activeGroupId);
-  const { data: eventos } = await eventosQuery;
 
   let membrosQuery = supabase
     .from("accounts")
     .select("id", { count: "exact", head: true })
     .eq("profile", "member");
   if (activeGroupId) membrosQuery = membrosQuery.eq("group_id", activeGroupId);
-  const { count: totalMembros } = await membrosQuery;
 
   let funcoesQuery = supabase.from("roles").select("id, group_id");
   if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
-  const { data: funcoes } = await funcoesQuery;
+
+  const atribuicoesQuery = supabase
+    .from("assignments")
+    .select("event_id, role_id");
+
+  const [
+    { data: grupos },
+    { data: eventos },
+    { count: totalMembros },
+    { data: funcoes },
+    { data: atribuicoes },
+  ] = await Promise.all([
+    gruposQuery,
+    eventosQuery,
+    membrosQuery,
+    funcoesQuery,
+    atribuicoesQuery,
+  ]);
+
   const totalPorGrupo = new Map<string, number>();
   funcoes?.forEach((f) => {
     totalPorGrupo.set(f.group_id, (totalPorGrupo.get(f.group_id) ?? 0) + 1);
   });
-
-  const { data: atribuicoes } = await supabase
-    .from("assignments")
-    .select("event_id, role_id");
   const atribuidasPorEvento = new Map<string, Set<string>>();
   atribuicoes?.forEach((a) => {
     const set = atribuidasPorEvento.get(a.event_id) ?? new Set<string>();

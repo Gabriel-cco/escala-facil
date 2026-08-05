@@ -110,67 +110,82 @@ export default function GerarEventosForm({
     setErro("");
     setCarregando(true);
 
-    const [ano, mes] = mesAno.split("-").map(Number);
-    const supabase = createClient();
+    try {
+      const [ano, mes] = mesAno.split("-").map(Number);
+      const supabase = createClient();
 
-    // Nome e cor litúrgica de cada data do mês (calculado uma vez, cacheado).
-    const liturgicoMes = await getLiturgicalMonthAction(ano, mes);
+      // Nome e cor litúrgica de cada data do mês (calculado uma vez, cacheado).
+      // Na primeira chamada em ambiente de desenvolvimento (Turbopack), essa
+      // Server Action pode demorar alguns segundos pra compilar — normal.
+      const liturgicoMes = await getLiturgicalMonthAction(ano, mes);
 
-    // Gera todos os eventos a partir dos padrões, deduplicando combinações
-    // idênticas (nome+data+hora) que dois padrões iguais possam produzir.
-    const vistos = new Set<string>();
-    const gerados: Omit<EventoPreview, "jaExiste" | "selecionado">[] = [];
-    for (const padrao of padroes) {
-      for (const date of getDatesForWeekday(ano, mes, padrao.diaSemana)) {
-        const nome = padrao.nome.trim();
-        const assinatura = `${nome}|${date}|${padrao.horario}`;
-        if (vistos.has(assinatura)) continue;
-        vistos.add(assinatura);
-        const liturgico = liturgicoMes[date];
-        gerados.push({
-          key: `${date}-${padrao.horario}-${nome}`,
-          nome: nome || liturgico?.name || "Missa",
-          date,
-          horario: padrao.horario,
-          grupoId,
-          liturgicalName: liturgico?.name ?? null,
-          liturgicalColor: liturgico?.color ?? null,
-        });
+      // Gera todos os eventos a partir dos padrões, deduplicando combinações
+      // idênticas (nome+data+hora) que dois padrões iguais possam produzir.
+      const vistos = new Set<string>();
+      const gerados: Omit<EventoPreview, "jaExiste" | "selecionado">[] = [];
+      for (const padrao of padroes) {
+        for (const date of getDatesForWeekday(ano, mes, padrao.diaSemana)) {
+          const nome = padrao.nome.trim();
+          const assinatura = `${nome}|${date}|${padrao.horario}`;
+          if (vistos.has(assinatura)) continue;
+          vistos.add(assinatura);
+          const liturgico = liturgicoMes[date];
+          gerados.push({
+            key: `${date}-${padrao.horario}-${nome}`,
+            nome: nome || liturgico?.name || "Missa",
+            date,
+            horario: padrao.horario,
+            grupoId,
+            liturgicalName: liturgico?.name ?? null,
+            liturgicalColor: liturgico?.color ?? null,
+          });
+        }
       }
+
+      // Busca os eventos já existentes desse grupo no mês para marcar duplicatas.
+      const primeiroDia = `${ano}-${String(mes).padStart(2, "0")}-01`;
+      const diasNoMes = new Date(ano, mes, 0).getDate();
+      const ultimoDia = `${ano}-${String(mes).padStart(2, "0")}-${String(diasNoMes).padStart(2, "0")}`;
+
+      const { data: existentes, error: erroExistentes } = await supabase
+        .from("events")
+        .select("name, date, time")
+        .eq("group_id", grupoId)
+        .gte("date", primeiroDia)
+        .lte("date", ultimoDia);
+
+      if (erroExistentes) {
+        setErro("Erro ao verificar eventos existentes: " + erroExistentes.message);
+        return;
+      }
+
+      // "time" no banco é HH:MM:SS; o padrão usa HH:MM — normaliza na comparação.
+      const setExistentes = new Set(
+        (existentes ?? []).map(
+          (e) =>
+            `${e.name}|${e.date}|${(e.time as string).slice(0, 5)}`
+        )
+      );
+
+      const eventos: EventoPreview[] = gerados.map((e) => {
+        const jaExiste = setExistentes.has(`${e.nome}|${e.date}|${e.horario}`);
+        return { ...e, jaExiste, selecionado: !jaExiste };
+      });
+
+      eventos.sort((a, b) =>
+        `${a.date}${a.horario}`.localeCompare(`${b.date}${b.horario}`)
+      );
+      setPreviewEventos(eventos);
+      setStep("preview");
+    } catch (e) {
+      setErro(
+        "Não foi possível gerar a prévia: " +
+          (e instanceof Error ? e.message : "erro desconhecido") +
+          ". Tente novamente."
+      );
+    } finally {
+      setCarregando(false);
     }
-
-    // Busca os eventos já existentes desse grupo no mês para marcar duplicatas.
-    const primeiroDia = `${ano}-${String(mes).padStart(2, "0")}-01`;
-    const diasNoMes = new Date(ano, mes, 0).getDate();
-    const ultimoDia = `${ano}-${String(mes).padStart(2, "0")}-${String(diasNoMes).padStart(2, "0")}`;
-
-    const { data: existentes } = await supabase
-      .from("events")
-      .select("name, date, time")
-      .eq("group_id", grupoId)
-      .gte("date", primeiroDia)
-      .lte("date", ultimoDia);
-
-    // "time" no banco é HH:MM:SS; o padrão usa HH:MM — normaliza na comparação.
-    const setExistentes = new Set(
-      (existentes ?? []).map(
-        (e) =>
-          `${e.name}|${e.date}|${(e.time as string).slice(0, 5)}`
-      )
-    );
-
-    setCarregando(false);
-
-    const eventos: EventoPreview[] = gerados.map((e) => {
-      const jaExiste = setExistentes.has(`${e.nome}|${e.date}|${e.horario}`);
-      return { ...e, jaExiste, selecionado: !jaExiste };
-    });
-
-    eventos.sort((a, b) =>
-      `${a.date}${a.horario}`.localeCompare(`${b.date}${b.horario}`)
-    );
-    setPreviewEventos(eventos);
-    setStep("preview");
   }
 
   function toggleEvento(key: string) {
@@ -361,6 +376,8 @@ export default function GerarEventosForm({
             + Adicionar padrão
           </button>
         </div>
+
+        {erro && <p className="text-[13px] text-danger">{erro}</p>}
 
         <div className="mt-1.5 flex flex-col gap-2.5 md:mt-2 md:flex-row md:justify-end">
           <button

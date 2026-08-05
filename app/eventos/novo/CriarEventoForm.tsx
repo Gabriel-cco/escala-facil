@@ -36,9 +36,14 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
 
   useEffect(() => {
     let cancelado = false;
-    getLiturgicalInfoAction(dataEfetiva).then((info) => {
-      if (!cancelado) setLiturgico(info);
-    });
+    getLiturgicalInfoAction(dataEfetiva)
+      .then((info) => {
+        if (!cancelado) setLiturgico(info);
+      })
+      .catch(() => {
+        // Informativo, não bloqueia o formulário — se falhar, só não mostra.
+        if (!cancelado) setLiturgico(null);
+      });
     return () => {
       cancelado = true;
     };

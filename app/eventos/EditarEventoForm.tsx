@@ -53,11 +53,16 @@ export default function EditarEventoForm({
       return;
     }
     let cancelado = false;
-    getLiturgicalInfoAction(data).then((info) => {
-      if (cancelado) return;
-      setLiturgicalName(info?.name ?? "");
-      setLiturgicalColor(info?.color ?? null);
-    });
+    getLiturgicalInfoAction(data)
+      .then((info) => {
+        if (cancelado) return;
+        setLiturgicalName(info?.name ?? "");
+        setLiturgicalColor(info?.color ?? null);
+      })
+      .catch(() => {
+        // Falhou o recálculo automático — mantém o que já estava no campo,
+        // o coordenador ainda pode editar manualmente.
+      });
     return () => {
       cancelado = true;
     };

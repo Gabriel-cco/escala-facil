@@ -1,14 +1,24 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getLiturgicalInfoAction } from "@/lib/liturgical-actions";
+import type { LiturgicalInfo } from "@/lib/liturgical";
 
 type Grupo = { id: string; name: string };
 
 const labelInput = "mb-2 text-[12px] font-semibold text-muted";
 const baseInput =
   "w-full rounded-[14px] border border-black/10 bg-paper text-ink outline-none";
+
+function hojeStr(): string {
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(hoje.getDate()).padStart(2, "0")}`;
+}
 
 export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
   const [nome, setNome] = useState("");
@@ -18,7 +28,21 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
   const [grupoId, setGrupoId] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [liturgico, setLiturgico] = useState<LiturgicalInfo | null>(null);
   const router = useRouter();
+
+  // Sem data escolhida, cai no default (hoje) — busca o litúrgico dela também.
+  const dataEfetiva = data || hojeStr();
+
+  useEffect(() => {
+    let cancelado = false;
+    getLiturgicalInfoAction(dataEfetiva).then((info) => {
+      if (!cancelado) setLiturgico(info);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [dataEfetiva]);
 
   const podeSalvar = nome.trim().length > 0 && grupoId !== "";
 
@@ -29,13 +53,7 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
 
     // events.date e events.time são separados e obrigatórios: aplicamos
     // defaults (hoje / 00:00) quando o usuário não preenche.
-    const hoje = new Date();
-    const dataFinal =
-      data ||
-      `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(
-        2,
-        "0"
-      )}-${String(hoje.getDate()).padStart(2, "0")}`;
+    const dataFinal = dataEfetiva;
     const horaFinal = `${hora || "00:00"}:00`;
 
     const supabase = createClient();
@@ -46,6 +64,8 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
         date: dataFinal,
         time: horaFinal,
         group_id: grupoId,
+        liturgical_name: liturgico?.name ?? null,
+        liturgical_color: liturgico?.color ?? null,
       })
       .select("id")
       .single();
@@ -85,6 +105,11 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
             onChange={(e) => setData(e.target.value)}
             className={`${baseInput} px-3.5 py-3 text-[14px]`}
           />
+          {liturgico && (
+            <p className="mt-1.5 text-[12px] text-muted">
+              📅 {liturgico.name}
+            </p>
+          )}
         </div>
         <div className="flex-1">
           <div className={labelInput}>HORA</div>

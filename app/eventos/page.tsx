@@ -5,6 +5,7 @@ import Header from "../components/shell/Header";
 import { rotuloData, rotuloHora, rotuloMes, chaveMes } from "@/lib/datas";
 import DeleteEventoButton from "./DeleteEventoButton";
 import CalendarioEventos, { type EventoCal } from "./CalendarioEventos";
+import { LiturgicalDot } from "../components/LiturgicalDot";
 
 const iconeLapis = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -38,7 +39,9 @@ export default async function EventosPage({
 
   let eventosQuery = supabase
     .from("events")
-    .select("id, name, date, time, group_id, groups(name)")
+    .select(
+      "id, name, date, time, group_id, liturgical_name, liturgical_color, groups(name)"
+    )
     .order("date", { ascending: true })
     .order("time", { ascending: true });
   if (activeGroupId) eventosQuery = eventosQuery.eq("group_id", activeGroupId);
@@ -161,8 +164,16 @@ export default async function EventosPage({
             className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-[18px] pr-3"
           >
             <div className="flex items-start justify-between gap-2.5">
-              <div className="font-serif text-[18px] font-semibold leading-tight text-ink">
-                {evento.name}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 font-serif text-[18px] font-semibold leading-tight text-ink">
+                  <LiturgicalDot color={evento.liturgical_color} />
+                  {evento.name}
+                </div>
+                {evento.liturgical_name && (
+                  <div className="mt-0.5 text-[12px] text-muted">
+                    {evento.liturgical_name}
+                  </div>
+                )}
               </div>
               <div className="whitespace-nowrap pt-0.5 text-[12px] font-semibold text-ink-soft">
                 {rotuloData(evento.date)} · {rotuloHora(evento.time)}
@@ -204,11 +215,13 @@ export default async function EventosPage({
             className="flex min-w-0 flex-1 items-center gap-6"
           >
             <div className="min-w-0 flex-1">
-              <div className="font-serif text-[18px] font-semibold text-ink">
+              <div className="flex items-center gap-1.5 font-serif text-[18px] font-semibold text-ink">
+                <LiturgicalDot color={evento.liturgical_color} />
                 {evento.name}
               </div>
               <div className="mt-1 text-[12.5px] text-muted">
                 {grupo?.name ?? "Sem grupo"}
+                {evento.liturgical_name && ` · ${evento.liturgical_name}`}
               </div>
             </div>
             <div className="w-[120px] flex-none text-[13px] font-semibold text-ink-soft">

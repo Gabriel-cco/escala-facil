@@ -1,8 +1,10 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getLiturgicalInfoAction } from "@/lib/liturgical-actions";
+import type { LiturgicalColor } from "@/lib/liturgical";
 
 type Grupo = { id: string; name: string };
 
@@ -16,6 +18,8 @@ export default function EditarEventoForm({
   dataInicial,
   horaInicial,
   grupoIdInicial,
+  liturgicalNameInicial,
+  liturgicalColorInicial,
   grupos,
 }: {
   id: string;
@@ -23,6 +27,8 @@ export default function EditarEventoForm({
   dataInicial: string;
   horaInicial: string;
   grupoIdInicial: string;
+  liturgicalNameInicial: string | null;
+  liturgicalColorInicial: string | null;
   grupos: Grupo[];
 }) {
   const [nome, setNome] = useState(nomeInicial);
@@ -32,7 +38,30 @@ export default function EditarEventoForm({
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [liturgicalName, setLiturgicalName] = useState(liturgicalNameInicial ?? "");
+  const [liturgicalColor, setLiturgicalColor] = useState<LiturgicalColor | null>(
+    (liturgicalColorInicial as LiturgicalColor | null) ?? null
+  );
   const router = useRouter();
+
+  // Se a data mudar, recalcula o litúrgico automaticamente (mas não na
+  // primeira renderização — aí o valor já veio pronto do banco).
+  const primeiraRenderizacao = useRef(true);
+  useEffect(() => {
+    if (primeiraRenderizacao.current) {
+      primeiraRenderizacao.current = false;
+      return;
+    }
+    let cancelado = false;
+    getLiturgicalInfoAction(data).then((info) => {
+      if (cancelado) return;
+      setLiturgicalName(info?.name ?? "");
+      setLiturgicalColor(info?.color ?? null);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [data]);
 
   const podeSalvar = nome.trim().length > 0 && grupoId !== "";
 
@@ -44,7 +73,14 @@ export default function EditarEventoForm({
     const supabase = createClient();
     const { error } = await supabase
       .from("events")
-      .update({ name: nome.trim(), date: data, time: horaFinal, group_id: grupoId })
+      .update({
+        name: nome.trim(),
+        date: data,
+        time: horaFinal,
+        group_id: grupoId,
+        liturgical_name: liturgicalName.trim() || null,
+        liturgical_color: liturgicalColor,
+      })
       .eq("id", id);
     if (error) {
       setSalvando(false);
@@ -113,6 +149,20 @@ export default function EditarEventoForm({
             ▾
           </span>
         </div>
+      </div>
+
+      <div>
+        <div className={labelInput}>NOME LITÚRGICO</div>
+        <input
+          value={liturgicalName}
+          onChange={(e) => setLiturgicalName(e.target.value)}
+          placeholder="Ex.: 18º Domingo do Tempo Comum"
+          className={`${baseInput} px-4 py-3.5 text-[15px]`}
+        />
+        <p className="mt-1.5 text-[12px] text-faint">
+          Preenchido automaticamente pelo calendário litúrgico. Recalculado se
+          a data mudar — edite se quiser personalizar.
+        </p>
       </div>
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}

@@ -13,7 +13,7 @@ export default async function EditarEventoModal({
 
   const { data: evento } = await supabase
     .from("events")
-    .select("id, name, date, time, group_id")
+    .select("id, name, date, time, group_id, liturgical_name, liturgical_color")
     .eq("id", id)
     .single();
 
@@ -33,6 +33,8 @@ export default async function EditarEventoModal({
         dataInicial={evento.date}
         horaInicial={evento.time}
         grupoIdInicial={evento.group_id}
+        liturgicalNameInicial={evento.liturgical_name}
+        liturgicalColorInicial={evento.liturgical_color}
         grupos={grupos ?? []}
       />
     </Modal>

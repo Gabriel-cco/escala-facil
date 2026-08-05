@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getLiturgicalMonthAction } from "@/lib/liturgical-actions";
+import { LiturgicalDot } from "@/app/components/LiturgicalDot";
+import type { LiturgicalColor } from "@/lib/liturgical";
 
 const DIAS_SEMANA = [
   "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado",
@@ -23,6 +26,8 @@ type EventoPreview = {
   grupoId: string;
   selecionado: boolean;
   jaExiste: boolean;
+  liturgicalName: string | null;
+  liturgicalColor: LiturgicalColor | null;
 };
 
 function proxMes(): string {
@@ -108,6 +113,9 @@ export default function GerarEventosForm({
     const [ano, mes] = mesAno.split("-").map(Number);
     const supabase = createClient();
 
+    // Nome e cor litúrgica de cada data do mês (calculado uma vez, cacheado).
+    const liturgicoMes = await getLiturgicalMonthAction(ano, mes);
+
     // Gera todos os eventos a partir dos padrões, deduplicando combinações
     // idênticas (nome+data+hora) que dois padrões iguais possam produzir.
     const vistos = new Set<string>();
@@ -118,12 +126,15 @@ export default function GerarEventosForm({
         const assinatura = `${nome}|${date}|${padrao.horario}`;
         if (vistos.has(assinatura)) continue;
         vistos.add(assinatura);
+        const liturgico = liturgicoMes[date];
         gerados.push({
           key: `${date}-${padrao.horario}-${nome}`,
-          nome,
+          nome: nome || liturgico?.name || "Missa",
           date,
           horario: padrao.horario,
           grupoId,
+          liturgicalName: liturgico?.name ?? null,
+          liturgicalColor: liturgico?.color ?? null,
         });
       }
     }
@@ -195,6 +206,8 @@ export default function GerarEventosForm({
         date: e.date,
         time: `${e.horario}:00`,
         group_id: e.grupoId,
+        liturgical_name: e.liturgicalName,
+        liturgical_color: e.liturgicalColor,
       }))
     );
 
@@ -441,9 +454,17 @@ export default function GerarEventosForm({
                     {sem}
                   </div>
                 </div>
-                <div className="min-w-0 flex-1 text-[13.5px] text-ink">
-                  <span className="font-semibold">{evento.horario}</span> ·{" "}
-                  {evento.nome}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13.5px] text-ink">
+                    <span className="font-semibold">{evento.horario}</span> ·{" "}
+                    {evento.nome}
+                  </div>
+                  {evento.liturgicalName && (
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted">
+                      <LiturgicalDot color={evento.liturgicalColor} />
+                      {evento.liturgicalName}
+                    </div>
+                  )}
                 </div>
                 <span className="flex-none rounded-full bg-[#fef3c7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400e]">
                   Já existe
@@ -480,9 +501,17 @@ export default function GerarEventosForm({
                   {sem}
                 </div>
               </div>
-              <div className="min-w-0 flex-1 text-[13.5px] text-ink">
-                <span className="font-semibold">{evento.horario}</span> ·{" "}
-                {evento.nome}
+              <div className="min-w-0 flex-1">
+                <div className="text-[13.5px] text-ink">
+                  <span className="font-semibold">{evento.horario}</span> ·{" "}
+                  {evento.nome}
+                </div>
+                {evento.liturgicalName && (
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted">
+                    <LiturgicalDot color={evento.liturgicalColor} />
+                    {evento.liturgicalName}
+                  </div>
+                )}
               </div>
             </button>
           );

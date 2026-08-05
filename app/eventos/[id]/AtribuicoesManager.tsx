@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { iniciais } from "@/lib/iniciais";
+import { LiturgicalDot } from "@/app/components/LiturgicalDot";
 
 type Funcao = { id: string; nome: string };
 // `id` é o id do account elegível.
@@ -21,6 +22,8 @@ export default function AtribuicoesManager({
   grupoNome,
   dataLabel,
   horaLabel,
+  liturgicalName,
+  liturgicalColor,
   funcoes,
   membros,
   atribuicoes,
@@ -29,6 +32,8 @@ export default function AtribuicoesManager({
   grupoNome: string;
   dataLabel: string;
   horaLabel: string;
+  liturgicalName: string | null;
+  liturgicalColor: string | null;
   funcoes: Funcao[];
   membros: Membro[];
   atribuicoes: Atribuicao[];
@@ -107,6 +112,12 @@ export default function AtribuicoesManager({
             {dataLabel} · {horaLabel}
           </div>
           <div className="mt-0.5 text-[12px] text-muted">{grupoNome}</div>
+          {liturgicalName && (
+            <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted">
+              <LiturgicalDot color={liturgicalColor} />
+              {liturgicalName}
+            </div>
+          )}
         </div>
         <div className="flex flex-none items-center gap-2.5">
           <div className="h-1.5 w-20 overflow-hidden rounded-full bg-track md:w-40">

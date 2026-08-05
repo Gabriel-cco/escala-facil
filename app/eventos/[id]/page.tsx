@@ -15,7 +15,9 @@ export default async function EventoDetalhePage({
 
   const { data: evento, error } = await supabase
     .from("events")
-    .select("id, name, date, time, group_id, groups(name)")
+    .select(
+      "id, name, date, time, group_id, liturgical_name, liturgical_color, groups(name)"
+    )
     .eq("id", id)
     .single();
 
@@ -96,6 +98,8 @@ export default async function EventoDetalhePage({
           grupoNome={grupo?.name ?? "Grupo"}
           dataLabel={rotuloData(evento.date)}
           horaLabel={rotuloHora(evento.time)}
+          liturgicalName={evento.liturgical_name}
+          liturgicalColor={evento.liturgical_color}
           funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name }))}
           membros={membros.map((m) => ({
             id: m.id,

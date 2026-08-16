@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useNotifications } from "@/hooks/useNotifications";
 import { registerPushSubscription } from "@/lib/push";
+import { isIOSSafari, isRunningAsPWA } from "@/hooks/useInstallPrompt";
 import type { Notification, Profile } from "@/lib/types";
 
 function tempoRelativo(dateStr: string): string {
@@ -70,20 +71,82 @@ function NotificationRow({
   );
 }
 
+function PushStatusBanner({
+  status,
+  activating,
+  onActivate,
+}: {
+  status: PushStatus;
+  activating: boolean;
+  onActivate: () => void;
+}) {
+  const msgs: Record<PushStatus, string> = {
+    active: "",
+    default: "Ative as notificações para ser avisado sobre sua escala.",
+    granted: "Permissão concedida — clique para finalizar o registro.",
+    denied: "Notificações bloqueadas. Ative nas configurações do dispositivo.",
+    ios_safari:
+      "Abra o app pelo ícone na tela inicial (não pelo Safari) para receber notificações.",
+    ios_outdated:
+      "Atualize para iOS 16.4 ou superior para receber notificações push.",
+    unsupported: "Seu navegador não suporta notificações push.",
+  };
+
+  const canActivate = status === "default" || status === "granted";
+
+  return (
+    <div className="flex items-start gap-3 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3">
+      <span className="mt-0.5 text-base">🔔</span>
+      <p className="flex-1 text-[13px] leading-snug text-amber-800">{msgs[status]}</p>
+      {canActivate && (
+        <button
+          onClick={onActivate}
+          disabled={activating}
+          className="flex-none rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+        >
+          {activating ? "..." : "Ativar"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 interface Props {
   accountId: string | null;
   perfil: Profile | null;
 }
 
-type PushStatus = "unsupported" | "denied" | "default" | "granted" | "active";
+type PushStatus =
+  | "active"         // subscription registrada e salva
+  | "default"        // API disponível, permissão não pedida ainda
+  | "granted"        // permissão dada mas sem subscription local
+  | "denied"         // usuário bloqueou
+  | "ios_safari"     // iOS mas aberto no Safari (não como PWA)
+  | "ios_outdated"   // iOS < 16.4 (sem suporte a Web Push)
+  | "unsupported";   // navegador não suporta (não iOS)
 
 function usePushStatus(accountId: string | null) {
-  const [status, setStatus] = useState<PushStatus>("unsupported");
+  const [status, setStatus] = useState<PushStatus | null>(null);
   const [activating, setActivating] = useState(false);
 
   useEffect(() => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    if (Notification.permission === "denied") { setStatus("denied"); return; }
+    // iOS Safari browser (não PWA) — Notification não existe aqui
+    if (isIOSSafari() && !isRunningAsPWA()) {
+      setStatus("ios_safari");
+      return;
+    }
+
+    // API indisponível
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      // iOS PWA mas versão antiga (< 16.4)
+      setStatus(isIOSSafari() ? "ios_outdated" : "unsupported");
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      setStatus("denied");
+      return;
+    }
 
     navigator.serviceWorker.ready.then((reg) => {
       reg.pushManager.getSubscription().then((sub) => {
@@ -153,30 +216,8 @@ export default function NotificacoesCliente({ accountId, perfil }: Props) {
   return (
     <main className="flex flex-1 flex-col gap-6 px-[18px] pb-10 pt-2 md:gap-8 md:p-0">
       {/* ===== Status push ===== */}
-      {pushStatus !== "unsupported" && pushStatus !== "active" && (
-        <div className="flex items-center gap-3 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3">
-          <span className="text-lg">🔔</span>
-          <div className="flex-1 min-w-0">
-            {pushStatus === "denied" ? (
-              <p className="text-[13px] text-amber-800">
-                Notificações bloqueadas. Ative nas configurações do seu dispositivo.
-              </p>
-            ) : (
-              <p className="text-[13px] text-amber-800">
-                Ative as notificações para ser avisado sobre sua escala.
-              </p>
-            )}
-          </div>
-          {pushStatus !== "denied" && (
-            <button
-              onClick={activatePush}
-              disabled={pushActivating}
-              className="flex-none rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
-            >
-              {pushActivating ? "..." : "Ativar"}
-            </button>
-          )}
-        </div>
+      {pushStatus !== null && pushStatus !== "active" && (
+        <PushStatusBanner status={pushStatus} activating={pushActivating} onActivate={activatePush} />
       )}
 
       {/* ===== Recebidas ===== */}

@@ -1,72 +1,82 @@
 "use client";
 
+// Chrome/Android exige ArrayBuffer — string base64url falha silenciosamente
+function vapidKeyToBuffer(base64String: string): ArrayBuffer {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  const buffer = new ArrayBuffer(raw.length);
+  const view = new Uint8Array(buffer);
+  for (let i = 0; i < raw.length; i++) view[i] = raw.charCodeAt(i);
+  return buffer;
+}
+
+// Lança erro com mensagem legível em vez de retornar false silenciosamente
 export async function registerPushSubscription(accountId: string): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-    console.warn("[Push] Não suportado neste navegador");
-    return false;
+    throw new Error("Push não suportado neste navegador.");
   }
 
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!vapidKey) {
-    console.warn("[Push] VAPID public key não configurada");
-    return false;
+    throw new Error("VAPID key não configurada. Contacte o suporte.");
   }
 
-  try {
-    // Registra o SW (idempotente — não faz nada se já estiver registrado)
-    await navigator.serviceWorker.register("/sw.js");
-    // Aguarda o SW estar ativo e controlando a página antes de assinar
-    // (usar o resultado de register() é race condition na primeira carga)
-    const registration = await navigator.serviceWorker.ready;
+  // Registra o SW e aguarda estar ativo
+  await navigator.serviceWorker.register("/sw.js");
+  const registration = await Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Service worker demorou demais. Tente recarregar o app.")), 8000)
+    ),
+  ]);
 
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      console.warn("[Push] Permissão negada:", permission);
-      return false;
-    }
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error(`Permissão negada (${permission}). Ative nas configurações do dispositivo.`);
+  }
 
-    // Reutiliza assinatura existente se houver (evita criar duplicatas)
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: vapidKey,
-      });
-    }
-
-    const keys = subscription.toJSON().keys!;
-    const res = await fetch("/api/push/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        endpoint: subscription.endpoint,
-        p256dh: keys.p256dh,
-        auth: keys.auth,
-        userAgent: navigator.userAgent,
-      }),
+  // Reutiliza subscription existente ou cria uma nova
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: vapidKeyToBuffer(vapidKey),
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("[Push] Erro ao salvar subscription:", err);
-      return false;
-    }
-
-    console.log("[Push] Subscription registrada com sucesso");
-    return true;
-  } catch (err) {
-    console.error("[Push] Erro ao registrar push subscription:", err);
-    return false;
   }
+
+  const keys = subscription.toJSON().keys!;
+  const res = await fetch("/api/push/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      endpoint: subscription.endpoint,
+      p256dh: keys.p256dh,
+      auth: keys.auth,
+      userAgent: navigator.userAgent,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(`Falhou ao salvar no servidor: ${body.error ?? res.status}`);
+  }
+
+  return true;
 }
 
-// Salva uma subscription já existente no browser para o banco via API route (server client).
-// Usa a rota /api/push/sync para evitar problemas de sessão com o browser client em iOS PWA.
+// Sincroniza subscription local com o banco via API route sem pedir permissão
 export async function syncSubscriptionToDB(): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
 
   try {
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 4000)
+      ),
+    ]);
+
     const subscription = await registration.pushManager.getSubscription();
     if (!subscription) return false;
 
@@ -82,16 +92,8 @@ export async function syncSubscriptionToDB(): Promise<boolean> {
       }),
     });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("[Push] Erro ao sincronizar subscription:", err);
-      return false;
-    }
-
-    console.log("[Push] Subscription local sincronizada com DB");
-    return true;
-  } catch (err) {
-    console.error("[Push] Erro ao sincronizar:", err);
+    return res.ok;
+  } catch {
     return false;
   }
 }

@@ -123,12 +123,11 @@ function PushSetup({ accountId }: { accountId: string | null }) {
     setBusy(true);
     setErrorMsg("");
     try {
-      const ok = await registerPushSubscription(accountId);
-      setState(ok ? "active" : "error");
-      if (!ok) setErrorMsg("Falhou ao registrar. Verifique a permissão nas configurações.");
+      await registerPushSubscription(accountId);
+      setState("active");
     } catch (err) {
       setState("error");
-      setErrorMsg(String(err));
+      setErrorMsg(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }

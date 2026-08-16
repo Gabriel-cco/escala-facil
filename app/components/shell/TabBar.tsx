@@ -25,7 +25,7 @@ const ABAS_MEMBER: Aba[] = [
 ];
 
 const TELAS_RAIZ = [
-  "/", "/eventos", "/membros", "/grupos", "/funcoes", "/usuarios", "/minha-escala",
+  "/", "/eventos", "/membros", "/grupos", "/funcoes", "/usuarios", "/minha-escala", "/notificacoes",
 ];
 
 function abaAtiva(pathname: string, href: string): boolean {

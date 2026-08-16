@@ -15,6 +15,7 @@ const ITENS_ADMIN = [
   { href: "/funcoes", label: "Funções" },
   { href: "/eventos", label: "Eventos" },
   { href: "/usuarios", label: "Usuários" },
+  { href: "/notificacoes", label: "Notificações" },
 ];
 
 const ITENS_COORDINATOR = [
@@ -22,6 +23,7 @@ const ITENS_COORDINATOR = [
   { href: "/membros", label: "Membros" },
   { href: "/funcoes", label: "Funções" },
   { href: "/eventos", label: "Eventos" },
+  { href: "/notificacoes", label: "Notificações" },
 ];
 
 const ITENS_MEMBER = [
@@ -87,6 +89,13 @@ function IconeNav({ href }: { href: string }) {
         <svg {...p}>
           <circle cx="12" cy="8" r="3.4" />
           <path d="M5.5 20c.5-3.6 3.2-5.6 6.5-5.6s6 2 6.5 5.6" />
+        </svg>
+      );
+    case "/notificacoes":
+      return (
+        <svg {...p}>
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
       );
     default:

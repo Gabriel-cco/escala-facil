@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { ShellUser } from "./AppShell";
@@ -64,6 +65,15 @@ export default function SideMenu({
           >
             Meu perfil
           </button>
+          {(user.perfil === "admin" || user.perfil === "coordinator") && (
+            <Link
+              href="/notificacoes"
+              onClick={onClose}
+              className="block w-full px-1.5 py-3.5 text-left text-[14.5px] text-ink"
+            >
+              Notificações
+            </Link>
+          )}
           <button
             onClick={onClose}
             className="w-full px-1.5 py-3.5 text-left text-[14.5px] text-ink"

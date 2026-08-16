@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { liturgicalEmoji } from "../../components/LiturgicalDot";
 
 type Assignment = { role_name: string; member_name: string };
 type EventoPublico = {
@@ -9,6 +10,8 @@ type EventoPublico = {
   event_name: string;
   date: string;
   time: string;
+  liturgical_name: string | null;
+  liturgical_color: string | null;
   assignments: Assignment[] | null;
 };
 
@@ -139,6 +142,12 @@ export default function EscalaPublica({
                       <div className="mt-0.5 text-[12.5px] text-muted">
                         {formatarData(evento.date)} · {evento.time.slice(0, 5)}
                       </div>
+                      {evento.liturgical_name && (
+                        <div className="mt-0.5 text-[12px] text-muted">
+                          {liturgicalEmoji(evento.liturgical_color)}{" "}
+                          {evento.liturgical_name}
+                        </div>
+                      )}
                     </div>
                     {ehProximo && (
                       <span className="flex-none rounded-full bg-[#efe6cc] px-2.5 py-1 text-[11px] font-semibold text-[#7a6420]">

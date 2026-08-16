@@ -11,6 +11,8 @@ type EventoPublico = {
   event_name: string;
   date: string;
   time: string;
+  liturgical_name: string | null;
+  liturgical_color: string | null;
   assignments: Assignment[] | null;
 };
 type Schedule = {

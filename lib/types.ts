@@ -24,3 +24,26 @@ export interface Account {
   updatedAt: string;
   user?: User; // preenchido quando a query faz JOIN em users
 }
+
+export type NotificationType =
+  | "general"
+  | "schedule"
+  | "swap_request"
+  | "swap_accepted"
+  | "swap_cancelled";
+
+export type NotificationReferenceType = "event" | "group" | "swap_request";
+
+export interface Notification {
+  id: string;
+  accountId: string;
+  title: string;
+  body: string;
+  type: NotificationType;
+  referenceType: NotificationReferenceType | null;
+  referenceId: string | null;
+  read: boolean;
+  readAt: string | null;
+  createdAt: string;
+  senderAccountId: string | null;
+}

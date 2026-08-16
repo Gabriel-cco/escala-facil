@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
+import NotificationBell from "./NotificationBell";
 
 type HeaderProps =
   | { variant: "home" }
@@ -60,39 +61,46 @@ export default function Header(props: HeaderProps) {
         <div className="font-serif text-[21px] font-semibold text-ink">
           Escala Fácil
         </div>
-        <button
-          onClick={openMenu}
-          aria-label="Abrir menu"
-          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
-        >
-          {userIniciais || "··"}
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button
+            onClick={openMenu}
+            aria-label="Abrir menu"
+            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
+          >
+            {userIniciais || "··"}
+          </button>
+        </div>
       </header>
     );
   }
 
   if (props.variant === "back") {
     return (
-      <header className="sticky top-0 z-30 flex flex-none items-center gap-1.5 bg-screen px-4 pb-3.5 pt-4 md:hidden">
-        <button
-          onClick={() => router.back()}
-          aria-label="Voltar"
-          className="-mt-1 flex h-[38px] w-[38px] items-center justify-center text-3xl leading-none text-ink"
-        >
-          ‹
-        </button>
-        <div className="font-serif text-[20px] font-semibold text-ink">
-          {props.title}
+      <header className="sticky top-0 z-30 flex flex-none items-center justify-between bg-screen px-4 pb-3.5 pt-4 md:hidden">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => router.back()}
+            aria-label="Voltar"
+            className="-mt-1 flex h-[38px] w-[38px] items-center justify-center text-3xl leading-none text-ink"
+          >
+            ‹
+          </button>
+          <div className="font-serif text-[20px] font-semibold text-ink">
+            {props.title}
+          </div>
         </div>
+        <NotificationBell />
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-30 flex-none bg-screen px-6 pb-3.5 pt-4 md:hidden">
+    <header className="sticky top-0 z-30 flex flex-none items-center justify-between bg-screen px-5 pb-3.5 pt-4 md:hidden">
       <div className="font-serif text-[28px] font-semibold text-ink">
         {props.title}
       </div>
+      <NotificationBell />
     </header>
   );
 }

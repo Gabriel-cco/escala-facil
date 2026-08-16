@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getLiturgicalMonthAction } from "@/lib/liturgical-actions";
+import { LiturgicalDot } from "@/app/components/LiturgicalDot";
+import type { LiturgicalColor } from "@/lib/liturgical";
 
 const DIAS_SEMANA = [
   "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado",
@@ -23,6 +26,8 @@ type EventoPreview = {
   grupoId: string;
   selecionado: boolean;
   jaExiste: boolean;
+  liturgicalName: string | null;
+  liturgicalColor: LiturgicalColor | null;
 };
 
 function proxMes(): string {
@@ -105,61 +110,82 @@ export default function GerarEventosForm({
     setErro("");
     setCarregando(true);
 
-    const [ano, mes] = mesAno.split("-").map(Number);
-    const supabase = createClient();
+    try {
+      const [ano, mes] = mesAno.split("-").map(Number);
+      const supabase = createClient();
 
-    // Gera todos os eventos a partir dos padrões, deduplicando combinações
-    // idênticas (nome+data+hora) que dois padrões iguais possam produzir.
-    const vistos = new Set<string>();
-    const gerados: Omit<EventoPreview, "jaExiste" | "selecionado">[] = [];
-    for (const padrao of padroes) {
-      for (const date of getDatesForWeekday(ano, mes, padrao.diaSemana)) {
-        const nome = padrao.nome.trim();
-        const assinatura = `${nome}|${date}|${padrao.horario}`;
-        if (vistos.has(assinatura)) continue;
-        vistos.add(assinatura);
-        gerados.push({
-          key: `${date}-${padrao.horario}-${nome}`,
-          nome,
-          date,
-          horario: padrao.horario,
-          grupoId,
-        });
+      // Nome e cor litúrgica de cada data do mês (calculado uma vez, cacheado).
+      // Na primeira chamada em ambiente de desenvolvimento (Turbopack), essa
+      // Server Action pode demorar alguns segundos pra compilar — normal.
+      const liturgicoMes = await getLiturgicalMonthAction(ano, mes);
+
+      // Gera todos os eventos a partir dos padrões, deduplicando combinações
+      // idênticas (nome+data+hora) que dois padrões iguais possam produzir.
+      const vistos = new Set<string>();
+      const gerados: Omit<EventoPreview, "jaExiste" | "selecionado">[] = [];
+      for (const padrao of padroes) {
+        for (const date of getDatesForWeekday(ano, mes, padrao.diaSemana)) {
+          const nome = padrao.nome.trim();
+          const assinatura = `${nome}|${date}|${padrao.horario}`;
+          if (vistos.has(assinatura)) continue;
+          vistos.add(assinatura);
+          const liturgico = liturgicoMes[date];
+          gerados.push({
+            key: `${date}-${padrao.horario}-${nome}`,
+            nome: nome || liturgico?.name || "Missa",
+            date,
+            horario: padrao.horario,
+            grupoId,
+            liturgicalName: liturgico?.name ?? null,
+            liturgicalColor: liturgico?.color ?? null,
+          });
+        }
       }
+
+      // Busca os eventos já existentes desse grupo no mês para marcar duplicatas.
+      const primeiroDia = `${ano}-${String(mes).padStart(2, "0")}-01`;
+      const diasNoMes = new Date(ano, mes, 0).getDate();
+      const ultimoDia = `${ano}-${String(mes).padStart(2, "0")}-${String(diasNoMes).padStart(2, "0")}`;
+
+      const { data: existentes, error: erroExistentes } = await supabase
+        .from("events")
+        .select("name, date, time")
+        .eq("group_id", grupoId)
+        .gte("date", primeiroDia)
+        .lte("date", ultimoDia);
+
+      if (erroExistentes) {
+        setErro("Erro ao verificar eventos existentes: " + erroExistentes.message);
+        return;
+      }
+
+      // "time" no banco é HH:MM:SS; o padrão usa HH:MM — normaliza na comparação.
+      const setExistentes = new Set(
+        (existentes ?? []).map(
+          (e) =>
+            `${e.name}|${e.date}|${(e.time as string).slice(0, 5)}`
+        )
+      );
+
+      const eventos: EventoPreview[] = gerados.map((e) => {
+        const jaExiste = setExistentes.has(`${e.nome}|${e.date}|${e.horario}`);
+        return { ...e, jaExiste, selecionado: !jaExiste };
+      });
+
+      eventos.sort((a, b) =>
+        `${a.date}${a.horario}`.localeCompare(`${b.date}${b.horario}`)
+      );
+      setPreviewEventos(eventos);
+      setStep("preview");
+    } catch (e) {
+      setErro(
+        "Não foi possível gerar a prévia: " +
+          (e instanceof Error ? e.message : "erro desconhecido") +
+          ". Tente novamente."
+      );
+    } finally {
+      setCarregando(false);
     }
-
-    // Busca os eventos já existentes desse grupo no mês para marcar duplicatas.
-    const primeiroDia = `${ano}-${String(mes).padStart(2, "0")}-01`;
-    const diasNoMes = new Date(ano, mes, 0).getDate();
-    const ultimoDia = `${ano}-${String(mes).padStart(2, "0")}-${String(diasNoMes).padStart(2, "0")}`;
-
-    const { data: existentes } = await supabase
-      .from("events")
-      .select("name, date, time")
-      .eq("group_id", grupoId)
-      .gte("date", primeiroDia)
-      .lte("date", ultimoDia);
-
-    // "time" no banco é HH:MM:SS; o padrão usa HH:MM — normaliza na comparação.
-    const setExistentes = new Set(
-      (existentes ?? []).map(
-        (e) =>
-          `${e.name}|${e.date}|${(e.time as string).slice(0, 5)}`
-      )
-    );
-
-    setCarregando(false);
-
-    const eventos: EventoPreview[] = gerados.map((e) => {
-      const jaExiste = setExistentes.has(`${e.nome}|${e.date}|${e.horario}`);
-      return { ...e, jaExiste, selecionado: !jaExiste };
-    });
-
-    eventos.sort((a, b) =>
-      `${a.date}${a.horario}`.localeCompare(`${b.date}${b.horario}`)
-    );
-    setPreviewEventos(eventos);
-    setStep("preview");
   }
 
   function toggleEvento(key: string) {
@@ -195,6 +221,8 @@ export default function GerarEventosForm({
         date: e.date,
         time: `${e.horario}:00`,
         group_id: e.grupoId,
+        liturgical_name: e.liturgicalName,
+        liturgical_color: e.liturgicalColor,
       }))
     );
 
@@ -349,6 +377,8 @@ export default function GerarEventosForm({
           </button>
         </div>
 
+        {erro && <p className="text-[13px] text-danger">{erro}</p>}
+
         <div className="mt-1.5 flex flex-col gap-2.5 md:mt-2 md:flex-row md:justify-end">
           <button
             type="button"
@@ -441,9 +471,17 @@ export default function GerarEventosForm({
                     {sem}
                   </div>
                 </div>
-                <div className="min-w-0 flex-1 text-[13.5px] text-ink">
-                  <span className="font-semibold">{evento.horario}</span> ·{" "}
-                  {evento.nome}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13.5px] text-ink">
+                    <span className="font-semibold">{evento.horario}</span> ·{" "}
+                    {evento.nome}
+                  </div>
+                  {evento.liturgicalName && (
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted">
+                      <LiturgicalDot color={evento.liturgicalColor} />
+                      {evento.liturgicalName}
+                    </div>
+                  )}
                 </div>
                 <span className="flex-none rounded-full bg-[#fef3c7] px-2 py-0.5 text-[10.5px] font-semibold text-[#92400e]">
                   Já existe
@@ -480,9 +518,17 @@ export default function GerarEventosForm({
                   {sem}
                 </div>
               </div>
-              <div className="min-w-0 flex-1 text-[13.5px] text-ink">
-                <span className="font-semibold">{evento.horario}</span> ·{" "}
-                {evento.nome}
+              <div className="min-w-0 flex-1">
+                <div className="text-[13.5px] text-ink">
+                  <span className="font-semibold">{evento.horario}</span> ·{" "}
+                  {evento.nome}
+                </div>
+                {evento.liturgicalName && (
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-muted">
+                    <LiturgicalDot color={evento.liturgicalColor} />
+                    {evento.liturgicalName}
+                  </div>
+                )}
               </div>
             </button>
           );

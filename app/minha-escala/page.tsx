@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Header from "../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
+import { LiturgicalDot } from "../components/LiturgicalDot";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -92,7 +93,7 @@ export default async function MinhaEscalaPage({
   const { data: rawEventos } = await supabase
     .from("events")
     .select(`
-      id, name, date, time,
+      id, name, date, time, liturgical_name, liturgical_color,
       assignments(
         id,
         account_id,
@@ -114,6 +115,7 @@ export default async function MinhaEscalaPage({
   };
   type Evento = {
     id: string; name: string; date: string; time: string;
+    liturgical_name: string | null; liturgical_color: string | null;
     assignments: Assignment[] | null;
   };
 
@@ -193,13 +195,19 @@ export default async function MinhaEscalaPage({
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-serif text-[17px] font-semibold leading-tight text-ink">
+                      <div className="flex items-center gap-1.5 font-serif text-[17px] font-semibold leading-tight text-ink">
+                        <LiturgicalDot color={evento.liturgical_color} />
                         {evento.name}
                       </div>
                       <div className="mt-0.5 text-[12.5px] text-muted">
                         {formatarDataEvento(evento.date)} ·{" "}
                         {evento.time.slice(0, 5)}
                       </div>
+                      {evento.liturgical_name && (
+                        <div className="mt-0.5 text-[12px] text-muted">
+                          {evento.liturgical_name}
+                        </div>
+                      )}
                     </div>
                     {euEstouEscalado && (
                       <span className="flex-none rounded-full bg-[#eef2ff] px-2.5 py-1 text-[11px] font-semibold text-[#4f46e5]">

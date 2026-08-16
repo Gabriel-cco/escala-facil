@@ -6,7 +6,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useNotifications } from "@/hooks/useNotifications";
 import { registerPushSubscription, syncSubscriptionToDB } from "@/lib/push";
-import { isIOSSafari, isRunningAsPWA } from "@/hooks/useInstallPrompt";
 import type { Notification, Profile } from "@/lib/types";
 
 function tempoRelativo(dateStr: string): string {
@@ -71,42 +70,86 @@ function NotificationRow({
   );
 }
 
-function PushStatusBanner({
-  status,
-  activating,
-  onActivate,
-}: {
-  status: PushStatus;
-  activating: boolean;
-  onActivate: () => void;
-}) {
-  const msgs: Record<PushStatus, string> = {
-    active: "",
-    default: "Ative as notificações para ser avisado sobre sua escala.",
-    granted: "Permissão concedida — clique para finalizar o registro.",
-    denied: "Notificações bloqueadas. Ative nas configurações do dispositivo.",
-    ios_safari:
-      "Abra o app pelo ícone na tela inicial (não pelo Safari) para receber notificações.",
-    ios_outdated:
-      "Atualize para iOS 16.4 ou superior para receber notificações push.",
-    unsupported: "Seu navegador não suporta notificações push.",
-  };
+// Painel de configuração de push — sempre visível, sem depender de detecção de UA.
+// Mostra o estado atual e erro na tela (útil para debug remoto).
+function PushSetup({ accountId }: { accountId: string | null }) {
+  type S = "checking" | "active" | "inactive" | "denied" | "unavailable" | "error";
+  const [state, setState] = useState<S>("checking");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const canActivate = status === "default" || status === "granted";
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setState("unavailable");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      setState("denied");
+      return;
+    }
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then(async (sub) => {
+        if (sub) {
+          // Subscription local existe — sincroniza com DB via API route
+          const ok = await syncSubscriptionToDB();
+          setState(ok ? "active" : "error");
+          if (!ok) setErrorMsg("Subscription encontrada mas falhou ao salvar. Tente ativar novamente.");
+        } else {
+          setState("inactive");
+        }
+      })
+      .catch((err) => {
+        setState("error");
+        setErrorMsg(String(err));
+      });
+  }, []);
+
+  async function activate() {
+    if (!accountId) return;
+    setBusy(true);
+    setErrorMsg("");
+    try {
+      const ok = await registerPushSubscription(accountId);
+      setState(ok ? "active" : "error");
+      if (!ok) setErrorMsg("Falhou ao registrar. Verifique a permissão nas configurações.");
+    } catch (err) {
+      setState("error");
+      setErrorMsg(String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (state === "checking") return null;
+  if (state === "active") return null;
+
+  const label =
+    state === "unavailable"
+      ? "Notificações push não disponíveis neste navegador."
+      : state === "denied"
+      ? "Notificações bloqueadas — ative nas configurações do dispositivo."
+      : state === "error"
+      ? `Erro: ${errorMsg || "desconhecido"}`
+      : "Ative as notificações para ser avisado sobre sua escala.";
+
+  const canActivate = state === "inactive" || state === "error";
 
   return (
-    <div className="flex items-start gap-3 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3">
-      <span className="mt-0.5 text-base">🔔</span>
-      <p className="flex-1 text-[13px] leading-snug text-amber-800">{msgs[status]}</p>
-      {canActivate && (
-        <button
-          onClick={onActivate}
-          disabled={activating}
-          className="flex-none rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
-        >
-          {activating ? "..." : "Ativar"}
-        </button>
-      )}
+    <div className="flex flex-col gap-2 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 text-base">🔔</span>
+        <p className="flex-1 text-[13px] leading-snug text-amber-800">{label}</p>
+        {canActivate && (
+          <button
+            onClick={activate}
+            disabled={busy}
+            className="flex-none rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? "..." : "Ativar"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -116,73 +159,11 @@ interface Props {
   perfil: Profile | null;
 }
 
-type PushStatus =
-  | "active"         // subscription registrada e salva
-  | "default"        // API disponível, permissão não pedida ainda
-  | "granted"        // permissão dada mas sem subscription local
-  | "denied"         // usuário bloqueou
-  | "ios_safari"     // iOS mas aberto no Safari (não como PWA)
-  | "ios_outdated"   // iOS < 16.4 (sem suporte a Web Push)
-  | "unsupported";   // navegador não suporta (não iOS)
-
-function usePushStatus(accountId: string | null) {
-  const [status, setStatus] = useState<PushStatus | null>(null);
-  const [activating, setActivating] = useState(false);
-
-  useEffect(() => {
-    // iOS Safari browser (não PWA) — Notification não existe aqui
-    if (isIOSSafari() && !isRunningAsPWA()) {
-      setStatus("ios_safari");
-      return;
-    }
-
-    // API indisponível
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-      // iOS PWA mas versão antiga (< 16.4)
-      setStatus(isIOSSafari() ? "ios_outdated" : "unsupported");
-      return;
-    }
-
-    if (Notification.permission === "denied") {
-      setStatus("denied");
-      return;
-    }
-
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.pushManager.getSubscription().then(async (sub) => {
-        if (sub) {
-          // Subscription existe localmente — sincroniza com o banco em background.
-          // Cobre o caso onde o subscribe() funcionou mas o upsert falhou antes.
-          syncSubscriptionToDB().then((ok) => {
-            if (!ok) console.warn("[Push] Sync com DB falhou — subscription local existe mas nao foi salva");
-          });
-          setStatus("active");
-        } else {
-          setStatus(Notification.permission === "granted" ? "granted" : "default");
-        }
-      });
-    });
-  }, []);
-
-  async function activate() {
-    if (!accountId) return;
-    setActivating(true);
-    const ok = await registerPushSubscription(accountId);
-    setActivating(false);
-    if (ok) setStatus("active");
-  }
-
-  return { status, activating, activate };
-}
-
 export default function NotificacoesCliente({ accountId, perfil }: Props) {
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
     useNotifications(accountId);
 
   const isAdminOrCoord = perfil === "admin" || perfil === "coordinator";
-
-  const { status: pushStatus, activating: pushActivating, activate: activatePush } =
-    usePushStatus(accountId);
 
   const [enviadas, setEnviadas] = useState<EnviadaGrupo[]>([]);
   const [loadingEnviadas, setLoadingEnviadas] = useState(false);
@@ -223,10 +204,8 @@ export default function NotificacoesCliente({ accountId, perfil }: Props) {
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-[18px] pb-10 pt-2 md:gap-8 md:p-0">
-      {/* ===== Status push ===== */}
-      {pushStatus !== null && pushStatus !== "active" && (
-        <PushStatusBanner status={pushStatus} activating={pushActivating} onActivate={activatePush} />
-      )}
+      {/* ===== Push setup ===== */}
+      <PushSetup accountId={accountId} />
 
       {/* ===== Recebidas ===== */}
       <section className="flex flex-col gap-3">

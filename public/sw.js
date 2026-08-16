@@ -6,9 +6,12 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(clients.claim());
 });
 
-// Passa todas as requisições direto para a rede.
-// Um handler vazio (sem respondWith) pode falhar em navegação PWA no Chrome.
+// Requisições de navegação (mode === "navigate") devem passar pelo browser
+// nativamente — interceptar com fetch() quebra fluxos OAuth (redirect externo
+// para Google falha com CORS) e impede cookies de auth de serem gravados.
+// Outros recursos (assets, API) passam direto para a rede.
 self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") return;
   event.respondWith(fetch(event.request));
 });
 

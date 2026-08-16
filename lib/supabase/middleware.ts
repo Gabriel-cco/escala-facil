@@ -38,6 +38,14 @@ export async function updateSession(request: NextRequest) {
 
     // Se não está logado e a rota não é pública → manda para o login
     if (!user && !ehRotaPublica) {
+        // Código OAuth pode cair na raiz (/?code=...) dependendo da config do Supabase.
+        // Redireciona para o callback handler que troca o código pela sessão.
+        const code = request.nextUrl.searchParams.get('code')
+        if (code) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/auth/callback'
+            return NextResponse.redirect(url)
+        }
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)

@@ -9,6 +9,8 @@ import SideMenu from "./SideMenu";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import PushBanner from "../PushBanner";
+import { InstallBanner } from "../InstallBanner";
+import { IOSInstallBanner } from "../IOSInstallBanner";
 
 export type ShellUser = {
   nome: string;
@@ -92,6 +94,8 @@ export default function AppShell({
 
         {user && <SideMenu aberto={menuAberto} onClose={closeMenu} user={user} />}
         {user && <PushBanner />}
+        {user && <InstallBanner />}
+        {user && <IOSInstallBanner />}
       </GroupProvider>
     </ShellContext.Provider>
   );

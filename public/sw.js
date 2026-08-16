@@ -1,9 +1,20 @@
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(clients.claim());
+});
+
+// Necessário para o Chrome considerar o app instalável como PWA
+self.addEventListener("fetch", () => {});
+
 self.addEventListener("push", (event) => {
   const data = event.data?.json() || {};
 
   const options = {
     body: data.body || "",
-    icon: "/file.svg",
+    icon: "/pwa-icons/192",
     data: { url: data.url || "/" },
     vibrate: [200, 100, 200],
   };

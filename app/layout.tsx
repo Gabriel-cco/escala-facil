@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import AppShell, { type ShellUser } from "./components/shell/AppShell";
@@ -15,6 +15,18 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Escala Fácil — Paróquia Santa Terezinha",
   description: "Gestão de escalas de serviço para grupos paroquiais",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Escala Fácil",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#4F46E5",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default async function RootLayout({

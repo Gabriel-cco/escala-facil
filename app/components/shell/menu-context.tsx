@@ -17,6 +17,8 @@ type ShellContextValue = {
   userIniciais: string;
   /** Nome do usuário logado (para a saudação "Olá, ..."). */
   userNome: string;
+  /** account.id do usuário logado (já buscado server-side no layout). */
+  accountId: string | null;
   /** Chrome atual exibido na topbar web. */
   chrome: PageChrome;
   /** As páginas registram seu chrome (título/ação/voltar) aqui. */

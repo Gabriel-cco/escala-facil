@@ -52,12 +52,14 @@ export default async function RootLayout({
     });
     const perfil =
       (rows?.[0]?.profile as ShellUser["perfil"] | undefined) ?? null;
+    const accountId = (rows?.[0]?.account_id as string | undefined) ?? null;
 
     shellUser = {
       nome,
       email: user.email ?? "",
       iniciais: iniciais(nome),
       perfil,
+      accountId,
     };
   }
 

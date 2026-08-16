@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useShell } from "./menu-context";
 import type { Notification } from "@/lib/types";
 
 function tempoRelativo(dateStr: string): string {
@@ -92,12 +93,14 @@ function NotificationItem({
 }
 
 function DropdownPanel({
+  accountId,
   onClose,
 }: {
+  accountId: string | null;
   onClose: () => void;
 }) {
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
-    useNotifications();
+    useNotifications(accountId);
 
   return (
     <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[340px] overflow-hidden rounded-[16px] border border-border bg-paper shadow-lg">
@@ -150,7 +153,8 @@ function DropdownPanel({
 
 /** Sino de notificações: Link no mobile, dropdown no desktop. */
 export default function NotificationBell() {
-  const { unreadCount } = useNotifications();
+  const { accountId } = useShell();
+  const { unreadCount } = useNotifications(accountId);
   const [aberto, setAberto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -197,7 +201,7 @@ export default function NotificationBell() {
           {unreadCount > 0 && <Badge count={unreadCount} />}
         </button>
 
-        {aberto && <DropdownPanel onClose={() => setAberto(false)} />}
+        {aberto && <DropdownPanel accountId={accountId} onClose={() => setAberto(false)} />}
       </div>
     </>
   );

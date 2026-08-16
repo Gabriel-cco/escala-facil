@@ -17,6 +17,7 @@ export type ShellUser = {
   email: string;
   iniciais: string;
   perfil: "admin" | "coordinator" | "member" | null;
+  accountId: string | null;
 };
 
 export const ROTULO_PERFIL: Record<string, string> = {
@@ -61,6 +62,7 @@ export default function AppShell({
     closeMenu,
     userIniciais: user?.iniciais ?? "",
     userNome: user?.nome ?? "",
+    accountId: user?.accountId ?? null,
     chrome,
     setChrome,
   };

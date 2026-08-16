@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useCurrentAccount } from "@/hooks/useCurrentAccount";
 import { useNotifications } from "@/hooks/useNotifications";
-import type { Notification } from "@/lib/types";
+import type { Notification, Profile } from "@/lib/types";
 
 function tempoRelativo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -70,13 +69,15 @@ function NotificationRow({
   );
 }
 
-export default function NotificacoesCliente() {
-  const { data: currentAccount } = useCurrentAccount();
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
-    useNotifications();
+interface Props {
+  accountId: string | null;
+  perfil: Profile | null;
+}
 
-  const perfil = currentAccount?.account.profile;
-  const accountId = currentAccount?.account.id;
+export default function NotificacoesCliente({ accountId, perfil }: Props) {
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
+    useNotifications(accountId);
+
   const isAdminOrCoord = perfil === "admin" || perfil === "coordinator";
 
   const [enviadas, setEnviadas] = useState<EnviadaGrupo[]>([]);
@@ -100,19 +101,13 @@ export default function NotificacoesCliente() {
         return;
       }
 
-      // Deduplica por (título + segundo de criação)
       const grupos = new Map<string, EnviadaGrupo>();
       for (const row of data) {
         const key = `${row.title}|${new Date(row.created_at).toISOString().slice(0, 19)}`;
         if (grupos.has(key)) {
           grupos.get(key)!.count++;
         } else {
-          grupos.set(key, {
-            title: row.title,
-            body: row.body,
-            createdAt: row.created_at,
-            count: 1,
-          });
+          grupos.set(key, { title: row.title, body: row.body, createdAt: row.created_at, count: 1 });
         }
       }
       setEnviadas(Array.from(grupos.values()));

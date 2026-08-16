@@ -33,9 +33,9 @@ export interface UseNotificationsReturn {
   loadMore: () => Promise<void>;
 }
 
-export function useNotifications(): UseNotificationsReturn {
+export function useNotifications(providedAccountId?: string | null): UseNotificationsReturn {
   const { data: currentAccount } = useCurrentAccount();
-  const accountId = currentAccount?.account.id;
+  const accountId = providedAccountId ?? currentAccount?.account.id;
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);

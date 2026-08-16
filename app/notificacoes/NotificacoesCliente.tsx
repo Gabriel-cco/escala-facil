@@ -87,11 +87,19 @@ function PushSetup({ accountId }: { accountId: string | null }) {
       setState("denied");
       return;
     }
-    navigator.serviceWorker.ready
+
+    // Timeout de 4 s no serviceWorker.ready — no iOS 26 pode travar indefinidamente
+    const swReady = Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("SW_TIMEOUT")), 4000)
+      ),
+    ]);
+
+    swReady
       .then((reg) => reg.pushManager.getSubscription())
       .then(async (sub) => {
         if (sub) {
-          // Subscription local existe — sincroniza com DB via API route
           const ok = await syncSubscriptionToDB();
           setState(ok ? "active" : "error");
           if (!ok) setErrorMsg("Subscription encontrada mas falhou ao salvar. Tente ativar novamente.");
@@ -99,9 +107,14 @@ function PushSetup({ accountId }: { accountId: string | null }) {
           setState("inactive");
         }
       })
-      .catch((err) => {
-        setState("error");
-        setErrorMsg(String(err));
+      .catch((err: Error) => {
+        if (err.message === "SW_TIMEOUT") {
+          // SW não ficou pronto — mostra botão de ativar direto
+          setState("inactive");
+        } else {
+          setState("error");
+          setErrorMsg(String(err));
+        }
       });
   }, []);
 
@@ -121,11 +134,12 @@ function PushSetup({ accountId }: { accountId: string | null }) {
     }
   }
 
-  if (state === "checking") return null;
   if (state === "active") return null;
 
   const label =
-    state === "unavailable"
+    state === "checking"
+      ? "Verificando notificações..."
+      : state === "unavailable"
       ? "Notificações push não disponíveis neste navegador."
       : state === "denied"
       ? "Notificações bloqueadas — ative nas configurações do dispositivo."

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     p_auth_id: authUser.id,
   });
   const account = pRows?.[0] as
-    | { id: string; profile: string; group_id: string | null }
+    | { account_id: string; profile: string; group_id: string | null }
     | undefined;
 
   if (!account || (account.profile !== "admin" && account.profile !== "coordinator")) {
@@ -43,8 +43,7 @@ export async function POST(request: NextRequest) {
   let recipientsQuery = supabaseAdmin
     .from("accounts")
     .select("id")
-    .eq("active", true)
-    .neq("profile", "admin");
+    .eq("active", true);
 
   if (targetGroupId && targetGroupId !== "all") {
     recipientsQuery = recipientsQuery.eq("group_id", targetGroupId);
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
     title,
     body: bodyText,
     type: "general",
-    sender_account_id: account.id,
+    sender_account_id: account.account_id,
   }));
 
   await supabaseAdmin.from("notifications").insert(rows);

@@ -15,13 +15,13 @@ export default async function NotificacoesPage() {
   const { data: pRows } = await supabase.rpc("get_account_by_auth_id", {
     p_auth_id: authUser.id,
   });
-  const account = pRows?.[0] as { id: string; profile: Profile } | undefined;
+  const account = pRows?.[0] as { account_id: string; profile: Profile } | undefined;
 
   return (
     <>
       <Header variant="back" title="Notificações" />
       <NotificacoesCliente
-        accountId={account?.id ?? null}
+        accountId={account?.account_id ?? null}
         perfil={account?.profile ?? null}
       />
     </>

@@ -62,6 +62,42 @@ export async function registerPushSubscription(accountId: string): Promise<boole
   }
 }
 
+// Salva uma subscription já existente no browser para o banco, sem pedir permissão.
+// Cobre o caso onde subscribe() funcionou mas o upsert falhou numa tentativa anterior.
+export async function syncSubscriptionToDB(accountId: string): Promise<boolean> {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return false;
+
+    const keys = subscription.toJSON().keys!;
+    const supabase = createClient();
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        account_id: accountId,
+        endpoint: subscription.endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        user_agent: navigator.userAgent,
+      },
+      { onConflict: "endpoint" }
+    );
+
+    if (error) {
+      console.error("[Push] Erro ao sincronizar subscription com DB:", error);
+      return false;
+    }
+
+    console.log("[Push] Subscription local sincronizada com DB");
+    return true;
+  } catch (err) {
+    console.error("[Push] Erro ao sincronizar:", err);
+    return false;
+  }
+}
+
 export async function unregisterPushSubscription(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
 

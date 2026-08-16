@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useNotifications } from "@/hooks/useNotifications";
-import { registerPushSubscription } from "@/lib/push";
+import { registerPushSubscription, syncSubscriptionToDB } from "@/lib/push";
 import { isIOSSafari, isRunningAsPWA } from "@/hooks/useInstallPrompt";
 import type { Notification, Profile } from "@/lib/types";
 
@@ -149,9 +149,20 @@ function usePushStatus(accountId: string | null) {
     }
 
     navigator.serviceWorker.ready.then((reg) => {
-      reg.pushManager.getSubscription().then((sub) => {
-        if (sub) setStatus("active");
-        else setStatus(Notification.permission === "granted" ? "granted" : "default");
+      reg.pushManager.getSubscription().then(async (sub) => {
+        if (sub) {
+          // Subscription existe localmente — sincroniza com o banco em background.
+          // Cobre o caso onde o subscribe() funcionou mas o upsert falhou antes.
+          if (accountId) {
+            const synced = await syncSubscriptionToDB(accountId);
+            if (!synced) {
+              console.warn("[Push] Sync com DB falhou — tente ativar novamente");
+            }
+          }
+          setStatus("active");
+        } else {
+          setStatus(Notification.permission === "granted" ? "granted" : "default");
+        }
       });
     });
   }, []);

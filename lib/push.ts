@@ -1,7 +1,5 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
-
 export async function registerPushSubscription(accountId: string): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     console.warn("[Push] Não suportado neste navegador");
@@ -37,20 +35,20 @@ export async function registerPushSubscription(accountId: string): Promise<boole
     }
 
     const keys = subscription.toJSON().keys!;
-    const supabase = createClient();
-    const { error } = await supabase.from("push_subscriptions").upsert(
-      {
-        account_id: accountId,
+    const res = await fetch("/api/push/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         endpoint: subscription.endpoint,
         p256dh: keys.p256dh,
         auth: keys.auth,
-        user_agent: navigator.userAgent,
-      },
-      { onConflict: "endpoint" }
-    );
+        userAgent: navigator.userAgent,
+      }),
+    });
 
-    if (error) {
-      console.error("[Push] Erro ao salvar subscription:", error);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("[Push] Erro ao salvar subscription:", err);
       return false;
     }
 
@@ -62,9 +60,9 @@ export async function registerPushSubscription(accountId: string): Promise<boole
   }
 }
 
-// Salva uma subscription já existente no browser para o banco, sem pedir permissão.
-// Cobre o caso onde subscribe() funcionou mas o upsert falhou numa tentativa anterior.
-export async function syncSubscriptionToDB(accountId: string): Promise<boolean> {
+// Salva uma subscription já existente no browser para o banco via API route (server client).
+// Usa a rota /api/push/sync para evitar problemas de sessão com o browser client em iOS PWA.
+export async function syncSubscriptionToDB(): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
 
   try {
@@ -73,20 +71,20 @@ export async function syncSubscriptionToDB(accountId: string): Promise<boolean> 
     if (!subscription) return false;
 
     const keys = subscription.toJSON().keys!;
-    const supabase = createClient();
-    const { error } = await supabase.from("push_subscriptions").upsert(
-      {
-        account_id: accountId,
+    const res = await fetch("/api/push/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         endpoint: subscription.endpoint,
         p256dh: keys.p256dh,
         auth: keys.auth,
-        user_agent: navigator.userAgent,
-      },
-      { onConflict: "endpoint" }
-    );
+        userAgent: navigator.userAgent,
+      }),
+    });
 
-    if (error) {
-      console.error("[Push] Erro ao sincronizar subscription com DB:", error);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("[Push] Erro ao sincronizar subscription:", err);
       return false;
     }
 
@@ -107,7 +105,10 @@ export async function unregisterPushSubscription(): Promise<void> {
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
 
-  const supabase = createClient();
-  await supabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
+  await fetch("/api/push/sync", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
+  });
   await subscription.unsubscribe();
 }

@@ -153,12 +153,9 @@ function usePushStatus(accountId: string | null) {
         if (sub) {
           // Subscription existe localmente — sincroniza com o banco em background.
           // Cobre o caso onde o subscribe() funcionou mas o upsert falhou antes.
-          if (accountId) {
-            const synced = await syncSubscriptionToDB(accountId);
-            if (!synced) {
-              console.warn("[Push] Sync com DB falhou — tente ativar novamente");
-            }
-          }
+          syncSubscriptionToDB().then((ok) => {
+            if (!ok) console.warn("[Push] Sync com DB falhou — subscription local existe mas nao foi salva");
+          });
           setStatus("active");
         } else {
           setStatus(Notification.permission === "granted" ? "granted" : "default");

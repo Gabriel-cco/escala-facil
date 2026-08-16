@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useNotifications } from "@/hooks/useNotifications";
+import { registerPushSubscription } from "@/lib/push";
 import type { Notification, Profile } from "@/lib/types";
 
 function tempoRelativo(dateStr: string): string {
@@ -74,11 +75,43 @@ interface Props {
   perfil: Profile | null;
 }
 
+type PushStatus = "unsupported" | "denied" | "default" | "granted" | "active";
+
+function usePushStatus(accountId: string | null) {
+  const [status, setStatus] = useState<PushStatus>("unsupported");
+  const [activating, setActivating] = useState(false);
+
+  useEffect(() => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (Notification.permission === "denied") { setStatus("denied"); return; }
+
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => {
+        if (sub) setStatus("active");
+        else setStatus(Notification.permission === "granted" ? "granted" : "default");
+      });
+    });
+  }, []);
+
+  async function activate() {
+    if (!accountId) return;
+    setActivating(true);
+    const ok = await registerPushSubscription(accountId);
+    setActivating(false);
+    if (ok) setStatus("active");
+  }
+
+  return { status, activating, activate };
+}
+
 export default function NotificacoesCliente({ accountId, perfil }: Props) {
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
     useNotifications(accountId);
 
   const isAdminOrCoord = perfil === "admin" || perfil === "coordinator";
+
+  const { status: pushStatus, activating: pushActivating, activate: activatePush } =
+    usePushStatus(accountId);
 
   const [enviadas, setEnviadas] = useState<EnviadaGrupo[]>([]);
   const [loadingEnviadas, setLoadingEnviadas] = useState(false);
@@ -119,6 +152,33 @@ export default function NotificacoesCliente({ accountId, perfil }: Props) {
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-[18px] pb-10 pt-2 md:gap-8 md:p-0">
+      {/* ===== Status push ===== */}
+      {pushStatus !== "unsupported" && pushStatus !== "active" && (
+        <div className="flex items-center gap-3 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3">
+          <span className="text-lg">🔔</span>
+          <div className="flex-1 min-w-0">
+            {pushStatus === "denied" ? (
+              <p className="text-[13px] text-amber-800">
+                Notificações bloqueadas. Ative nas configurações do seu dispositivo.
+              </p>
+            ) : (
+              <p className="text-[13px] text-amber-800">
+                Ative as notificações para ser avisado sobre sua escala.
+              </p>
+            )}
+          </div>
+          {pushStatus !== "denied" && (
+            <button
+              onClick={activatePush}
+              disabled={pushActivating}
+              className="flex-none rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+            >
+              {pushActivating ? "..." : "Ativar"}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ===== Recebidas ===== */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

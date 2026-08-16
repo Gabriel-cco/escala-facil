@@ -14,6 +14,7 @@ const ITENS_ADMIN = [
   { href: "/membros", label: "Membros" },
   { href: "/funcoes", label: "Funções" },
   { href: "/eventos", label: "Eventos" },
+  { href: "/trocas", label: "Trocas" },
   { href: "/usuarios", label: "Usuários" },
   { href: "/notificacoes", label: "Notificações" },
 ];
@@ -23,11 +24,13 @@ const ITENS_COORDINATOR = [
   { href: "/membros", label: "Membros" },
   { href: "/funcoes", label: "Funções" },
   { href: "/eventos", label: "Eventos" },
+  { href: "/trocas", label: "Trocas" },
   { href: "/notificacoes", label: "Notificações" },
 ];
 
 const ITENS_MEMBER = [
   { href: "/minha-escala", label: "Minha Escala" },
+  { href: "/trocas", label: "Trocas" },
 ];
 
 function itemAtivo(pathname: string, href: string): boolean {
@@ -89,6 +92,12 @@ function IconeNav({ href }: { href: string }) {
         <svg {...p}>
           <circle cx="12" cy="8" r="3.4" />
           <path d="M5.5 20c.5-3.6 3.2-5.6 6.5-5.6s6 2 6.5 5.6" />
+        </svg>
+      );
+    case "/trocas":
+      return (
+        <svg {...p}>
+          <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M14 4l-4 16" />
         </svg>
       );
     case "/notificacoes":

@@ -16,16 +16,17 @@ const ABAS_ADMIN: Aba[] = [
 const ABAS_COORDINATOR: Aba[] = [
   { href: "/", label: "Início" },
   { href: "/eventos", label: "Eventos" },
+  { href: "/trocas", label: "Trocas" },
   { href: "/membros", label: "Membros" },
-  { href: "/funcoes", label: "Funções" },
 ];
 
 const ABAS_MEMBER: Aba[] = [
   { href: "/minha-escala", label: "Minha Escala" },
+  { href: "/trocas", label: "Trocas" },
 ];
 
 const TELAS_RAIZ = [
-  "/", "/eventos", "/membros", "/grupos", "/funcoes", "/usuarios", "/minha-escala", "/notificacoes",
+  "/", "/eventos", "/membros", "/grupos", "/funcoes", "/usuarios", "/minha-escala", "/notificacoes", "/trocas",
 ];
 
 function abaAtiva(pathname: string, href: string): boolean {

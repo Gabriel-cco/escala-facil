@@ -46,6 +46,11 @@ export async function sendPushToAccount(accountId: string, payload: PushPayload)
   );
 }
 
+export async function sendPushToAccounts(accountIds: string[], payload: PushPayload) {
+  if (!process.env.VAPID_PRIVATE_KEY || !accountIds.length) return;
+  await Promise.allSettled(accountIds.map((id) => sendPushToAccount(id, payload)));
+}
+
 export async function sendPushToGroup(groupId: string, payload: PushPayload) {
   if (!process.env.VAPID_PRIVATE_KEY) return;
 

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getLiturgicalMonthAction } from "@/lib/liturgical-actions";
 import { LiturgicalDot } from "@/app/components/LiturgicalDot";
 import type { LiturgicalColor } from "@/lib/liturgical";
+import { withRetry } from "@/lib/retry";
 
 const DIAS_SEMANA = [
   "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado",
@@ -114,10 +115,10 @@ export default function GerarEventosForm({
       const [ano, mes] = mesAno.split("-").map(Number);
       const supabase = createClient();
 
-      // Nome e cor litúrgica de cada data do mês (calculado uma vez, cacheado).
-      // Na primeira chamada em ambiente de desenvolvimento (Turbopack), essa
-      // Server Action pode demorar alguns segundos pra compilar — normal.
-      const liturgicoMes = await getLiturgicalMonthAction(ano, mes);
+      // Nome e cor litúrgica de cada data do mês (calculado uma vez, cacheado
+      // no servidor pelo ano inteiro). Retry porque essa Server Action pode
+      // falhar de forma transitória (cold start, blip de rede).
+      const liturgicoMes = await withRetry(() => getLiturgicalMonthAction(ano, mes));
 
       // Gera todos os eventos a partir dos padrões, deduplicando combinações
       // idênticas (nome+data+hora) que dois padrões iguais possam produzir.

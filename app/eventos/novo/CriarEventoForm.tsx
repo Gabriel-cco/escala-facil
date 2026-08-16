@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getLiturgicalInfoAction } from "@/lib/liturgical-actions";
 import type { LiturgicalInfo } from "@/lib/liturgical";
+import { withRetry } from "@/lib/retry";
 
 type Grupo = { id: string; name: string };
 
@@ -36,7 +37,7 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
 
   useEffect(() => {
     let cancelado = false;
-    getLiturgicalInfoAction(dataEfetiva)
+    withRetry(() => getLiturgicalInfoAction(dataEfetiva), { tentativas: 2 })
       .then((info) => {
         if (!cancelado) setLiturgico(info);
       })

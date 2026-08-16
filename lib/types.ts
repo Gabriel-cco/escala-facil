@@ -34,6 +34,25 @@ export type NotificationType =
 
 export type NotificationReferenceType = "event" | "group" | "swap_request";
 
+export interface SwapRequest {
+  id: string;
+  assignmentId: string;
+  eventId: string;
+  roleId: string;
+  requesterAccountId: string;
+  accepterAccountId: string | null;
+  status: "pending" | "accepted" | "cancelled";
+  reason: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  // campos de join
+  eventName?: string;
+  eventDate?: string;
+  roleName?: string;
+  requesterName?: string;
+  accepterName?: string;
+}
+
 export interface Notification {
   id: string;
   accountId: string;

@@ -65,11 +65,29 @@ export default async function EventoDetalhePage({
     })
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
 
+  // Account do usuário logado (para saber se pode solicitar troca)
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  let currentAccountId: string | null = null;
+  if (authUser) {
+    const { data: pRows } = await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id });
+    currentAccountId = (pRows?.[0]?.account_id as string | undefined) ?? null;
+  }
+
   // Atribuições já feitas para o evento.
   const { data: atribuicoes } = await supabase
     .from("assignments")
     .select("id, role_id, account_id, account:accounts(suspended_until, user:users(name))")
     .eq("event_id", id);
+
+  // Solicitações de troca pendentes deste evento (por assignment_id)
+  const { data: swapRows } = await supabase
+    .from("swap_requests")
+    .select("id, assignment_id, requester_account_id")
+    .eq("event_id", id)
+    .eq("status", "pending");
+  const pendingSwaps = new Map<string, { swapId: string; requesterAccountId: string }>(
+    (swapRows ?? []).map((s) => [s.assignment_id, { swapId: s.id, requesterAccountId: s.requester_account_id }])
+  );
 
   // Uma atribuição por função (semântica do protótipo): pega a primeira.
   const porFuncao = new Map<
@@ -95,11 +113,14 @@ export default async function EventoDetalhePage({
       <main className="flex flex-1 flex-col px-[18px] pb-7 pt-0.5 md:p-0">
         <AtribuicoesManager
           eventId={evento.id}
+          eventDate={evento.date}
+          groupId={evento.group_id}
           grupoNome={grupo?.name ?? "Grupo"}
           dataLabel={rotuloData(evento.date)}
           horaLabel={rotuloHora(evento.time)}
           liturgicalName={evento.liturgical_name}
           liturgicalColor={evento.liturgical_color}
+          currentAccountId={currentAccountId}
           funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name }))}
           membros={membros.map((m) => ({
             id: m.id,
@@ -108,12 +129,15 @@ export default async function EventoDetalhePage({
           }))}
           atribuicoes={(funcoes ?? []).map((f) => {
             const a = porFuncao.get(f.id);
+            const pending = a?.assignmentId ? pendingSwaps.get(a.assignmentId) : undefined;
             return {
               roleId: f.id,
               assignmentId: a?.assignmentId ?? null,
               accountId: a?.accountId ?? null,
               accountName: a?.accountName ?? null,
               suspendedNaData: a?.suspendedNaData ?? false,
+              pendingSwapId: pending?.swapId ?? null,
+              pendingSwapRequesterId: pending?.requesterAccountId ?? null,
             };
           })}
         />

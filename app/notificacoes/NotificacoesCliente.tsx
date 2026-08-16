@@ -38,7 +38,9 @@ function NotificationRow({
 
   async function handleClick() {
     if (!notification.read) await onMarkRead(notification.id);
-    if (notification.referenceType === "event" && notification.referenceId) {
+    if (notification.referenceType === "swap_request") {
+      router.push("/trocas");
+    } else if (notification.referenceType === "event" && notification.referenceId) {
       router.push(`/eventos/${notification.referenceId}`);
     } else if (notification.referenceType === "group" && notification.referenceId) {
       router.push(`/grupos/${notification.referenceId}`);

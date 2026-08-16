@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getLiturgicalMonth } from "@/lib/liturgical";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -43,6 +44,27 @@ export async function GET(request: Request) {
       : account.profile === "member"
       ? `${origin}/minha-escala`
       : `${origin}${next}`;
+
+  // Aquece o cache do calendário litúrgico (Romcal calcula o ano inteiro e
+  // guarda em memória — ver lib/liturgical.ts) pra quando o coordenador abrir
+  // "Gerar mês" ou criar um evento, o cálculo já estar pronto. `after()` roda
+  // isso depois da resposta ser enviada — não atrasa o login — mas ainda
+  // mantém a function viva até terminar (void + fire-and-forget comum não
+  // teria essa garantia em runtime serverless). Falha aqui é só uma
+  // otimização perdida, nunca um erro de autenticação.
+  after(async () => {
+    const anoAtual = new Date().getFullYear();
+    try {
+      await getLiturgicalMonth(anoAtual, 1);
+      // Dezembro: "gerar mês" já sugere o próximo mês por padrão, que cai no
+      // ano seguinte — aquece esse ano também.
+      if (new Date().getMonth() === 11) {
+        await getLiturgicalMonth(anoAtual + 1, 1);
+      }
+    } catch {
+      // Só otimização — sem impacto no login se falhar.
+    }
+  });
 
   const response = NextResponse.redirect(destino);
   response.cookies.set("ef_profile", account.profile, {

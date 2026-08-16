@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
+import NotificationBell from "./NotificationBell";
 
 type HeaderProps =
   | { variant: "home" }
@@ -60,13 +61,16 @@ export default function Header(props: HeaderProps) {
         <div className="font-serif text-[21px] font-semibold text-ink">
           Escala Fácil
         </div>
-        <button
-          onClick={openMenu}
-          aria-label="Abrir menu"
-          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
-        >
-          {userIniciais || "··"}
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button
+            onClick={openMenu}
+            aria-label="Abrir menu"
+            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
+          >
+            {userIniciais || "··"}
+          </button>
+        </div>
       </header>
     );
   }

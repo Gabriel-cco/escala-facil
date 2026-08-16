@@ -8,6 +8,7 @@ import TabBar from "./TabBar";
 import SideMenu from "./SideMenu";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import PushBanner from "../PushBanner";
 
 export type ShellUser = {
   nome: string;
@@ -90,6 +91,7 @@ export default function AppShell({
         </div>
 
         {user && <SideMenu aberto={menuAberto} onClose={closeMenu} user={user} />}
+        {user && <PushBanner />}
       </GroupProvider>
     </ShellContext.Provider>
   );

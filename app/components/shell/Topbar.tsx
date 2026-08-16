@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
 import { useGroup } from "@/contexts/GroupContext";
+import NotificationBell from "./NotificationBell";
 
 /**
  * Topbar (72px) do layout web: título em serifa + voltar (detalhes) +
@@ -48,14 +49,17 @@ export default function Topbar({ className = "" }: { className?: string }) {
         )}
       </div>
 
-      {chrome.actionLabel && chrome.actionHref && (
-        <Link
-          href={chrome.actionHref}
-          className="rounded-lg bg-primary px-5 py-[11px] text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover"
-        >
-          {chrome.actionLabel}
-        </Link>
-      )}
+      <div className="flex items-center gap-3">
+        <NotificationBell />
+        {chrome.actionLabel && chrome.actionHref && (
+          <Link
+            href={chrome.actionHref}
+            className="rounded-lg bg-primary px-5 py-[11px] text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            {chrome.actionLabel}
+          </Link>
+        )}
+      </div>
     </header>
   );
 }

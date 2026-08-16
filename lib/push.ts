@@ -83,6 +83,7 @@ export async function syncSubscriptionToDB(): Promise<boolean> {
     const keys = subscription.toJSON().keys!;
     const res = await fetch("/api/push/sync", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         endpoint: subscription.endpoint,

@@ -65,7 +65,7 @@ function NotificationRow({
         >
           {notification.title}
         </p>
-        <p className="mt-1 text-[13px] leading-snug text-muted">{notification.body}</p>
+        <p className="mt-1 whitespace-pre-line text-[13px] leading-snug text-muted">{notification.body}</p>
         <p className="mt-2 text-[11.5px] text-faint">{tempoRelativo(notification.createdAt)}</p>
       </div>
     </button>

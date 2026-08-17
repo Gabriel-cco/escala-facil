@@ -51,6 +51,8 @@ export default function AtribuicoesManager({
   const [swapBusy, setSwapBusy] = useState(false);
   const [swapErro, setSwapErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const [notificando, setNotificando] = useState(false);
+  const [notifyErro, setNotifyErro] = useState("");
   const router = useRouter();
 
   const porFuncao = new Map(atribuicoes.map((a) => [a.roleId, a]));
@@ -122,6 +124,23 @@ export default function AtribuicoesManager({
     setSwapRoleId(null);
     setSwapMotivo("");
     router.refresh();
+  }
+
+  async function concluirENotificar() {
+    if (notificando || atribuidas === 0) return;
+    setNotificando(true);
+    setNotifyErro("");
+    const res = await fetch(`/api/events/${eventId}/notify`, {
+      method: "POST",
+      credentials: "include",
+    });
+    setNotificando(false);
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      setNotifyErro(b.error ?? "Erro ao notificar os escalados.");
+      return;
+    }
+    router.back();
   }
 
   const completo = total > 0 && atribuidas >= total;
@@ -249,12 +268,26 @@ export default function AtribuicoesManager({
         </div>
       )}
 
-      <button
-        onClick={() => router.back()}
-        className="mt-1.5 w-full rounded-2xl bg-primary py-3.5 text-[14.5px] font-semibold text-white md:hidden"
-      >
-        Concluir
-      </button>
+      {/* Concluir a escala: com ou sem notificar os escalados */}
+      <div className="mt-1.5 flex flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
+        {notifyErro && (
+          <p className="text-[12.5px] text-danger md:mr-auto md:self-center">{notifyErro}</p>
+        )}
+        <button
+          onClick={() => router.back()}
+          className="w-full rounded-2xl border border-black/10 py-3.5 text-[14.5px] font-semibold text-ink hover:bg-surface md:w-auto md:rounded-[14px] md:px-6 md:py-3"
+        >
+          Concluir sem notificar
+        </button>
+        <button
+          onClick={concluirENotificar}
+          disabled={notificando || atribuidas === 0}
+          title={atribuidas === 0 ? "Nenhum membro escalado ainda" : undefined}
+          className="w-full rounded-2xl bg-primary py-3.5 text-[14.5px] font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 md:w-auto md:rounded-[14px] md:px-6 md:py-3"
+        >
+          {notificando ? "Enviando..." : "Concluir e notificar"}
+        </button>
+      </div>
 
       {/* Sheet: seletor de membro (coord/admin) */}
       {sheetRoleId && (

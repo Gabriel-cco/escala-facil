@@ -6,14 +6,12 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(clients.claim());
 });
 
-// Requisições de navegação (mode === "navigate") devem passar pelo browser
-// nativamente — interceptar com fetch() quebra fluxos OAuth (redirect externo
-// para Google falha com CORS) e impede cookies de auth de serem gravados.
-// Outros recursos (assets, API) passam direto para a rede.
-self.addEventListener("fetch", (event) => {
-  if (event.request.mode === "navigate") return;
-  event.respondWith(fetch(event.request));
-});
+// Intencionalmente SEM handler de `fetch`. Este SW existe apenas para push
+// notifications — não há cache/offline. Um handler que faz
+// `respondWith(fetch(event.request))` é idêntico ao comportamento nativo do
+// browser, mas roteia todo o tráfego pela thread do SW e pode quebrar fluxos
+// OAuth (redirects para o Google) se um fetch rejeitar. Sem handler, o browser
+// trata cada requisição nativamente e o SW nunca interfere na navegação.
 
 self.addEventListener("push", (event) => {
   const data = event.data?.json() || {};

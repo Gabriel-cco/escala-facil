@@ -79,8 +79,18 @@ export function useNotifications(providedAccountId?: string | null): UseNotifica
     carregar();
 
     const supabase = createClient();
+    // O cliente do browser é um singleton, então o mesmo topic de channel é
+    // compartilhado entre TODAS as instâncias deste hook (o sino aparece em
+    // mais de um ponto do shell, e o dropdown monta outra instância). Se dois
+    // channels com o mesmo topic forem criados no mesmo cliente, o segundo
+    // `.on()` roda depois do `.subscribe()` do primeiro e lança
+    // "cannot add postgres_changes callbacks ... after subscribe()", um erro
+    // não-tratado que derruba a árvore de render inteira. Um sufixo único por
+    // inscrição garante que cada instância tenha seu próprio channel — também
+    // evita colisão em remontagens rápidas, onde o removeChannel anterior
+    // ainda não terminou.
     const channel = supabase
-      .channel("notifications-" + accountId)
+      .channel(`notifications-${accountId}-${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         {

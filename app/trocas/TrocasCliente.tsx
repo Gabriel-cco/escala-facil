@@ -154,8 +154,11 @@ export default function TrocasCliente({
   // Realtime: atualiza lista ao vivo quando outro membro aceita/cancela
   useEffect(() => {
     const supabase = createClient();
+    // Topic único por inscrição: evita o erro "cannot add postgres_changes
+    // callbacks ... after subscribe()" se o channel colidir com um anterior
+    // ainda não removido (removeChannel é assíncrono) numa remontagem rápida.
     const channel = supabase
-      .channel("swap-realtime")
+      .channel(`swap-realtime-${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "swap_requests" },

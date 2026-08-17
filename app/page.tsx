@@ -65,18 +65,9 @@ export default async function Home() {
     atribuidasPorEvento.set(a.event_id, set);
   });
 
-  // Funções (total e atribuídas) somando todos os eventos.
-  let totalFuncoes = 0;
-  let totalAtribuidas = 0;
-  eventos?.forEach((e) => {
-    totalFuncoes += totalPorGrupo.get(e.group_id) ?? 0;
-    totalAtribuidas += atribuidasPorEvento.get(e.id)?.size ?? 0;
-  });
-
   const stats = [
     { value: String(eventos?.length ?? 0), label: "Eventos agendados" },
     { value: String(totalMembros ?? 0), label: "Membros cadastrados" },
-    { value: `${totalAtribuidas}/${totalFuncoes}`, label: "Funções atribuídas" },
   ];
 
   const proximos = (eventos ?? []).slice(0, 5);
@@ -104,7 +95,7 @@ export default async function Home() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-4">
           {stats.map((s) => (
             <div
               key={s.label}

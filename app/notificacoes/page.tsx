@@ -1,29 +1,24 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import Header from "../components/shell/Header";
 import NotificacoesCliente from "./NotificacoesCliente";
-import type { Profile } from "@/lib/types";
+import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 
 export default async function NotificacoesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
+  if (!user) redirect("/login");
 
-  if (!authUser) redirect("/login");
+  const account = await getCurrentAccount();
 
-  const { data: pRows } = await supabase.rpc("get_account_by_auth_id", {
-    p_auth_id: authUser.id,
-  });
-  const account = pRows?.[0] as { account_id: string; profile: Profile } | undefined;
+  // Esta tela é de gestão das ENVIADAS (admin/coordinator). Membro só vê as
+  // recebidas, pelo sino.
+  if (!account || account.profile === "member") {
+    redirect("/notificacoes/recebidas");
+  }
 
   return (
     <>
       <Header variant="back" title="Notificações" />
-      <NotificacoesCliente
-        accountId={account?.account_id ?? null}
-        perfil={account?.profile ?? null}
-      />
+      <NotificacoesCliente accountId={account.account_id} />
     </>
   );
 }

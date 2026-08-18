@@ -142,7 +142,7 @@ function DropdownPanel({
 
       <div className="border-t border-border px-4 py-2.5">
         <Link
-          href="/notificacoes"
+          href="/notificacoes/recebidas"
           onClick={onClose}
           className="block text-center text-[12px] font-medium text-primary hover:underline"
         >
@@ -180,9 +180,9 @@ export default function NotificationBell() {
 
   return (
     <>
-      {/* Mobile: link direto para a página */}
+      {/* Mobile: link direto para as recebidas */}
       <Link
-        href="/notificacoes"
+        href="/notificacoes/recebidas"
         aria-label="Notificações"
         className="relative flex h-[38px] w-[38px] items-center justify-center text-ink md:hidden"
       >

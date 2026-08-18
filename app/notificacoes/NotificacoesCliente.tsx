@@ -1,24 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useNotifications } from "@/hooks/useNotifications";
-import { syncSubscriptionToDB } from "@/lib/push";
-import type { Notification, Profile } from "@/lib/types";
-
-function tempoRelativo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "agora";
-  if (mins < 60) return `${mins} min`;
-  const horas = Math.floor(mins / 60);
-  if (horas < 24) return `${horas}h`;
-  const dias = Math.floor(horas / 24);
-  if (dias === 1) return "ontem";
-  return `${dias}d`;
-}
 
 interface EnviadaGrupo {
   title: string;
@@ -27,339 +11,134 @@ interface EnviadaGrupo {
   count: number;
 }
 
-function NotificationRow({
-  notification,
-  onMarkRead,
-}: {
-  notification: Notification;
-  onMarkRead: (id: string) => Promise<void>;
-}) {
-  const router = useRouter();
-
-  async function handleClick() {
-    if (!notification.read) await onMarkRead(notification.id);
-    if (notification.referenceType === "swap_request") {
-      router.push("/trocas");
-    } else if (notification.referenceType === "event" && notification.referenceId) {
-      router.push(`/eventos/${notification.referenceId}`);
-    } else if (notification.referenceType === "group" && notification.referenceId) {
-      router.push(`/grupos/${notification.referenceId}`);
-    }
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      className="flex w-full items-start gap-3.5 rounded-[14px] bg-paper p-4 text-left shadow-[0_1px_3px_rgba(0,0,0,0.07)] transition-colors active:bg-surface"
-    >
-      <span
-        className={`mt-1.5 h-2.5 w-2.5 flex-none rounded-full ${
-          notification.read ? "bg-transparent" : "bg-primary"
-        }`}
-      />
-      <div className="min-w-0 flex-1">
-        <p
-          className={`text-[14px] leading-snug ${
-            notification.read ? "font-normal text-ink" : "font-semibold text-ink"
-          }`}
-        >
-          {notification.title}
-        </p>
-        <p className="mt-1 whitespace-pre-line text-[13px] leading-snug text-muted">{notification.body}</p>
-        <p className="mt-2 text-[11.5px] text-faint">{tempoRelativo(notification.createdAt)}</p>
-      </div>
-    </button>
-  );
+function formatarDataEnvio(iso: string): string {
+  const d = new Date(iso);
+  const data = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${data} às ${hora}`;
 }
 
-function PushSetup({ accountId }: { accountId: string | null }) {
-  type S = "checking" | "active" | "inactive" | "denied" | "unavailable" | "error";
-  const [state, setState] = useState<S>("checking");
-  const [step, setStep] = useState("");   // passo atual visível ao usuário
-  const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-      setState("unavailable");
-      return;
-    }
-    if (Notification.permission === "denied") {
-      setState("denied");
-      return;
-    }
-
-    const swReady = Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("SW_TIMEOUT")), 4000)
-      ),
-    ]);
-
-    swReady
-      .then((reg) => reg.pushManager.getSubscription())
-      .then(async (sub) => {
-        if (sub) {
-          const ok = await syncSubscriptionToDB();
-          setState(ok ? "active" : "inactive");
-        } else {
-          setState("inactive");
-        }
-      })
-      .catch(() => setState("inactive"));
-  }, []);
-
-  async function activate() {
-    if (!accountId) {
-      setErrorMsg("accountId ausente — recarregue a página.");
-      setState("error");
-      return;
-    }
-
-    setState("checking");
-    setErrorMsg("");
-
-    try {
-      setStep("Registrando service worker...");
-      await navigator.serviceWorker.register("/sw.js");
-
-      setStep("Aguardando service worker ficar ativo...");
-      const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Service worker não ficou pronto em 8s. Recarregue o app.")), 8000)
-        ),
-      ]);
-
-      setStep("Solicitando permissão de notificação...");
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        throw new Error(`Permissão ${permission}. Ative nas configurações do dispositivo.`);
-      }
-
-      setStep("Criando assinatura push...");
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidKey) throw new Error("VAPID key não configurada.");
-
-      const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
-      const base64 = (vapidKey + padding).replace(/-/g, "+").replace(/_/g, "/");
-      const raw = atob(base64);
-      const keyBuffer = new ArrayBuffer(raw.length);
-      const keyView = new Uint8Array(keyBuffer);
-      for (let i = 0; i < raw.length; i++) keyView[i] = raw.charCodeAt(i);
-
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: keyBuffer,
-        });
-      }
-
-      setStep("Salvando no servidor...");
-      const keys = subscription.toJSON().keys!;
-      const res = await fetch("/api/push/sync", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endpoint: subscription.endpoint,
-          p256dh: keys.p256dh,
-          auth: keys.auth,
-          userAgent: navigator.userAgent,
-        }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        throw new Error(`Servidor: ${body.error ?? res.status}`);
-      }
-
-      setStep("");
-      setState("active");
-    } catch (err) {
-      setStep("");
-      setState("error");
-      setErrorMsg(err instanceof Error ? err.message : String(err));
-    }
-  }
-
-  if (state === "active") return null;
-
-  const label =
-    state === "checking"
-      ? step || "Verificando..."
-      : state === "unavailable"
-      ? "Notificações push não disponíveis neste navegador."
-      : state === "denied"
-      ? "Notificações bloqueadas — ative nas configurações do dispositivo."
-      : state === "error"
-      ? `Erro: ${errorMsg}`
-      : "Ative as notificações para ser avisado sobre sua escala.";
-
-  const canActivate = state === "inactive" || state === "error";
-
-  return (
-    <div className="flex flex-col gap-2 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 text-base">🔔</span>
-        <p className="flex-1 text-[13px] leading-snug text-amber-800">{label}</p>
-        {canActivate && (
-          <button
-            onClick={activate}
-            className="flex-none rounded-lg bg-amber-600 px-3 py-1.5 text-[12.5px] font-semibold text-white"
-          >
-            Ativar
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface Props {
-  accountId: string | null;
-  perfil: Profile | null;
-}
-
-export default function NotificacoesCliente({ accountId, perfil }: Props) {
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
-    useNotifications(accountId);
-
-  const isAdminOrCoord = perfil === "admin" || perfil === "coordinator";
-
+/**
+ * Tela de gestão de notificações ENVIADAS (admin/coordinator). As recebidas
+ * são vistas só pelo sino (/notificacoes/recebidas).
+ */
+export default function NotificacoesCliente({ accountId }: { accountId: string | null }) {
   const [enviadas, setEnviadas] = useState<EnviadaGrupo[]>([]);
-  const [loadingEnviadas, setLoadingEnviadas] = useState(false);
+  const [loading, setLoading] = useState(Boolean(accountId));
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
-    if (!isAdminOrCoord || !accountId) return;
+    if (!accountId) return;
+    let cancelado = false;
 
-    async function carregarEnviadas() {
-      setLoadingEnviadas(true);
+    (async () => {
       const supabase = createClient();
       const { data } = await supabase
         .from("notifications")
         .select("title, body, created_at")
         .eq("sender_account_id", accountId)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(500);
 
-      if (!data) {
-        setLoadingEnviadas(false);
-        return;
-      }
+      if (cancelado) return;
 
+      // Cada envio vira várias linhas (uma por destinatário). Agrupa por
+      // título + instante para reconstituir o "envio" e contar destinatários.
       const grupos = new Map<string, EnviadaGrupo>();
-      for (const row of data) {
+      for (const row of data ?? []) {
         const key = `${row.title}|${new Date(row.created_at).toISOString().slice(0, 19)}`;
-        if (grupos.has(key)) {
-          grupos.get(key)!.count++;
-        } else {
-          grupos.set(key, { title: row.title, body: row.body, createdAt: row.created_at, count: 1 });
-        }
+        const existente = grupos.get(key);
+        if (existente) existente.count++;
+        else grupos.set(key, { title: row.title, body: row.body, createdAt: row.created_at, count: 1 });
       }
       setEnviadas(Array.from(grupos.values()));
-      setLoadingEnviadas(false);
-    }
+      setLoading(false);
+    })();
 
-    carregarEnviadas();
-  }, [isAdminOrCoord, accountId]);
+    return () => {
+      cancelado = true;
+    };
+  }, [accountId]);
+
+  const filtradas = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return enviadas;
+    return enviadas.filter(
+      (e) => e.title.toLowerCase().includes(q) || e.body.toLowerCase().includes(q)
+    );
+  }, [enviadas, busca]);
 
   return (
-    <main className="flex flex-1 flex-col gap-6 px-[18px] pb-10 pt-2 md:gap-8 md:p-0">
-      {/* ===== Push setup ===== */}
-      <PushSetup accountId={accountId} />
+    <main className="flex flex-1 flex-col gap-4 px-[18px] pb-10 pt-2 md:gap-5 md:p-0">
+      {/* Subtítulo + criar */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] text-muted">
+          Mensagens enviadas aos membros. As recebidas ficam no sino 🔔.
+        </p>
+        <Link
+          href="/notificacoes/enviar"
+          className="flex-none rounded-lg bg-primary px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-primary-hover"
+        >
+          + Criar notificação
+        </Link>
+      </div>
 
-      {/* ===== Recebidas ===== */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold text-ink">
-            Recebidas
-            {unreadCount > 0 && (
-              <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold text-white">
-                {unreadCount}
-              </span>
-            )}
-          </h2>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="text-[12.5px] font-medium text-primary hover:underline"
-            >
-              Marcar todas como lidas
-            </button>
-          )}
-        </div>
+      {/* Busca */}
+      <input
+        type="text"
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        placeholder="Buscar por título ou mensagem"
+        className="w-full rounded-[12px] border border-black/10 bg-paper px-4 py-2.5 text-[13.5px] text-ink outline-none focus:border-primary/40"
+      />
 
-        {isLoading ? (
-          <p className="py-8 text-center text-[13px] text-muted">Carregando...</p>
-        ) : notifications.length === 0 ? (
-          <div className="rounded-[14px] bg-paper px-6 py-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
-            <p className="text-[13.5px] text-muted">Nenhuma notificação</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {notifications.map((n) => (
-              <NotificationRow key={n.id} notification={n} onMarkRead={markAsRead} />
-            ))}
-            {hasMore && (
-              <button
-                onClick={loadMore}
-                className="mt-1 py-2 text-center text-[13px] font-medium text-primary hover:underline"
-              >
-                Ver mais
-              </button>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* ===== Histórico de enviadas (admin/coordinator) ===== */}
-      {isAdminOrCoord && (
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[15px] font-semibold text-ink">Enviadas</h2>
+      {loading ? (
+        <p className="py-8 text-center text-[13px] text-muted">Carregando...</p>
+      ) : filtradas.length === 0 ? (
+        <div className="rounded-[14px] bg-paper px-6 py-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
+          <p className="text-[13.5px] text-muted">
+            {enviadas.length === 0
+              ? "Nenhuma notificação enviada ainda."
+              : "Nenhum resultado para a busca."}
+          </p>
+          {enviadas.length === 0 && (
             <Link
               href="/notificacoes/enviar"
-              className="rounded-lg bg-primary px-4 py-2 text-[12.5px] font-semibold text-white transition-colors hover:bg-primary-hover"
+              className="mt-3 inline-block text-[13px] font-medium text-primary hover:underline"
             >
-              + Enviar
+              Enviar primeira notificação
             </Link>
+          )}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-[14px] border border-black/[0.07] bg-paper shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          {/* Cabeçalho (desktop) */}
+          <div className="hidden grid-cols-[1fr_110px_150px] gap-4 border-b border-black/[0.07] px-5 py-3 text-[11.5px] font-semibold uppercase tracking-[0.5px] text-muted md:grid">
+            <span>Título</span>
+            <span className="text-right">Destinatários</span>
+            <span className="text-right">Data de envio</span>
           </div>
 
-          {loadingEnviadas ? (
-            <p className="py-4 text-center text-[13px] text-muted">Carregando...</p>
-          ) : enviadas.length === 0 ? (
-            <div className="rounded-[14px] bg-paper px-6 py-6 text-center shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
-              <p className="text-[13.5px] text-muted">Nenhuma notificação enviada</p>
-              <Link
-                href="/notificacoes/enviar"
-                className="mt-3 inline-block text-[13px] font-medium text-primary hover:underline"
-              >
-                Enviar primeira notificação
-              </Link>
+          {filtradas.map((e, i) => (
+            <div
+              key={`${e.title}-${e.createdAt}-${i}`}
+              className="border-b border-black/[0.05] px-5 py-3.5 last:border-b-0 md:grid md:grid-cols-[1fr_110px_150px] md:items-center md:gap-4"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-[14px] font-semibold text-ink">{e.title}</p>
+                <p className="mt-0.5 line-clamp-1 text-[12.5px] text-muted">{e.body}</p>
+              </div>
+              <div className="mt-1.5 flex items-center gap-2 md:mt-0 md:justify-end">
+                <span className="rounded-full bg-surface px-2.5 py-0.5 text-[11.5px] font-semibold text-ink-soft">
+                  {e.count} {e.count === 1 ? "pessoa" : "pessoas"}
+                </span>
+              </div>
+              <div className="mt-1 text-[12px] text-faint md:mt-0 md:text-right">
+                {formatarDataEnvio(e.createdAt)}
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {enviadas.map((e, i) => (
-                <div
-                  key={i}
-                  className="rounded-[14px] bg-paper p-4 shadow-[0_1px_3px_rgba(0,0,0,0.07)]"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-[14px] font-semibold text-ink">{e.title}</p>
-                    <span className="flex-none text-[11.5px] text-faint">
-                      {tempoRelativo(e.createdAt)}
-                    </span>
-                  </div>
-                  <p className="mt-1 line-clamp-2 text-[13px] text-muted">{e.body}</p>
-                  <p className="mt-2 text-[11.5px] text-faint">
-                    {e.count} destinatário{e.count !== 1 ? "s" : ""}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+          ))}
+        </div>
       )}
     </main>
   );

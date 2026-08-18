@@ -8,6 +8,7 @@ import { LiturgicalDot } from "../components/LiturgicalDot";
 import { rotuloData } from "@/lib/datas";
 import { getAuthUser } from "@/lib/current-user";
 import SolicitarTrocaButton from "./SolicitarTrocaButton";
+import ScrollToProximoEvento from "./ScrollToProximoEvento";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -141,6 +142,8 @@ export default async function MinhaEscalaPage({
 
   const membroNome = (userRow as { name?: string } | null)?.name ?? "Membro";
 
+  const proximoEventoId = eventos.find((e) => e.date >= hoje)?.id ?? null;
+
   return (
     <>
       <Header variant="root" title="Minha Escala" />
@@ -184,6 +187,8 @@ export default async function MinhaEscalaPage({
           </Link>
         </div>
 
+        {proximoEventoId && <ScrollToProximoEvento />}
+
         {/* Lista de eventos */}
         {eventos.length === 0 ? (
           <p className="text-[13px] text-muted">
@@ -201,6 +206,7 @@ export default async function MinhaEscalaPage({
               return (
                 <div
                   key={evento.id}
+                  id={evento.id === proximoEventoId ? "proximo-evento" : undefined}
                   className={`rounded-[18px] border bg-paper px-[18px] py-4 ${
                     euEstouEscalado
                       ? "border-[#4f46e5]/40 bg-[#eef2ff]"

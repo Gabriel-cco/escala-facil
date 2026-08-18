@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
+import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../../components/shell/Header";
 import GerarEventosForm from "./GerarEventosForm";
 
@@ -8,15 +9,8 @@ export default async function GerarEventosPage() {
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-
-  const { data: pRows } = authUser
-    ? await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id })
-    : { data: null };
-
-  const perfil = pRows?.[0]?.profile as string | undefined;
+  const conta = await getCurrentAccount();
+  const perfil = conta?.profile;
 
   if (!perfil || perfil === "member") redirect("/eventos");
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
 import CompartilharEscala from "./CompartilharEscala";
@@ -19,13 +20,8 @@ export default async function GrupoDetalhePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  const { data: pRows } = authUser
-    ? await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id })
-    : { data: null };
-  const perfil = pRows?.[0]?.profile as string | undefined;
+  const conta = await getCurrentAccount();
+  const perfil = conta?.profile;
   const podeEditarGrupo = perfil === "admin";
   const podeEditarMembro = perfil === "admin" || perfil === "coordinator";
 

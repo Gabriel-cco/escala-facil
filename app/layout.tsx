@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { createClient } from "@/lib/supabase/server";
 import AppShell, { type ShellUser } from "./components/shell/AppShell";
 import { iniciais } from "@/lib/iniciais";
+import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import "./globals.css";
 
 // Inter em todo o app (design system). Hierarquia por tamanho e peso.
@@ -34,10 +34,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
 
   let shellUser: ShellUser | null = null;
   if (user) {
@@ -47,19 +44,16 @@ export default async function RootLayout({
       user.email ??
       "Usuário";
 
-    const { data: rows } = await supabase.rpc("get_account_by_auth_id", {
-      p_auth_id: user.id,
-    });
-    const perfil =
-      (rows?.[0]?.profile as ShellUser["perfil"] | undefined) ?? null;
-    const accountId = (rows?.[0]?.account_id as string | undefined) ?? null;
+    // getCurrentAccount reaproveita o getAuthUser acima (cache por request).
+    const account = await getCurrentAccount();
 
     shellUser = {
       nome,
       email: user.email ?? "",
       iniciais: iniciais(nome),
-      perfil,
-      accountId,
+      perfil: (account?.profile as ShellUser["perfil"]) ?? null,
+      accountId: account?.account_id ?? null,
+      groupId: account?.group_id ?? null,
     };
   }
 

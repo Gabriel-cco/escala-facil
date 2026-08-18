@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
+import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../components/shell/Header";
 import FuncaoItem from "./FuncaoItem";
 
@@ -15,14 +16,9 @@ export default async function FuncoesPage({
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
-  // Perfil do usuário logado para controle de botões.
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  const { data: pRows } = authUser
-    ? await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id })
-    : { data: null };
-  const perfil = pRows?.[0]?.profile as string | undefined;
+  // Perfil do usuário logado para controle de botões (cache por request).
+  const conta = await getCurrentAccount();
+  const perfil = conta?.profile;
   const podeGerenciar = perfil === "admin" || perfil === "coordinator";
 
   let gruposQuery = supabase

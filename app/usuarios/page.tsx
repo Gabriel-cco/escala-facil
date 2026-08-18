@@ -1,21 +1,17 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import Header from "../components/shell/Header";
 import UsuariosManager from "./UsuariosManager";
 
 export default async function UsuariosPage() {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
+  const user = await getAuthUser();
+  if (!user) redirect("/login");
 
-  const { data: rpcData } = await supabase.rpc("get_account_by_auth_id", {
-    p_auth_id: authUser.id,
-  });
-  // A RPC retorna um array (setof) — o perfil está no primeiro registro.
-  const perfil = (rpcData as { profile?: string }[] | null)?.[0]?.profile;
-  if (perfil !== "admin") redirect("/");
+  const conta = await getCurrentAccount();
+  if (conta?.profile !== "admin") redirect("/");
+
+  const supabase = await createClient();
 
   // Busca todos accounts com user e grupo
   const { data: rawAccounts } = await supabase
@@ -70,7 +66,7 @@ export default async function UsuariosPage() {
         <UsuariosManager
           contas={contas}
           grupos={grupos}
-          adminAccountId={(contas.find((c) => c.userEmail === authUser.email))?.id ?? ""}
+          adminAccountId={(contas.find((c) => c.userEmail === user.email))?.id ?? ""}
         />
       </main>
     </>

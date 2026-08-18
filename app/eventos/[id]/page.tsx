@@ -4,6 +4,7 @@ import Header from "../../components/shell/Header";
 import AtribuicoesManager from "./AtribuicoesManager";
 import { rotuloData, rotuloHora } from "@/lib/datas";
 import { iniciais } from "@/lib/iniciais";
+import { getCurrentAccount } from "@/lib/current-user";
 
 export default async function EventoDetalhePage({
   params,
@@ -66,12 +67,8 @@ export default async function EventoDetalhePage({
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
 
   // Account do usuário logado (para saber se pode solicitar troca)
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  let currentAccountId: string | null = null;
-  if (authUser) {
-    const { data: pRows } = await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id });
-    currentAccountId = (pRows?.[0]?.account_id as string | undefined) ?? null;
-  }
+  const conta = await getCurrentAccount();
+  const currentAccountId = conta?.account_id ?? null;
 
   // Atribuições já feitas para o evento.
   const { data: atribuicoes } = await supabase

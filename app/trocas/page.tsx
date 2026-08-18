@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import Header from "@/app/components/shell/Header";
 import TrocasCliente from "./TrocasCliente";
 import { rotuloData } from "@/lib/datas";
+import { getCurrentAccount } from "@/lib/current-user";
 
 const SELECT_SWAP = [
   "id", "assignment_id", "event_id", "role_id",
@@ -24,21 +24,12 @@ function parseName(acc: any): string | null {
 }
 
 export default async function TrocasPage() {
-  const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  if (!authUser) return null;
+  const me = await getCurrentAccount();
+  if (!me) return null;
 
-  const { data: pRows } = await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id });
-  const meRaw = pRows?.[0] as {
-    account_id: string;
-    profile: string;
-    group_id: string | null;
-  } | undefined;
-  if (!meRaw) return null;
-
-  const accountId = meRaw.account_id;
-  const profile = meRaw.profile;
-  const groupId = meRaw.group_id;
+  const accountId = me.account_id;
+  const profile = me.profile;
+  const groupId = me.group_id;
 
   const admin = createAdminClient();
 

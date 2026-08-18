@@ -6,6 +6,7 @@ import Header from "../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
 import { LiturgicalDot } from "../components/LiturgicalDot";
 import { rotuloData } from "@/lib/datas";
+import { getAuthUser } from "@/lib/current-user";
 import SolicitarTrocaButton from "./SolicitarTrocaButton";
 
 const MESES = [
@@ -38,18 +39,16 @@ export default async function MinhaEscalaPage({
 }) {
   const { mes } = await searchParams;
 
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const user = await getAuthUser();
+  if (!user) redirect("/login");
 
-  if (!authUser) redirect("/login");
+  const supabase = await createClient();
 
   // Busca account via join (RPC só retorna profile)
   const { data: userRow } = await supabase
     .from("users")
     .select("id, name, accounts(id, profile, group_id, suspended_until)")
-    .eq("auth_id", authUser.id)
+    .eq("auth_id", user.id)
     .single();
 
   type AccRow = { id: string; profile: string; group_id: string | null; suspended_until: string | null };

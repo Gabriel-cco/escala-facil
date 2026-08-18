@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendPushToAccount, sendPushToAll } from "@/lib/send-push";
+import { sendPushToAccounts } from "@/lib/send-push";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -25,18 +25,29 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, body: bodyText, groupId } = body as {
+  const { title, body: bodyText, groupId, groupIds } = body as {
     title: string;
     body: string;
-    groupId: string | "all";
+    groupId?: string | "all";
+    groupIds?: string[];
   };
 
   if (!title?.trim() || !bodyText?.trim()) {
     return NextResponse.json({ error: "title e body são obrigatórios" }, { status: 400 });
   }
 
-  const targetGroupId =
-    account.profile === "coordinator" ? account.group_id : groupId;
+  // Grupos-alvo. Coordinator fica preso ao próprio grupo. Admin pode mandar
+  // para "all", vários grupos (groupIds) ou um só (groupId, legado).
+  let targetGroupIds: string[] | "all";
+  if (account.profile === "coordinator") {
+    targetGroupIds = account.group_id ? [account.group_id] : [];
+  } else if (Array.isArray(groupIds) && groupIds.length > 0) {
+    targetGroupIds = groupIds;
+  } else if (!groupId || groupId === "all") {
+    targetGroupIds = "all";
+  } else {
+    targetGroupIds = [groupId];
+  }
 
   const supabaseAdmin = createAdminClient();
 
@@ -45,8 +56,11 @@ export async function POST(request: NextRequest) {
     .select("id")
     .eq("active", true);
 
-  if (targetGroupId && targetGroupId !== "all") {
-    recipientsQuery = recipientsQuery.eq("group_id", targetGroupId);
+  if (targetGroupIds !== "all") {
+    if (targetGroupIds.length === 0) {
+      return NextResponse.json({ count: 0 });
+    }
+    recipientsQuery = recipientsQuery.in("group_id", targetGroupIds);
   }
 
   const { data: recipients } = await recipientsQuery;
@@ -65,19 +79,10 @@ export async function POST(request: NextRequest) {
 
   await supabaseAdmin.from("notifications").insert(rows);
 
-  const pushPayload = { title, body: bodyText, url: "/notificacoes" };
-  if (targetGroupId && targetGroupId !== "all") {
-    const { data: accs } = await supabaseAdmin
-      .from("accounts")
-      .select("id")
-      .eq("group_id", targetGroupId)
-      .eq("active", true);
-    await Promise.allSettled(
-      (accs ?? []).map((a) => sendPushToAccount(a.id, pushPayload))
-    );
-  } else {
-    await sendPushToAll(pushPayload);
-  }
+  await sendPushToAccounts(
+    recipients.map((r) => r.id),
+    { title, body: bodyText, url: "/notificacoes" }
+  );
 
   return NextResponse.json({ count: recipients.length });
 }

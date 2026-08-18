@@ -22,25 +22,58 @@ export default function EnviarForm({ grupos }: { grupos: Grupo[] }) {
 
   const [titulo, setTitulo] = useState("");
   const [mensagem, setMensagem] = useState("");
-  const [grupoId, setGrupoId] = useState<string>(
-    perfil === "coordinator" ? (groupIdProprio ?? "") : "all"
-  );
+  // Admin: "todos" ou uma seleção de grupos. Coordinator não usa (vai pro
+  // próprio grupo direto no envio).
+  const [todosGrupos, setTodosGrupos] = useState(true);
+  const [grupoIds, setGrupoIds] = useState<Set<string>>(new Set());
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
+
+  function toggleGrupo(id: string) {
+    setTodosGrupos(false);
+    setGrupoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selecionarTodos() {
+    setTodosGrupos(true);
+    setGrupoIds(new Set());
+  }
 
   async function enviar() {
     if (!titulo.trim() || !mensagem.trim()) {
       setErro("Preencha o título e a mensagem.");
       return;
     }
+    if (perfil === "admin" && !todosGrupos && grupoIds.size === 0) {
+      setErro("Selecione ao menos um grupo.");
+      return;
+    }
     setEnviando(true);
     setErro("");
+
+    // Coordinator → próprio grupo. Admin → "todos" (all) ou lista de grupos.
+    const payload: Record<string, unknown> = {
+      title: titulo.trim(),
+      body: mensagem.trim(),
+    };
+    if (perfil === "coordinator") {
+      payload.groupId = groupIdProprio ?? "";
+    } else if (todosGrupos) {
+      payload.groupId = "all";
+    } else {
+      payload.groupIds = [...grupoIds];
+    }
 
     try {
       const res = await fetch("/api/notifications/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: titulo.trim(), body: mensagem.trim(), groupId: grupoId }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -88,22 +121,42 @@ export default function EnviarForm({ grupos }: { grupos: Grupo[] }) {
           <p className="mt-1 text-right text-[11px] text-faint">{mensagem.length}/500</p>
         </div>
 
-        {/* Destinatários (somente admin vê o seletor) */}
+        {/* Destinatários (somente admin escolhe; pode marcar vários grupos) */}
         {perfil === "admin" && (
           <div>
             <label className={labelInput}>Destinatários</label>
-            <select
-              value={grupoId}
-              onChange={(e) => setGrupoId(e.target.value)}
-              className={baseInput}
-            >
-              <option value="all">Todos os grupos</option>
-              {grupos.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={selecionarTodos}
+                aria-pressed={todosGrupos}
+                className={`rounded-full border px-4 py-2 text-[13.5px] font-semibold transition-colors ${
+                  todosGrupos
+                    ? "border-primary bg-primary text-white"
+                    : "border-black/10 bg-paper text-ink hover:bg-surface"
+                }`}
+              >
+                Todos os grupos
+              </button>
+              {grupos.map((g) => {
+                const sel = !todosGrupos && grupoIds.has(g.id);
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => toggleGrupo(g.id)}
+                    aria-pressed={sel}
+                    className={`rounded-full border px-4 py-2 text-[13.5px] font-semibold transition-colors ${
+                      sel
+                        ? "border-primary bg-primary text-white"
+                        : "border-black/10 bg-paper text-ink hover:bg-surface"
+                    }`}
+                  >
+                    {g.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 

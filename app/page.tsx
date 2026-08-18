@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
+import { getAuthUser } from "@/lib/current-user";
 import Header from "./components/shell/Header";
 import { rotuloData, rotuloHora } from "@/lib/datas";
 
@@ -34,13 +35,13 @@ export default async function Home() {
     .select("event_id, role_id");
 
   const [
-    { data: userData },
+    authUser,
     { data: eventos },
     { count: totalMembros },
     { data: funcoes },
     { data: atribuicoes },
   ] = await Promise.all([
-    supabase.auth.getUser(),
+    getAuthUser(),
     eventosQuery,
     membrosQuery,
     funcoesQuery,
@@ -48,9 +49,9 @@ export default async function Home() {
   ]);
 
   const nomeCompleto =
-    (userData?.user?.user_metadata?.full_name as string | undefined) ??
-    (userData?.user?.user_metadata?.name as string | undefined) ??
-    userData?.user?.email ??
+    (authUser?.user_metadata?.full_name as string | undefined) ??
+    (authUser?.user_metadata?.name as string | undefined) ??
+    authUser?.email ??
     "";
   const primeiroNome = nomeCompleto.trim().split(/\s+/)[0] || "";
 
@@ -70,7 +71,11 @@ export default async function Home() {
     { value: String(totalMembros ?? 0), label: "Membros cadastrados" },
   ];
 
-  const proximos = (eventos ?? []).slice(0, 5);
+  // "Próximos" = a partir de hoje (eventos de hoje seguem visíveis). A query já
+  // vem ordenada por data crescente, então basta filtrar os passados e cortar.
+  const agora = new Date();
+  const hojeStr = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+  const proximos = (eventos ?? []).filter((e) => e.date >= hojeStr).slice(0, 5);
 
   return (
     <>

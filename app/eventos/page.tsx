@@ -6,6 +6,8 @@ import { rotuloData, rotuloHora, rotuloMes, chaveMes } from "@/lib/datas";
 import DeleteEventoButton from "./DeleteEventoButton";
 import CalendarioEventos, { type EventoCal } from "./CalendarioEventos";
 import { LiturgicalDot } from "../components/LiturgicalDot";
+import { getCurrentAccount } from "@/lib/current-user";
+import ScrollToEvento from "./ScrollToEvento";
 
 const iconeLapis = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -27,14 +29,10 @@ export default async function EventosPage({
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
-  // Perfil do usuário logado para controle de botões.
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  const { data: pRows } = authUser
-    ? await supabase.rpc("get_account_by_auth_id", { p_auth_id: authUser.id })
-    : { data: null };
-  const perfil = pRows?.[0]?.profile as string | undefined;
+  // Perfil do usuário logado para controle de botões (cache por request).
+  const conta = await getCurrentAccount();
+  const perfil = conta?.profile;
+  const accountIdLogado = conta?.account_id ?? null;
   const podeGerenciar = perfil === "admin" || perfil === "coordinator";
 
   let eventosQuery = supabase
@@ -99,6 +97,17 @@ export default async function EventosPage({
     atribuidasPorEvento.set(a.event_id, set);
   });
 
+  // Eventos em que o usuário logado está escalado (para rolar até o próximo).
+  const { data: minhasAtribuicoes } = accountIdLogado
+    ? await supabase
+        .from("assignments")
+        .select("event_id")
+        .eq("account_id", accountIdLogado)
+    : { data: null };
+  const meusEventoIds = new Set(
+    (minhasAtribuicoes ?? []).map((a) => a.event_id)
+  );
+
   // Data de hoje como "AAAA-MM-DD" (local) para comparar com events.date.
   const agora = new Date();
   const hojeStr = `${agora.getFullYear()}-${String(
@@ -113,6 +122,12 @@ export default async function EventosPage({
   const ehFuturo = (e: Evento) => e.date >= hojeStr;
   const totalPassados = filtrados.filter((e) => !ehFuturo(e)).length;
   const visiveis = mostrarPassados ? filtrados : filtrados.filter(ehFuturo);
+
+  // Próximo evento futuro (na lista visível) onde o usuário está escalado.
+  const proximoMeuEvento = visiveis.find(
+    (e) => ehFuturo(e) && meusEventoIds.has(e.id)
+  );
+  const scrollTargetId = proximoMeuEvento?.id ?? null;
 
   // O calendário mostra todos os eventos do grupo filtrado (passados inclusos).
   const eventosCal: EventoCal[] = filtrados.map((e) => {
@@ -155,7 +170,8 @@ export default async function EventosPage({
     return (
       <div
         key={evento.id}
-        className="rounded-[18px] border border-black/[0.06] bg-paper shadow-card md:rounded-2xl"
+        id={`evento-${evento.id}`}
+        className="scroll-mt-20 rounded-[18px] border border-black/[0.06] bg-paper shadow-card md:rounded-2xl"
       >
         {/* Mobile: cartão empilhado */}
         <div className="flex items-stretch md:hidden">
@@ -297,8 +313,10 @@ export default async function EventosPage({
           </div>
         )}
 
-        {/* Filtro por grupo (chips, dirigido por ?grupo=<id>) */}
-        {todos.length > 0 && grupos && grupos.length > 0 && (
+        {/* Filtro por grupo (chips, dirigido por ?grupo=<id>). Escondido quando
+            já há um grupo ativo no shell — aí o escopo é só aquele grupo e o
+            chip "Todos" não faria sentido. */}
+        {!activeGroupId && todos.length > 0 && grupos && grupos.length > 0 && (
           <div className="ef-scroll -mx-[18px] flex gap-2 overflow-x-auto px-[18px] md:mx-0 md:flex-wrap md:px-0">
             <Link
               href={montarHref({ grupo: null })}
@@ -378,6 +396,7 @@ export default async function EventosPage({
         {/* Vista lista */}
         {!vistaCalendario && filtrados.length > 0 && (
           <>
+            {scrollTargetId && <ScrollToEvento targetId={scrollTargetId} />}
             {/* Toggle de eventos passados (dirigido por ?passados=1) */}
             <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
               <div className="text-[12px] text-muted">

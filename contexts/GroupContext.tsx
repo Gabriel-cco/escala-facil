@@ -10,7 +10,6 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useCurrentAccount } from "@/hooks/useCurrentAccount";
 import { ACTIVE_GROUP_COOKIE } from "@/lib/active-group";
 
 interface GroupContextType {
@@ -51,8 +50,18 @@ function gravarCookie(nome: string, valor: string | null) {
   }
 }
 
-export function GroupProvider({ children }: { children: React.ReactNode }) {
-  const { data: current, isLoading: carregandoConta } = useCurrentAccount();
+export function GroupProvider({
+  children,
+  profile,
+  groupId,
+}: {
+  children: React.ReactNode;
+  // Perfil e grupo do usuário, resolvidos no servidor (layout) — fonte
+  // confiável, sem depender de um fetch client-side com RLS que pode falhar/
+  // atrasar e derrubar o admin para o modo "sem troca de grupo".
+  profile: "admin" | "coordinator" | "member" | null;
+  groupId: string | null;
+}) {
   const router = useRouter();
 
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
@@ -61,25 +70,24 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
     lerCookie(ACTIVE_GROUP_COOKIE)
   );
 
-  const canSwitchGroup = current?.account.profile === "admin";
+  const canSwitchGroup = profile === "admin";
 
   // Grupo ativo derivado: fixo no account para coordinator/member; seleção
-  // do admin caso contrário (ou o cookie, enquanto a conta carrega).
-  const activeGroupId =
-    current && !canSwitchGroup ? current.account.groupId : adminSelection;
+  // do admin (cookie) caso contrário.
+  const activeGroupId = profile && !canSwitchGroup ? groupId : adminSelection;
 
-  // Coordinator/member: espelha o grupo fixo no cookie (efeito externo, para
-  // os Server Components filtrarem). Não faz setState aqui.
+  // Coordinator/member: espelha o grupo fixo no cookie (para os Server
+  // Components filtrarem).
   useEffect(() => {
-    if (!current) return;
-    if (current.account.profile !== "admin") {
-      gravarCookie(ACTIVE_GROUP_COOKIE, current.account.groupId);
+    if (!profile) return;
+    if (profile !== "admin") {
+      gravarCookie(ACTIVE_GROUP_COOKIE, groupId);
     }
-  }, [current]);
+  }, [profile, groupId]);
 
   // Carrega os grupos visíveis (RLS filtra por perfil).
   useEffect(() => {
-    if (!current) return;
+    if (!profile) return;
     let cancelado = false;
     (async () => {
       const supabase = createClient();
@@ -92,13 +100,13 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelado = true;
     };
-  }, [current]);
+  }, [profile]);
 
   const setActiveGroup = useCallback(
-    (groupId: string | null) => {
+    (novoGrupoId: string | null) => {
       if (!canSwitchGroup) return; // só admin troca de grupo
-      setAdminSelection(groupId);
-      gravarCookie(ACTIVE_GROUP_COOKIE, groupId);
+      setAdminSelection(novoGrupoId);
+      gravarCookie(ACTIVE_GROUP_COOKIE, novoGrupoId);
       // Re-renderiza os Server Components com o novo filtro.
       router.refresh();
     },
@@ -114,10 +122,10 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
       setActiveGroup,
       groups,
       isGlobalView: activeGroupId === null,
-      canSwitchGroup: !!canSwitchGroup,
-      isLoading: carregandoConta,
+      canSwitchGroup,
+      isLoading: profile === null,
     };
-  }, [activeGroupId, groups, setActiveGroup, canSwitchGroup, carregandoConta]);
+  }, [activeGroupId, groups, setActiveGroup, canSwitchGroup, profile]);
 
   return (
     <GroupContext.Provider value={value}>{children}</GroupContext.Provider>

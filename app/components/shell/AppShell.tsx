@@ -18,6 +18,7 @@ export type ShellUser = {
   iniciais: string;
   perfil: "admin" | "coordinator" | "member" | null;
   accountId: string | null;
+  groupId: string | null;
 };
 
 export const ROTULO_PERFIL: Record<string, string> = {
@@ -78,7 +79,7 @@ export default function AppShell({
 
   return (
     <ShellContext.Provider value={contextValue}>
-      <GroupProvider>
+      <GroupProvider profile={user?.perfil ?? null} groupId={user?.groupId ?? null}>
         <div className="min-h-dvh bg-screen md:flex md:h-dvh md:min-h-0 md:overflow-hidden md:bg-app">
           {user && <Sidebar className="hidden md:flex" user={user} />}
 

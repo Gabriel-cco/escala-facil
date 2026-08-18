@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import PushSetup from "../PushSetup";
@@ -68,20 +69,35 @@ function NotificationRow({
 export default function RecebidasCliente({ accountId }: { accountId: string | null }) {
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
     useNotifications(accountId);
+  const [aba, setAba] = useState<"nao_lidas" | "lidas">("nao_lidas");
+
+  const lista = notifications.filter((n) => (aba === "nao_lidas" ? !n.read : n.read));
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-[18px] pb-10 pt-2 md:gap-5 md:p-0">
       <PushSetup accountId={accountId} />
 
       <div className="flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold text-ink">
-          Recebidas
-          {unreadCount > 0 && (
-            <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold text-white">
-              {unreadCount}
-            </span>
-          )}
-        </h2>
+        <div className="flex gap-1">
+          {(
+            [
+              ["nao_lidas", unreadCount > 0 ? `Não lidas (${unreadCount})` : "Não lidas"],
+              ["lidas", "Já lidas"],
+            ] as const
+          ).map(([valor, rotulo]) => (
+            <button
+              key={valor}
+              onClick={() => setAba(valor)}
+              className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+                aba === valor
+                  ? "bg-primary text-white"
+                  : "bg-surface text-muted hover:text-ink"
+              }`}
+            >
+              {rotulo}
+            </button>
+          ))}
+        </div>
         {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
@@ -94,13 +110,15 @@ export default function RecebidasCliente({ accountId }: { accountId: string | nu
 
       {isLoading ? (
         <p className="py-8 text-center text-[13px] text-muted">Carregando...</p>
-      ) : notifications.length === 0 ? (
+      ) : lista.length === 0 ? (
         <div className="rounded-[14px] bg-paper px-6 py-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
-          <p className="text-[13.5px] text-muted">Nenhuma notificação</p>
+          <p className="text-[13.5px] text-muted">
+            {aba === "nao_lidas" ? "Nenhuma notificação não lida" : "Nenhuma notificação lida"}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {notifications.map((n) => (
+          {lista.map((n) => (
             <NotificationRow key={n.id} notification={n} onMarkRead={markAsRead} />
           ))}
           {hasMore && (

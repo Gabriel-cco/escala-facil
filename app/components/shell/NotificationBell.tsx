@@ -94,6 +94,10 @@ function NotificationItem({
   );
 }
 
+// Mostra no máximo as 10 mais recentes de cada aba no sino; a lista completa
+// fica em /notificacoes/recebidas.
+const LIMITE_SINO = 10;
+
 function DropdownPanel({
   accountId,
   onClose,
@@ -101,8 +105,13 @@ function DropdownPanel({
   accountId: string | null;
   onClose: () => void;
 }) {
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, hasMore, loadMore } =
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } =
     useNotifications(accountId);
+  const [aba, setAba] = useState<"nao_lidas" | "lidas">("nao_lidas");
+
+  const naoLidas = notifications.filter((n) => !n.read).slice(0, LIMITE_SINO);
+  const lidas = notifications.filter((n) => n.read).slice(0, LIMITE_SINO);
+  const lista = aba === "nao_lidas" ? naoLidas : lidas;
 
   return (
     <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[340px] overflow-hidden rounded-[16px] border border-border bg-paper shadow-lg">
@@ -118,25 +127,39 @@ function DropdownPanel({
         )}
       </div>
 
-      <div className="max-h-[400px] overflow-y-auto">
+      {/* Abas */}
+      <div className="flex gap-1 border-b border-border px-2 py-2">
+        {(
+          [
+            ["nao_lidas", unreadCount > 0 ? `Não lidas (${unreadCount})` : "Não lidas"],
+            ["lidas", "Já lidas"],
+          ] as const
+        ).map(([valor, rotulo]) => (
+          <button
+            key={valor}
+            onClick={() => setAba(valor)}
+            className={`flex-1 rounded-lg py-1.5 text-[12.5px] font-semibold transition-colors ${
+              aba === valor
+                ? "bg-primary-light text-primary"
+                : "text-muted hover:bg-surface hover:text-ink"
+            }`}
+          >
+            {rotulo}
+          </button>
+        ))}
+      </div>
+
+      <div className="max-h-[360px] overflow-y-auto">
         {isLoading ? (
           <p className="px-4 py-6 text-center text-[13px] text-muted">Carregando...</p>
-        ) : notifications.length === 0 ? (
-          <p className="px-4 py-8 text-center text-[13px] text-muted">Nenhuma notificação</p>
+        ) : lista.length === 0 ? (
+          <p className="px-4 py-8 text-center text-[13px] text-muted">
+            {aba === "nao_lidas" ? "Nenhuma notificação não lida" : "Nenhuma notificação lida"}
+          </p>
         ) : (
-          <>
-            {notifications.map((n) => (
-              <NotificationItem key={n.id} notification={n} onMarkRead={markAsRead} onClose={onClose} />
-            ))}
-            {hasMore && (
-              <button
-                onClick={loadMore}
-                className="w-full py-3 text-center text-[12px] font-medium text-primary hover:underline"
-              >
-                Ver mais
-              </button>
-            )}
-          </>
+          lista.map((n) => (
+            <NotificationItem key={n.id} notification={n} onMarkRead={markAsRead} onClose={onClose} />
+          ))
         )}
       </div>
 

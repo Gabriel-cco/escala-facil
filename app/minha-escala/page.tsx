@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import Header from "../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
 import { LiturgicalDot } from "../components/LiturgicalDot";
+import { rotuloData } from "@/lib/datas";
+import SolicitarTrocaButton from "./SolicitarTrocaButton";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -124,6 +127,18 @@ export default async function MinhaEscalaPage({
   // Suspensão
   const hoje = new Date().toISOString().split("T")[0];
   const estaSuspenso = acc.suspended_until && acc.suspended_until >= hoje;
+
+  // Atribuições do membro que já têm uma solicitação de troca pendente
+  // (admin client evita depender de policy de leitura em swap_requests).
+  const admin = createAdminClient();
+  const { data: trocasPendentes } = await admin
+    .from("swap_requests")
+    .select("assignment_id")
+    .eq("requester_account_id", accountId)
+    .eq("status", "pending");
+  const atribuicoesComTrocaPendente = new Set(
+    (trocasPendentes ?? []).map((t) => t.assignment_id)
+  );
 
   const membroNome = (userRow as { name?: string } | null)?.name ?? "Membro";
 
@@ -259,6 +274,24 @@ export default async function MinhaEscalaPage({
                       Nenhuma função atribuída ainda.
                     </p>
                   )}
+
+                  {euEstouEscalado && minhaAtribuicao && evento.date >= hoje && (() => {
+                    const myRole = Array.isArray(minhaAtribuicao.role)
+                      ? minhaAtribuicao.role[0]
+                      : minhaAtribuicao.role;
+                    return (
+                      <div className="mt-3 flex justify-end border-t border-black/[0.06] pt-3">
+                        <SolicitarTrocaButton
+                          assignmentId={minhaAtribuicao.id}
+                          eventId={evento.id}
+                          roleId={myRole?.id ?? ""}
+                          roleName={myRole?.name ?? "Função"}
+                          dataLabel={rotuloData(evento.date)}
+                          jaPendente={atribuicoesComTrocaPendente.has(minhaAtribuicao.id)}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

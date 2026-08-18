@@ -37,6 +37,9 @@ export default function LoginPage() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        // Força o Google a mostrar o seletor de conta em vez de reusar a sessão
+        // ativa — assim dá pra trocar de conta depois de "Sair".
+        queryParams: { prompt: "select_account" },
       },
     });
     // O navegador é redirecionado ao Google a partir daqui.

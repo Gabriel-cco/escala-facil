@@ -90,7 +90,16 @@ export default function Header(props: HeaderProps) {
             {props.title}
           </div>
         </div>
-        <NotificationBell />
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button
+            onClick={openMenu}
+            aria-label="Abrir menu"
+            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
+          >
+            {userIniciais || "··"}
+          </button>
+        </div>
       </header>
     );
   }
@@ -100,7 +109,16 @@ export default function Header(props: HeaderProps) {
       <div className="font-serif text-[28px] font-semibold text-ink">
         {props.title}
       </div>
-      <NotificationBell />
+      <div className="flex items-center gap-1">
+        <NotificationBell />
+        <button
+          onClick={openMenu}
+          aria-label="Abrir menu"
+          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
+        >
+          {userIniciais || "··"}
+        </button>
+      </div>
     </header>
   );
 }

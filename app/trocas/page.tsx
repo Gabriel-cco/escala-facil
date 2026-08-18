@@ -104,7 +104,14 @@ export default async function TrocasPage() {
 
   return (
     <>
-      <Header variant="root" title="Trocas" />
+      <Header
+        variant="root"
+        title="Trocas"
+        {...(profile === "member" && {
+          actionLabel: "Solicitar troca",
+          actionHref: "/minha-escala",
+        })}
+      />
       <TrocasCliente
         accountId={accountId}
         profile={profile as "admin" | "coordinator" | "member"}

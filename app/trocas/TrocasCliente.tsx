@@ -209,6 +209,17 @@ export default function TrocasCliente({
 
   return (
     <main className="flex flex-1 flex-col gap-5 px-[18px] pb-10 pt-3 md:p-0">
+      {/* CTA para membros solicitarem troca via Minha Escala (mobile) */}
+      {profile === "member" && (
+        <Link
+          href="/minha-escala"
+          className="flex items-center justify-between rounded-[14px] border border-primary/30 bg-primary/5 px-4 py-3 md:hidden"
+        >
+          <span className="text-[13.5px] font-semibold text-primary">Solicitar troca</span>
+          <span className="text-[18px] text-primary">›</span>
+        </Link>
+      )}
+
       {/* Filtro */}
       <div className="flex gap-2">
         {(["pendentes", "resolvidas"] as const).map((f) => (
@@ -239,9 +250,19 @@ export default function TrocasCliente({
           </p>
           <p className="text-[13px] text-muted">
             {filtro === "pendentes"
-              ? "Quando alguém solicitar uma troca, vai aparecer aqui."
+              ? profile === "member"
+                ? "Para solicitar uma troca, vá em Minha Escala e toque em 'Solicitar troca' no evento desejado."
+                : "Quando alguém solicitar uma troca, vai aparecer aqui."
               : "O histórico de trocas vai aparecer aqui."}
           </p>
+          {filtro === "pendentes" && profile === "member" && (
+            <Link
+              href="/minha-escala"
+              className="mt-2 rounded-[12px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white"
+            >
+              Ir para Minha Escala
+            </Link>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

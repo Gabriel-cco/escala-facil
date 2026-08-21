@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Header from "../../components/shell/Header";
-import AtribuicoesManager from "./AtribuicoesManager";
+import EscalaEventoView from "./EscalaEventoView";
 import { rotuloData, rotuloHora } from "@/lib/datas";
 import { iniciais } from "@/lib/iniciais";
 import { getCurrentAccount } from "@/lib/current-user";
@@ -43,7 +43,6 @@ export default async function EventoDetalhePage({
 
   const grupo = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
 
-  // Funções ativas do grupo do evento (inativas não entram em escalas novas).
   const { data: funcoes } = await supabase
     .from("roles")
     .select("id, name")
@@ -51,7 +50,6 @@ export default async function EventoDetalhePage({
     .eq("active", true)
     .order("name", { ascending: true });
 
-  // Membros elegíveis: mesmo grupo, ativos e não suspensos na data do evento.
   const { data: accounts } = await supabase
     .from("accounts")
     .select("id, user:users(name)")
@@ -66,17 +64,15 @@ export default async function EventoDetalhePage({
     })
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
 
-  // Account do usuário logado (para saber se pode solicitar troca)
   const conta = await getCurrentAccount();
   const currentAccountId = conta?.account_id ?? null;
+  const podeGerenciar = conta?.profile !== "member";
 
-  // Atribuições já feitas para o evento.
   const { data: atribuicoes } = await supabase
     .from("assignments")
     .select("id, role_id, account_id, account:accounts(suspended_until, user:users(name))")
     .eq("event_id", id);
 
-  // Solicitações de troca pendentes deste evento (por assignment_id)
   const { data: swapRows } = await supabase
     .from("swap_requests")
     .select("id, assignment_id, requester_account_id")
@@ -86,7 +82,6 @@ export default async function EventoDetalhePage({
     (swapRows ?? []).map((s) => [s.assignment_id, { swapId: s.id, requesterAccountId: s.requester_account_id }])
   );
 
-  // Uma atribuição por função (semântica do protótipo): pega a primeira.
   const porFuncao = new Map<
     string,
     { assignmentId: string; accountId: string; accountName: string; suspendedNaData: boolean }
@@ -104,39 +99,50 @@ export default async function EventoDetalhePage({
     });
   });
 
+  const atribuicoesLeitura = (funcoes ?? []).map((f) => ({
+    roleId: f.id,
+    roleName: f.name,
+    memberName: porFuncao.get(f.id)?.accountName ?? null,
+  }));
+
+  const atribuicoesEdicao = (funcoes ?? []).map((f) => {
+    const a = porFuncao.get(f.id);
+    const pending = a?.assignmentId ? pendingSwaps.get(a.assignmentId) : undefined;
+    return {
+      roleId: f.id,
+      assignmentId: a?.assignmentId ?? null,
+      accountId: a?.accountId ?? null,
+      accountName: a?.accountName ?? null,
+      suspendedNaData: a?.suspendedNaData ?? false,
+      pendingSwapId: pending?.swapId ?? null,
+      pendingSwapRequesterId: pending?.requesterAccountId ?? null,
+    };
+  });
+
   return (
     <>
       <Header variant="back" title={evento.name} />
       <main className="flex flex-1 flex-col px-[18px] pb-7 pt-0.5 md:p-0">
-        <AtribuicoesManager
+        <EscalaEventoView
           eventId={evento.id}
           eventDate={evento.date}
           groupId={evento.group_id}
+          eventName={evento.name}
           grupoNome={grupo?.name ?? "Grupo"}
           dataLabel={rotuloData(evento.date)}
           horaLabel={rotuloHora(evento.time)}
           liturgicalName={evento.liturgical_name}
           liturgicalColor={evento.liturgical_color}
+          podeGerenciar={podeGerenciar}
           currentAccountId={currentAccountId}
+          atribuicoesLeitura={atribuicoesLeitura}
           funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name }))}
           membros={membros.map((m) => ({
             id: m.id,
             nome: m.nome,
             iniciais: iniciais(m.nome),
           }))}
-          atribuicoes={(funcoes ?? []).map((f) => {
-            const a = porFuncao.get(f.id);
-            const pending = a?.assignmentId ? pendingSwaps.get(a.assignmentId) : undefined;
-            return {
-              roleId: f.id,
-              assignmentId: a?.assignmentId ?? null,
-              accountId: a?.accountId ?? null,
-              accountName: a?.accountName ?? null,
-              suspendedNaData: a?.suspendedNaData ?? false,
-              pendingSwapId: pending?.swapId ?? null,
-              pendingSwapRequesterId: pending?.requesterAccountId ?? null,
-            };
-          })}
+          atribuicoesEdicao={atribuicoesEdicao}
         />
       </main>
     </>

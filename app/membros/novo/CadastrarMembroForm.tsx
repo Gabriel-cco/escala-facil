@@ -10,6 +10,7 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   // Cada membro pertence a um único grupo (accounts.group_id).
   const [grupoId, setGrupoId] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -33,6 +34,7 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
         name: nome.trim(),
         email: email.trim(),
         cpf: cpf.trim() || null,
+        birth_date: birthDate || null,
       })
       .select("id")
       .single();
@@ -98,6 +100,18 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
           value={cpf}
           onChange={(e) => setCpf(e.target.value)}
           placeholder="000.000.000-00"
+          className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+        />
+      </div>
+
+      <div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">
+          DATA DE NASCIMENTO (OPCIONAL)
+        </div>
+        <input
+          type="date"
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
       </div>

@@ -9,6 +9,7 @@ export interface User {
   name: string;
   email: string;
   cpf: string | null;
+  birthDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

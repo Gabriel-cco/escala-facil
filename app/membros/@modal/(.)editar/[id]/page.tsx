@@ -13,7 +13,7 @@ export default async function EditarMembroModal({
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, group_id, user:users(id, name, email, cpf)")
+    .select("id, group_id, user:users(id, name, email, cpf, birth_date)")
     .eq("id", id)
     .single();
 
@@ -36,6 +36,7 @@ export default async function EditarMembroModal({
         nomeInicial={user.name ?? ""}
         emailInicial={user.email ?? ""}
         cpfInicial={user.cpf ?? ""}
+        birthDateInicial={user.birth_date ?? ""}
         grupoIdInicial={account.group_id ?? ""}
         grupos={grupos ?? []}
       />

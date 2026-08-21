@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getLiturgicalMonthAction } from "@/lib/liturgical-actions";
@@ -19,6 +19,11 @@ const MESES_LONGOS = [
 
 type Grupo = { id: string; name: string };
 type Padrao = { id: string; nome: string; diaSemana: number; horario: string };
+type ScheduleTemplate = {
+  id: string;
+  name: string;
+  patterns: Array<{ nome: string; diaSemana: number; horario: string }>;
+};
 type EventoPreview = {
   key: string;
   nome: string;
@@ -69,10 +74,12 @@ export default function GerarEventosForm({
   perfil,
   grupos,
   grupoIdInicial,
+  accountId,
 }: {
   perfil: string;
   grupos: Grupo[];
   grupoIdInicial: string | null;
+  accountId: string;
 }) {
   const [step, setStep] = useState<"configurar" | "preview">("configurar");
   const [mesAno, setMesAno] = useState(proxMes);
@@ -84,10 +91,82 @@ export default function GerarEventosForm({
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
 
+  // Templates salvos
+  const [templates, setTemplates] = useState<ScheduleTemplate[]>([]);
+  const [templateSelecionadoId, setTemplateSelecionadoId] = useState("");
+  const [mostrarSalvarTemplate, setMostrarSalvarTemplate] = useState(false);
+  const [templateNome, setTemplateNome] = useState("");
+  const [salvandoTemplate, setSalvandoTemplate] = useState(false);
+  const [templateMensagem, setTemplateMensagem] = useState("");
+
   const router = useRouter();
 
   const grupoFixo = perfil === "coordinator";
   const grupoNome = grupos.find((g) => g.id === grupoId)?.name ?? "";
+
+  // Carrega templates do grupo sempre que o grupo muda
+  useEffect(() => {
+    if (!grupoId) { setTemplates([]); return; }
+    const supabase = createClient();
+    supabase
+      .from("schedule_templates")
+      .select("id, name, patterns")
+      .eq("group_id", grupoId)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setTemplates((data as ScheduleTemplate[]) ?? []));
+  }, [grupoId]);
+
+  function carregarTemplate() {
+    const tpl = templates.find((t) => t.id === templateSelecionadoId);
+    if (!tpl) return;
+    setPadroes(
+      tpl.patterns.map((p) => ({
+        id: Math.random().toString(36).slice(2),
+        nome: p.nome,
+        diaSemana: p.diaSemana,
+        horario: p.horario,
+      }))
+    );
+    setTemplateSelecionadoId("");
+  }
+
+  async function excluirTemplate(id: string) {
+    const supabase = createClient();
+    await supabase.from("schedule_templates").delete().eq("id", id);
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    if (templateSelecionadoId === id) setTemplateSelecionadoId("");
+  }
+
+  async function salvarTemplate() {
+    if (!templateNome.trim() || !grupoId || salvandoTemplate) return;
+    setSalvandoTemplate(true);
+    setTemplateMensagem("");
+    const supabase = createClient();
+    const { error } = await supabase.from("schedule_templates").insert({
+      group_id: grupoId,
+      name: templateNome.trim(),
+      patterns: padroes.map((p) => ({
+        nome: p.nome.trim(),
+        diaSemana: p.diaSemana,
+        horario: p.horario,
+      })),
+      created_by: accountId,
+    });
+    setSalvandoTemplate(false);
+    if (error) {
+      setTemplateMensagem("Erro ao salvar: " + error.message);
+    } else {
+      setTemplateMensagem("Template salvo com sucesso!");
+      setTemplateNome("");
+      setMostrarSalvarTemplate(false);
+      const { data } = await supabase
+        .from("schedule_templates")
+        .select("id, name, patterns")
+        .eq("group_id", grupoId)
+        .order("created_at", { ascending: false });
+      setTemplates((data as ScheduleTemplate[]) ?? []);
+    }
+  }
 
   const podePrevisualizar =
     grupoId !== "" &&
@@ -284,6 +363,54 @@ export default function GerarEventosForm({
           </div>
         )}
 
+        {/* Templates salvos */}
+        {grupoId && templates.length > 0 && (
+          <div>
+            <div className={lb}>USAR TEMPLATE SALVO</div>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <select
+                  value={templateSelecionadoId}
+                  onChange={(e) => setTemplateSelecionadoId(e.target.value)}
+                  className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[14px] outline-none ${
+                    templateSelecionadoId ? "text-ink" : "text-muted"
+                  }`}
+                >
+                  <option value="">Selecione um template…</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+                  ▾
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={carregarTemplate}
+                disabled={!templateSelecionadoId}
+                className="flex-none rounded-[14px] border border-primary/40 px-4 py-3 text-[13.5px] font-semibold text-primary hover:bg-primary/5 disabled:opacity-40"
+              >
+                Carregar
+              </button>
+              {templateSelecionadoId && (
+                <button
+                  type="button"
+                  onClick={() => excluirTemplate(templateSelecionadoId)}
+                  className="flex-none rounded-[14px] border border-danger/30 px-4 py-3 text-[13.5px] font-semibold text-danger hover:bg-danger/5"
+                >
+                  Excluir
+                </button>
+              )}
+            </div>
+            <p className="mt-1.5 text-[11.5px] text-faint">
+              Carregar substitui os padrões abaixo pelos do template selecionado.
+            </p>
+          </div>
+        )}
+
         {/* Padrões */}
         <div>
           <div className="mb-3 text-[12px] font-semibold text-muted">
@@ -377,6 +504,57 @@ export default function GerarEventosForm({
             + Adicionar padrão
           </button>
         </div>
+
+        {/* Salvar padrões como template */}
+        {podePrevisualizar && (
+          <div className="rounded-[14px] border border-black/[0.07] bg-paper px-4 py-3.5">
+            {!mostrarSalvarTemplate ? (
+              <button
+                type="button"
+                onClick={() => setMostrarSalvarTemplate(true)}
+                className="text-[13px] font-semibold text-ink-soft hover:text-ink"
+              >
+                Salvar estes padrões como template →
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="text-[12px] font-semibold text-muted">
+                  NOME DO TEMPLATE
+                </div>
+                <input
+                  value={templateNome}
+                  onChange={(e) => setTemplateNome(e.target.value)}
+                  placeholder="Ex.: Padrão setembro"
+                  className={`${baseInput} px-4 py-3 text-[14px]`}
+                />
+                {templateMensagem && (
+                  <p className="text-[12.5px] text-success">{templateMensagem}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMostrarSalvarTemplate(false);
+                      setTemplateNome("");
+                      setTemplateMensagem("");
+                    }}
+                    className="flex-1 rounded-[12px] border border-black/10 py-2.5 text-[13px] font-semibold text-ink"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={salvarTemplate}
+                    disabled={!templateNome.trim() || salvandoTemplate}
+                    className="flex-1 rounded-[12px] bg-primary py-2.5 text-[13px] font-semibold text-paper disabled:opacity-40"
+                  >
+                    {salvandoTemplate ? "Salvando..." : "Salvar template"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {erro && <p className="text-[13px] text-danger">{erro}</p>}
 

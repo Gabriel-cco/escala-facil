@@ -12,6 +12,7 @@ export default function EditarMembroForm({
   nomeInicial,
   emailInicial,
   cpfInicial,
+  birthDateInicial,
   grupoIdInicial,
   grupos,
 }: {
@@ -20,12 +21,14 @@ export default function EditarMembroForm({
   nomeInicial: string;
   emailInicial: string;
   cpfInicial: string;
+  birthDateInicial: string;
   grupoIdInicial: string;
   grupos: Grupo[];
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
   const [cpf, setCpf] = useState(cpfInicial);
+  const [birthDate, setBirthDate] = useState(birthDateInicial);
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -42,7 +45,7 @@ export default function EditarMembroForm({
 
     const { error: erroUser } = await supabase
       .from("users")
-      .update({ name: nome.trim(), email: email.trim(), cpf: cpf.trim() || null })
+      .update({ name: nome.trim(), email: email.trim(), cpf: cpf.trim() || null, birth_date: birthDate || null })
       .eq("id", userId);
 
     if (erroUser) {
@@ -99,6 +102,18 @@ export default function EditarMembroForm({
           value={cpf}
           onChange={(e) => setCpf(e.target.value)}
           placeholder="000.000.000-00"
+          className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+        />
+      </div>
+
+      <div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">
+          DATA DE NASCIMENTO (OPCIONAL)
+        </div>
+        <input
+          type="date"
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
       </div>

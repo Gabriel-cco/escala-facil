@@ -22,12 +22,13 @@ export default async function GerarEventosPage() {
 
   return (
     <>
-      <Header variant="back" title="Gerar mês" />
+      <Header variant="back" title="Gerar Escala Mensal" />
       <main className="flex flex-1 flex-col px-[22px] pb-6 pt-0.5 md:p-0">
         <GerarEventosForm
           perfil={perfil}
           grupos={grupos ?? []}
           grupoIdInicial={activeGroupId}
+          accountId={conta!.account_id}
         />
       </main>
     </>

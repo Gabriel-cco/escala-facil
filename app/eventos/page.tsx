@@ -291,9 +291,9 @@ export default async function EventosPage({
         {podeGerenciar && (
           <Link
             href="/eventos/gerar"
-            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-blue-400 p-3.5 text-[13.5px] font-semibold text-blue-600 md:hidden"
           >
-            Gerar mês
+            Gerar Escala Mensal
           </Link>
         )}
 
@@ -306,9 +306,9 @@ export default async function EventosPage({
           <div className="hidden md:flex md:justify-end">
             <Link
               href="/eventos/gerar"
-              className="rounded-[11px] border border-black/10 px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:text-ink"
+              className="rounded-[11px] border border-blue-300 bg-blue-50 px-4 py-2.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-100"
             >
-              Gerar mês
+              Gerar Escala Mensal
             </Link>
           </div>
         )}

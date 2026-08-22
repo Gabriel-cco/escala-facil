@@ -17,7 +17,6 @@ const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   style: ["normal"],
-  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {

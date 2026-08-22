@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { iniciais } from "@/lib/iniciais";
@@ -90,11 +90,29 @@ export default function FazerChamadaForm({
   const [erro, setErro] = useState("");
 
   const [modoAvulso, setModoAvulso] = useState<ModoAvulso>(null);
+  const membrosOriginal = useRef<EntradaRoster[]>([]);
+
+  const entrarModoAvulso = useCallback(() => {
+    if (roster.some((r) => r.tipo === "membro")) {
+      membrosOriginal.current = [...roster];
+      setRoster([]);
+    }
+    setModoAvulso("escolhendo");
+  }, [roster]);
+
+  const cancelarModoAvulso = useCallback(() => {
+    if (membrosOriginal.current.length > 0) {
+      setRoster(membrosOriginal.current);
+      membrosOriginal.current = [];
+    }
+    setModoAvulso(null);
+  }, []);
 
   const onGrupoChange = useCallback(
     async (novoGrupoId: string) => {
       setGrupoId(novoGrupoId);
       setModoAvulso(null);
+      membrosOriginal.current = [];
       if (!novoGrupoId) return;
 
       const grupo = grupos.find((g) => g.id === novoGrupoId);
@@ -286,8 +304,13 @@ export default function FazerChamadaForm({
   const totalCount = roster.length;
   const absentCount = totalCount - presentCount;
 
-  const rosterVazio = roster.length === 0 && grupoId && !carregandoGrupo;
+  const rosterVazio = roster.length === 0 && !!grupoId && !carregandoGrupo;
+  // Prompt avulso substitui o roster apenas quando o grupo não tem membros
   const mostrarAvulsoPrompt = rosterVazio && !editando && modoAvulso !== "manual" && modoAvulso !== "qr";
+  // Admin com membros carregados pode iniciar avulsa pelo botão no topo do roster
+  const mostrarBotaoAvulsoAdmin =
+    perfil === "admin" && !editando && !!grupoId && !carregandoGrupo &&
+    modoAvulso === null && roster.some((r) => r.tipo === "membro");
   const mostrarRoster = modoAvulso === "manual" || (!mostrarAvulsoPrompt && !carregandoGrupo);
 
   return (
@@ -486,14 +509,42 @@ export default function FazerChamadaForm({
                   Deseja começar uma frequência avulsa?
                 </button>
               )}
+              {modoAvulso === "escolhendo" && (
+                <button
+                  onClick={cancelarModoAvulso}
+                  className="self-start text-[12.5px] text-muted underline underline-offset-2"
+                >
+                  Cancelar
+                </button>
+              )}
             </div>
           ) : mostrarRoster ? (
             /* ── Roster normal ou avulso manual ── */
             <>
-              <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-[1.1px] text-muted">
-                {modoAvulso === "manual"
-                  ? "Adicione quem está presente"
-                  : "Toque em quem estava presente"}
+              {/* Botão avulso para admin com membros */}
+              {mostrarBotaoAvulsoAdmin && (
+                <button
+                  onClick={entrarModoAvulso}
+                  className="mb-1 self-start rounded-[10px] border border-[#C7D2FE] bg-[#EEF2FF] px-4 py-2 text-[12.5px] font-semibold text-[#3730A3]"
+                >
+                  Iniciar frequência avulsa
+                </button>
+              )}
+
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-[11.5px] font-semibold uppercase tracking-[1.1px] text-muted">
+                  {modoAvulso === "manual"
+                    ? "Adicione quem está presente"
+                    : "Toque em quem estava presente"}
+                </span>
+                {modoAvulso === "manual" && (
+                  <button
+                    onClick={() => setModoAvulso("escolhendo")}
+                    className="text-[12px] font-semibold text-muted underline underline-offset-2"
+                  >
+                    ← Voltar à escolha
+                  </button>
+                )}
               </div>
 
               {roster.map((r) => {

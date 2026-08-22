@@ -1,9 +1,16 @@
 "use client";
 import { useState } from "react";
 
+const STORAGE_KEY = (token: string) => `ef_avulsa_${token}`;
+
 export default function ScanForm({ token }: { token: string }) {
   const [nome, setNome] = useState("");
-  const [estado, setEstado] = useState<"idle" | "salvando" | "ok" | "erro">("idle");
+  const [estado, setEstado] = useState<"idle" | "salvando" | "ok" | "erro" | "jaRegistrado">(() => {
+    if (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY(token))) {
+      return "jaRegistrado";
+    }
+    return "idle";
+  });
   const [msgErro, setMsgErro] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,6 +31,7 @@ export default function ScanForm({ token }: { token: string }) {
         setMsgErro(json.error ?? "Erro ao registrar.");
         setEstado("erro");
       } else {
+        localStorage.setItem(STORAGE_KEY(token), "1");
         setEstado("ok");
       }
     } catch {
@@ -32,18 +40,24 @@ export default function ScanForm({ token }: { token: string }) {
     }
   };
 
+  if (estado === "jaRegistrado") {
+    return (
+      <div className="rounded-[16px] border border-[#A7F3D0] bg-[#ECFDF5] px-6 py-8 text-center">
+        <div className="text-[40px] mb-3">✅</div>
+        <p className="text-[18px] font-bold text-[#065F46]">Presença já registrada</p>
+        <p className="mt-1 text-[14px] text-[#047857]">
+          Você já confirmou sua presença nesta lista.
+        </p>
+      </div>
+    );
+  }
+
   if (estado === "ok") {
     return (
       <div className="rounded-[16px] border border-[#A7F3D0] bg-[#ECFDF5] px-6 py-8 text-center">
         <div className="text-[40px] mb-3">✅</div>
         <p className="text-[18px] font-bold text-[#065F46]">Presença registrada!</p>
         <p className="mt-1 text-[14px] text-[#047857]">Obrigado por registrar sua presença.</p>
-        <button
-          onClick={() => { setNome(""); setEstado("idle"); }}
-          className="mt-6 text-[13px] font-semibold text-[#047857] underline underline-offset-2"
-        >
-          Registrar outra pessoa
-        </button>
       </div>
     );
   }

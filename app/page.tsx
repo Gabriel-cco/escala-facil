@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
-import { getAuthUser } from "@/lib/current-user";
+import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import Header from "./components/shell/Header";
 import { LiturgicalDot } from "./components/LiturgicalDot";
 
@@ -98,8 +98,14 @@ export default async function Home() {
     .eq("active", true);
   if (activeGroupId) suspensoesQuery = suspensoesQuery.eq("group_id", activeGroupId);
 
+  // Última chamada de presença (widget frequência)
+  const ultimaChamadaQuery = activeGroupId
+    ? supabase.rpc("get_last_attendance_summary", { p_group_id: activeGroupId })
+    : Promise.resolve({ data: null, error: null });
+
   const [
     authUser,
+    conta,
     { data: eventos },
     { count: totalMembros },
     { data: funcoes },
@@ -109,8 +115,10 @@ export default async function Home() {
     { data: gapsCount },
     { data: swaps },
     { count: suspensoesCount },
+    { data: ultimaChamadaData },
   ] = await Promise.all([
     getAuthUser(),
+    getCurrentAccount(),
     eventosQuery,
     membrosQuery,
     funcoesQuery,
@@ -120,6 +128,7 @@ export default async function Home() {
     gapsQuery,
     swapsQuery,
     suspensoesQuery,
+    ultimaChamadaQuery,
   ]);
 
   // ── Dados derivados ───────────────────────────────────────────────────────
@@ -185,6 +194,18 @@ export default async function Home() {
 
   const eventsWithGaps = (gapsCount as number | null) ?? 0;
   const suspensoesTotal = suspensoesCount ?? 0;
+
+  // Widget de frequência
+  const mostraFrequencia = conta?.profile !== "member";
+  type UltimaChamadaRow = {
+    list_id: string;
+    list_name: string;
+    list_date: string;
+    present_count: number;
+    total_count: number;
+  };
+  const ultimaChamada =
+    ((ultimaChamadaData as UltimaChamadaRow[] | null) ?? [])[0] ?? null;
 
   // Ações pendentes — apenas as com contagem > 0
   const acoesPendentes = [
@@ -270,8 +291,10 @@ export default async function Home() {
           ))}
         </div>
 
-        {/* Widgets — 2 colunas no desktop, empilhado no mobile */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Widgets — 3 colunas no desktop para admin/coord, 2 para member */}
+        <div
+          className={`grid grid-cols-1 gap-4 ${mostraFrequencia ? "md:grid-cols-3" : "md:grid-cols-2"}`}
+        >
           {/* ── Widget: Próximo Evento ──────────────────────────────────── */}
           <div className="flex flex-col gap-2.5">
             <div className="text-[11px] font-semibold uppercase tracking-[1.2px] text-muted">
@@ -378,6 +401,75 @@ export default async function Home() {
               </div>
             )}
           </div>
+
+          {/* ── Widget: Frequência ─────────────────────────────────────── */}
+          {mostraFrequencia && (
+            <div className="flex flex-col gap-2.5">
+              <div className="text-[11px] font-semibold uppercase tracking-[1.2px] text-muted">
+                Frequência
+              </div>
+
+              <div className="flex flex-col rounded-[18px] border border-black/[0.06] bg-paper p-5 shadow-card">
+                <div className="mb-4 flex items-start gap-3.5">
+                  <div
+                    className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[10px] text-[17px]"
+                    style={{
+                      background: ultimaChamada ? "#EEF2FF" : "#F5F5F5",
+                      color: ultimaChamada ? "#4F46E5" : "#A3A3A3",
+                    }}
+                  >
+                    ✓
+                  </div>
+                  <div>
+                    {ultimaChamada ? (
+                      <>
+                        <div className="text-[12px] font-semibold uppercase tracking-[0.05em] text-muted">
+                          Última chamada
+                        </div>
+                        <div className="mt-1 text-[15px] font-semibold leading-tight text-ink">
+                          {ultimaChamada.list_name}
+                        </div>
+                        <div className="mt-0.5 text-[13.5px] text-muted">
+                          <strong className="text-ink">
+                            {ultimaChamada.present_count} de{" "}
+                            {ultimaChamada.total_count}
+                          </strong>{" "}
+                          presentes
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-[15px] font-semibold text-ink">
+                          Nenhuma chamada registrada
+                        </div>
+                        <div className="mt-1 text-[13px] leading-snug text-muted">
+                          Registre a presença de um encontro, missa ou reunião.
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Link
+                  href="/frequencia/nova"
+                  className="flex w-full items-center justify-center rounded-[14px] bg-primary py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary-hover"
+                >
+                  Fazer chamada
+                </Link>
+
+                {ultimaChamada && (
+                  <div className="mt-3 text-center">
+                    <Link
+                      href="/frequencia"
+                      className="text-[13px] font-semibold text-primary hover:underline"
+                    >
+                      Ver histórico e relatório
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ── Widget: Ações Pendentes ─────────────────────────────────── */}
           <div className="flex flex-col gap-2.5">

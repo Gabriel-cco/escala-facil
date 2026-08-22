@@ -340,9 +340,9 @@ export default function FazerChamadaForm({
 
       {/* Banner modo QR */}
       {modoAvulso === "qr" && (
-        <div className="flex flex-none items-center gap-3 border-b border-[#C7D2FE] bg-[#EEF2FF] px-[18px] py-3 md:px-6">
+        <div className="flex flex-none items-center gap-3 border-b border-[#D6C3A5] bg-[#F2E7D4] px-[18px] py-3 md:px-6">
           <span className="text-[18px]">📱</span>
-          <p className="text-[13px] font-semibold text-[#3730A3]">
+          <p className="text-[13px] font-semibold text-[#4A2415]">
             Modo QR — o código será gerado ao salvar
           </p>
         </div>
@@ -354,13 +354,13 @@ export default function FazerChamadaForm({
           {/* Seletor de grupo — apenas admin sem grupo ativo */}
           {perfil === "admin" && !grupoIdInicial && (
             <div>
-              <div className="mb-1.5 text-[13px] font-semibold text-[#404040]">
+              <div className="mb-1.5 text-[13px] font-semibold text-[#4A3A31]">
                 Grupo
               </div>
               <select
                 value={grupoId}
                 onChange={(e) => onGrupoChange(e.target.value)}
-                className="w-full rounded-[8px] border border-[#D4D4D4] bg-white px-3 py-2.5 text-[14px] text-ink focus:outline-none"
+                className="w-full rounded-[8px] border border-[#D6C3A5] bg-white px-3 py-2.5 text-[14px] text-ink focus:outline-none"
               >
                 <option value="">Selecione o grupo…</option>
                 {grupos.map((g) => (
@@ -373,14 +373,14 @@ export default function FazerChamadaForm({
           )}
 
           <div>
-            <div className="mb-1.5 text-[13px] font-semibold text-[#404040]">
+            <div className="mb-1.5 text-[13px] font-semibold text-[#4A3A31]">
               Nome da chamada
             </div>
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full rounded-[8px] border border-[#D4D4D4] px-3 py-2.5 text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-[8px] border border-[#D6C3A5] px-3 py-2.5 text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             <div className="mt-1 text-[12px] text-muted">
               Sugerido automaticamente — pode editar.
@@ -389,18 +389,18 @@ export default function FazerChamadaForm({
 
           <div className="flex gap-3">
             <div className="flex-1">
-              <div className="mb-1.5 text-[13px] font-semibold text-[#404040]">
+              <div className="mb-1.5 text-[13px] font-semibold text-[#4A3A31]">
                 Data
               </div>
               <input
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
-                className="w-full rounded-[8px] border border-[#D4D4D4] px-3 py-2.5 text-[13.5px] text-ink focus:outline-none"
+                className="w-full rounded-[8px] border border-[#D6C3A5] px-3 py-2.5 text-[13.5px] text-ink focus:outline-none"
               />
             </div>
             <div className="flex-1">
-              <div className="mb-1.5 text-[13px] font-semibold text-[#404040]">
+              <div className="mb-1.5 text-[13px] font-semibold text-[#4A3A31]">
                 Hora{" "}
                 <span className="text-[12px] font-normal text-muted">
                   (opcional)
@@ -410,13 +410,13 @@ export default function FazerChamadaForm({
                 type="time"
                 value={hora}
                 onChange={(e) => setHora(e.target.value)}
-                className="w-full rounded-[8px] border border-[#D4D4D4] px-3 py-2.5 text-[13.5px] text-ink focus:outline-none"
+                className="w-full rounded-[8px] border border-[#D6C3A5] px-3 py-2.5 text-[13.5px] text-ink focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <div className="mb-1.5 text-[13px] font-semibold text-[#404040]">
+            <div className="mb-1.5 text-[13px] font-semibold text-[#4A3A31]">
               Vincular a um evento{" "}
               <span className="text-[12px] font-normal text-muted">
                 (opcional)
@@ -425,7 +425,7 @@ export default function FazerChamadaForm({
             <select
               value={eventoId}
               onChange={(e) => setEventoId(e.target.value)}
-              className="w-full rounded-[8px] border border-[#D4D4D4] bg-white px-3 py-2.5 text-[14px] text-ink focus:outline-none"
+              className="w-full rounded-[8px] border border-[#D6C3A5] bg-white px-3 py-2.5 text-[14px] text-ink focus:outline-none"
             >
               <option value="">Nenhum evento</option>
               {eventos.map((e) => (
@@ -480,7 +480,7 @@ export default function FazerChamadaForm({
                   </p>
                   <button
                     onClick={() => setModoAvulso("manual")}
-                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D4D4D4] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAFBFF]"
+                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D6C3A5] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAF6EC]"
                   >
                     <span className="text-[14px] font-semibold text-ink">
                       ✏️ Adicionar manualmente
@@ -491,7 +491,7 @@ export default function FazerChamadaForm({
                   </button>
                   <button
                     onClick={() => setModoAvulso("qr")}
-                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D4D4D4] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAFBFF]"
+                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D6C3A5] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAF6EC]"
                   >
                     <span className="text-[14px] font-semibold text-ink">
                       📱 Gerar QR Code
@@ -504,7 +504,7 @@ export default function FazerChamadaForm({
               ) : (
                 <button
                   onClick={() => setModoAvulso("escolhendo")}
-                  className="self-start rounded-[10px] border border-[#C7D2FE] bg-[#EEF2FF] px-4 py-2.5 text-[13px] font-semibold text-[#3730A3]"
+                  className="self-start rounded-[10px] border border-[#D6C3A5] bg-[#F2E7D4] px-4 py-2.5 text-[13px] font-semibold text-[#4A2415]"
                 >
                   Deseja começar uma frequência avulsa?
                 </button>
@@ -525,7 +525,7 @@ export default function FazerChamadaForm({
               {mostrarBotaoAvulsoAdmin && (
                 <button
                   onClick={entrarModoAvulso}
-                  className="mb-1 self-start rounded-[10px] border border-[#C7D2FE] bg-[#EEF2FF] px-4 py-2 text-[12.5px] font-semibold text-[#3730A3]"
+                  className="mb-1 self-start rounded-[10px] border border-[#D6C3A5] bg-[#F2E7D4] px-4 py-2 text-[12.5px] font-semibold text-[#4A2415]"
                 >
                   Iniciar frequência avulsa
                 </button>
@@ -585,7 +585,7 @@ export default function FazerChamadaForm({
                         className="truncate text-[14px] font-semibold"
                         style={{
                           color:
-                            modoAvulso === "manual" ? "#171717" : isPresente ? "#171717" : "#404040",
+                            modoAvulso === "manual" ? "#2E1A11" : isPresente ? "#2E1A11" : "#4A3A31",
                         }}
                       >
                         {r.nome}
@@ -625,7 +625,7 @@ export default function FazerChamadaForm({
               })}
 
               {adicionandoExterno ? (
-                <div className="flex items-center gap-2 rounded-[8px] border border-[#D4D4D4] px-4 py-3">
+                <div className="flex items-center gap-2 rounded-[8px] border border-[#D6C3A5] px-4 py-3">
                   <input
                     autoFocus
                     type="text"
@@ -664,7 +664,7 @@ export default function FazerChamadaForm({
               ) : (
                 <button
                   onClick={() => setAdicionandoExterno(true)}
-                  className="flex items-center gap-2 rounded-[8px] border border-dashed border-[#D4D4D4] px-4 py-3 text-[13px] font-semibold text-ink-soft hover:border-primary hover:text-primary"
+                  className="flex items-center gap-2 rounded-[8px] border border-dashed border-[#D6C3A5] px-4 py-3 text-[13px] font-semibold text-ink-soft hover:border-primary hover:text-primary"
                 >
                   <span className="text-[16px] leading-none">+</span>
                   {modoAvulso === "manual"

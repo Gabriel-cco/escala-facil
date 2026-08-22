@@ -77,7 +77,7 @@ export default function ScanForm({ token }: { token: string }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
-        <label className="mb-1.5 block text-[13px] font-semibold text-[#404040]">
+        <label className="mb-1.5 block text-[13px] font-semibold text-[#4A3A31]">
           Seu nome completo
         </label>
         <input
@@ -87,7 +87,7 @@ export default function ScanForm({ token }: { token: string }) {
           placeholder="Digite seu nome…"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="w-full rounded-[10px] border border-[#D4D4D4] px-4 py-3 text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full rounded-[10px] border border-[#D6C3A5] px-4 py-3 text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
 

@@ -91,7 +91,7 @@ export default function CompartilharEscala({
         {processando ? "Gerando…" : "Compartilhar escala"}
       </button>
       {toast && (
-        <span className="text-[11.5px] font-semibold text-[#4f46e5]">
+        <span className="text-[11.5px] font-semibold text-[#6B3521]">
           {toast}
         </span>
       )}

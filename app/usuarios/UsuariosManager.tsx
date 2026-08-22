@@ -29,18 +29,18 @@ const PERFIS = [
 function badgePerfil(profile: string) {
   if (profile === "admin")
     return (
-      <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#4f46e5]">
+      <span className="rounded-full bg-[#F2E7D4] px-2 py-0.5 text-[10.5px] font-semibold text-[#6B3521]">
         Admin
       </span>
     );
   if (profile === "coordinator")
     return (
-      <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#374151]">
+      <span className="rounded-full bg-[#E3D2B6] px-2 py-0.5 text-[10.5px] font-semibold text-[#4A3A31]">
         Coordenador
       </span>
     );
   return (
-    <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
+    <span className="rounded-full bg-[#F2E7D4] px-2 py-0.5 text-[10.5px] font-semibold text-[#6E5A4E]">
       Membro
     </span>
   );
@@ -543,7 +543,7 @@ export default function UsuariosManager({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Remover acesso?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
                 &ldquo;{contaRemovendo.userName}&rdquo; perderá o acesso ao sistema.
                 O cadastro de usuário permanece e pode ser reativado.
               </p>

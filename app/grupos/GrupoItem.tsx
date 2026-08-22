@@ -70,7 +70,7 @@ export default function GrupoItem({
               {grupo.name}
             </span>
             {!grupo.active && (
-              <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
+              <span className="rounded-full bg-[#E3D2B6] px-2 py-0.5 text-[10.5px] font-semibold text-[#6E5A4E]">
                 Inativo
               </span>
             )}
@@ -121,7 +121,7 @@ export default function GrupoItem({
             )}
           </div>
         ) : (
-          <div className="text-[22px] text-[#9ca3af] md:hidden">›</div>
+          <div className="text-[22px] text-[#B3A296] md:hidden">›</div>
         )}
       </div>
 
@@ -140,7 +140,7 @@ export default function GrupoItem({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Arquivar grupo?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
                 &ldquo;{grupo.name}&rdquo; ficará inativo e não aparecerá nas
                 listas, mas poderá ser reativado depois.
               </p>

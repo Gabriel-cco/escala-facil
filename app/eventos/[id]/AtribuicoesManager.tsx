@@ -21,7 +21,6 @@ type Atribuicao = {
 export default function AtribuicoesManager({
   eventId,
   eventDate,
-  groupId,
   grupoNome,
   dataLabel,
   horaLabel,

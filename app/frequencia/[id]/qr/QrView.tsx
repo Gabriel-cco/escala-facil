@@ -100,11 +100,11 @@ export default function QrView({
 
         {/* QR Code */}
         {!qrFechado && (
-          <div className="flex flex-col items-center gap-4 rounded-[16px] border border-[#E5E5E5] bg-white p-6">
+          <div className="flex flex-col items-center gap-4 rounded-[16px] border border-[#E3D2B6] bg-white p-6">
             <p className="text-[12.5px] font-semibold text-muted uppercase tracking-wider">
               Mostre este QR para os participantes
             </p>
-            <div className="rounded-[12px] bg-white p-3 shadow-sm border border-[#F0F0F0]">
+            <div className="rounded-[12px] bg-white p-3 shadow-sm border border-[#E3D2B6]">
               {qrUrl && <QRCode value={qrUrl} size={220} />}
             </div>
             <p className="text-[11.5px] text-muted text-center max-w-[260px]">
@@ -114,7 +114,7 @@ export default function QrView({
               <button
                 onClick={atualizar}
                 disabled={atualizando}
-                className="flex-1 rounded-[10px] border border-[#D4D4D4] py-2.5 text-[13px] font-semibold text-ink disabled:opacity-60"
+                className="flex-1 rounded-[10px] border border-[#D6C3A5] py-2.5 text-[13px] font-semibold text-ink disabled:opacity-60"
               >
                 {atualizando ? "Atualizando…" : "Atualizar lista"}
               </button>
@@ -176,7 +176,7 @@ export default function QrView({
             Adicionar manualmente
           </div>
           {adicionando ? (
-            <div className="flex items-center gap-2 rounded-[10px] border border-[#D4D4D4] px-4 py-3">
+            <div className="flex items-center gap-2 rounded-[10px] border border-[#D6C3A5] px-4 py-3">
               <input
                 autoFocus
                 type="text"

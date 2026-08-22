@@ -106,7 +106,7 @@ export default function GerarEventosForm({
 
   // Carrega templates do grupo sempre que o grupo muda
   useEffect(() => {
-    if (!grupoId) { setTemplates([]); return; }
+    if (!grupoId) return;
     const supabase = createClient();
     supabase
       .from("schedule_templates")

@@ -128,7 +128,7 @@ export default function EscalaPublica({
                   key={evento.event_id}
                   className={`rounded-[18px] border bg-paper px-[18px] py-4 transition-colors ${
                     destacado
-                      ? "border-[#4f46e5] ring-1 ring-[#4f46e5]/40"
+                      ? "border-[#6B3521] ring-1 ring-[#6B3521]/40"
                       : ehProximo
                       ? "border-[#c9b98a]"
                       : "border-black/[0.06]"
@@ -174,7 +174,7 @@ export default function EscalaPublica({
                             <span
                               className={`text-right ${
                                 nomeDestacado
-                                  ? "rounded-md bg-[#eef2ff] px-1.5 font-semibold text-[#4f46e5]"
+                                  ? "rounded-md bg-[#F2E7D4] px-1.5 font-semibold text-[#6B3521]"
                                   : "font-medium text-ink"
                               }`}
                             >

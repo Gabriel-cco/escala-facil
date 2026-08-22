@@ -60,14 +60,14 @@ function ini(nome: string) {
 
 function barColor(pct: number) {
   if (pct >= 80) return "#059669";
-  if (pct >= 50) return "#4F46E5";
-  return "#D97706";
+  if (pct >= 50) return "#6B3521";
+  return "#B07A1E";
 }
 
 function pctColor(pct: number) {
-  if (pct >= 80) return "#047857";
-  if (pct >= 50) return "#525252";
-  return "#B45309";
+  if (pct >= 80) return "#2F6B44";
+  if (pct >= 50) return "#6E5A4E";
+  return "#8A5A12";
 }
 
 const PERIODOS = [
@@ -141,8 +141,8 @@ export default function FrequenciaView({
             onClick={() => handleTabChange(t)}
             className="px-5 py-4 text-[14px] font-semibold transition-colors"
             style={{
-              color: tab === t ? "#171717" : "#A3A3A3",
-              borderBottom: `2px solid ${tab === t ? "#4F46E5" : "transparent"}`,
+              color: tab === t ? "#171717" : "#8A7466",
+              borderBottom: `2px solid ${tab === t ? "#6B3521" : "transparent"}`,
             }}
           >
             {t === "historico" ? "Histórico" : "Relatório"}
@@ -178,8 +178,8 @@ export default function FrequenciaView({
                     onClick={() => setSelectedListId(lista.id)}
                     className="w-full rounded-[10px] border px-4 py-3.5 text-left transition-colors"
                     style={{
-                      background: selecionado ? "#EEF2FF" : "#fff",
-                      borderColor: selecionado ? "#C7D2FE" : "#E5E5E5",
+                      background: selecionado ? "#F2E7D4" : "#fff",
+                      borderColor: selecionado ? "#D6C3A5" : "#E3D2B6",
                     }}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -191,16 +191,16 @@ export default function FrequenciaView({
                       </div>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[#F0F0F0]">
+                      <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[#F2E7D4]">
                         <div
                           className="h-full rounded-full"
                           style={{
                             width: `${pct}%`,
-                            background: pct === 100 ? "#059669" : "#4F46E5",
+                            background: pct === 100 ? "#059669" : "#6B3521",
                           }}
                         />
                       </div>
-                      <div className="flex-none whitespace-nowrap text-[12px] font-semibold text-[#525252]">
+                      <div className="flex-none whitespace-nowrap text-[12px] font-semibold text-[#6E5A4E]">
                         {presentes}/{total}
                       </div>
                     </div>
@@ -262,7 +262,7 @@ export default function FrequenciaView({
                           className="flex items-center gap-2.5 rounded-[8px] px-3 py-2"
                           style={{ background: "#ECFDF5" }}
                         >
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#047857]">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#2F6B44]">
                             {ini(r.name)}
                           </div>
                           <div className="text-[13.5px] font-medium text-[#065F46]">
@@ -287,7 +287,7 @@ export default function FrequenciaView({
                 {/* Faltantes */}
                 <div className="mt-5">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[#D97706]" />
+                    <span className="h-2 w-2 rounded-full bg-[#B07A1E]" />
                     <div className="text-[12.5px] font-semibold uppercase tracking-wider text-[#92400E]">
                       Faltantes ·{" "}
                       {selectedLista.records.filter((r) => !r.present).length}
@@ -338,7 +338,7 @@ export default function FrequenciaView({
               primeiro.
             </p>
             {/* Segmented (desktop) */}
-            <div className="hidden rounded-[8px] bg-[#F0F0F0] p-[3px] md:flex">
+            <div className="hidden rounded-[8px] bg-[#F2E7D4] p-[3px] md:flex">
               {PERIODOS.map((p) => (
                 <button
                   key={p.id}
@@ -378,8 +378,8 @@ export default function FrequenciaView({
           ) : (
             <>
               {/* Tabela desktop */}
-              <div className="hidden overflow-hidden rounded-[10px] border border-[#E5E5E5] md:block">
-                <div className="grid grid-cols-[1fr_110px_130px_150px] border-b border-[#E5E5E5] bg-[#FAFAFA] px-[18px] py-3">
+              <div className="hidden overflow-hidden rounded-[10px] border border-[#E3D2B6] md:block">
+                <div className="grid grid-cols-[1fr_110px_130px_150px] border-b border-[#E3D2B6] bg-[#FAF6EC] px-[18px] py-3">
                   {["Membro", "Presenças", "Chamadas", "Frequência"].map(
                     (h) => (
                       <div
@@ -400,10 +400,10 @@ export default function FrequenciaView({
                   return (
                     <div
                       key={r.account_id}
-                      className="grid grid-cols-[1fr_110px_130px_150px] items-center border-b border-[#F5F5F5] px-[18px] py-3.5 last:border-0 hover:bg-[#FAFAFA]"
+                      className="grid grid-cols-[1fr_110px_130px_150px] items-center border-b border-[#F5F5F5] px-[18px] py-3.5 last:border-0 hover:bg-[#FAF6EC]"
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#EEF2FF] text-[11.5px] font-bold text-[#4338CA]">
+                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#F2E7D4] text-[11.5px] font-bold text-[#4A2415]">
                           {ini(r.member_name)}
                         </div>
                         <div className="truncate text-[14px] font-semibold text-ink">
@@ -417,7 +417,7 @@ export default function FrequenciaView({
                         {pct === null ? "—" : r.total_count}
                       </div>
                       <div className="flex items-center gap-2.5">
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F0F0F0]">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F2E7D4]">
                           {pct !== null && (
                             <div
                               className="h-full rounded-full"
@@ -431,7 +431,7 @@ export default function FrequenciaView({
                         <div
                           className="w-14 text-right text-[13px] font-semibold"
                           style={{
-                            color: pct === null ? "#A3A3A3" : pctColor(pct),
+                            color: pct === null ? "#8A7466" : pctColor(pct),
                           }}
                         >
                           {pct === null ? "—" : `${pct}%`}
@@ -453,10 +453,10 @@ export default function FrequenciaView({
                   return (
                     <div
                       key={r.account_id}
-                      className="rounded-[10px] border border-[#E5E5E5] bg-paper p-3.5"
+                      className="rounded-[10px] border border-[#E3D2B6] bg-paper p-3.5"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#EEF2FF] text-[11.5px] font-bold text-[#4338CA]">
+                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#F2E7D4] text-[11.5px] font-bold text-[#4A2415]">
                           {ini(r.member_name)}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -472,13 +472,13 @@ export default function FrequenciaView({
                         <div
                           className="flex-none text-[14px] font-bold"
                           style={{
-                            color: pct === null ? "#A3A3A3" : pctColor(pct),
+                            color: pct === null ? "#8A7466" : pctColor(pct),
                           }}
                         >
                           {pct === null ? "—" : `${pct}%`}
                         </div>
                       </div>
-                      <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-[#F0F0F0]">
+                      <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-[#F2E7D4]">
                         {pct !== null && (
                           <div
                             className="h-full rounded-full"

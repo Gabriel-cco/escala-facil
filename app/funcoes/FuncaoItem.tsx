@@ -69,7 +69,7 @@ export default function FuncaoItem({
         )}
 
         {!funcao.active && (
-          <span className="text-[10.5px] font-semibold text-[#6b7280]">
+          <span className="text-[10.5px] font-semibold text-[#6E5A4E]">
             · inativa
           </span>
         )}
@@ -110,7 +110,7 @@ export default function FuncaoItem({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Arquivar função?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
                 &ldquo;{funcao.nome}&rdquo; ficará inativa e não aparecerá nas
                 escalas, mas poderá ser reativada depois.
               </p>

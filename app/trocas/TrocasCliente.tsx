@@ -77,7 +77,7 @@ function SwapCard({
 
       {swap.reason && (
         <div className="rounded-[10px] bg-surface px-3 py-2 text-[12.5px] italic text-muted">
-          "{swap.reason}"
+          &ldquo;{swap.reason}&rdquo;
         </div>
       )}
 
@@ -134,7 +134,6 @@ function SwapCard({
 }
 
 export default function TrocasCliente({
-  accountId,
   profile,
   pending: initialPending,
   resolved: initialResolved,
@@ -202,7 +201,9 @@ export default function TrocasCliente({
 
   // Quando o servidor re-renderiza (router.refresh), as props são re-passadas
   // mas o estado local não é resetado — sincroniza manualmente
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setPending(initialPending); }, [initialPending]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setResolved(initialResolved); }, [initialResolved]);
 
   const lista = filtro === "pendentes" ? pending : resolved;

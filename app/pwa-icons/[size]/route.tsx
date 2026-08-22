@@ -22,7 +22,7 @@ export async function GET(
         style={{
           width: size,
           height: size,
-          background: isMaskable ? "#FAFAFA" : "#4F46E5",
+          background: isMaskable ? "#FAF6EC" : "#6B3521",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -32,7 +32,7 @@ export async function GET(
           style={{
             width: innerSize,
             height: innerSize,
-            background: "#4F46E5",
+            background: "#6B3521",
             borderRadius: radius,
             display: "flex",
             alignItems: "center",

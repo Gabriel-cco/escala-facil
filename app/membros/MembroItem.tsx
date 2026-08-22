@@ -119,7 +119,7 @@ export default function MembroItem({
             <div className="text-[12px] text-muted">{membro.grupoNome}</div>
             <div className="flex flex-wrap gap-1.5">
               {!membro.active && (
-                <span className="rounded-full bg-[#e5e7eb] px-2 py-0.5 text-[10.5px] font-semibold text-[#6b7280]">
+                <span className="rounded-full bg-[#E3D2B6] px-2 py-0.5 text-[10.5px] font-semibold text-[#6E5A4E]">
                   Inativo
                 </span>
               )}
@@ -227,7 +227,7 @@ export default function MembroItem({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Arquivar membro?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
                 &ldquo;{membro.nome}&rdquo; ficará inativo e não será elegível
                 para escalas, mas poderá ser reativado depois.
               </p>

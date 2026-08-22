@@ -414,8 +414,8 @@ export default async function Home() {
                   <div
                     className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[10px] text-[17px]"
                     style={{
-                      background: ultimaChamada ? "#EEF2FF" : "#F5F5F5",
-                      color: ultimaChamada ? "#4F46E5" : "#A3A3A3",
+                      background: ultimaChamada ? "#F2E7D4" : "#F2E7D4",
+                      color: ultimaChamada ? "#6B3521" : "#8A7466",
                     }}
                   >
                     ✓

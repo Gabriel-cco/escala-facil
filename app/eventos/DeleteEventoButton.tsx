@@ -75,7 +75,7 @@ export default function DeleteEventoButton({
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
                 Apagar evento?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6b7280]">
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
                 &ldquo;{titulo}&rdquo; e todas as suas atribuições serão
                 removidos. Esta ação não pode ser desfeita.
               </p>

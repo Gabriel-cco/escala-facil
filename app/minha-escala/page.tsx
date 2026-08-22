@@ -209,7 +209,7 @@ export default async function MinhaEscalaPage({
                   id={evento.id === proximoEventoId ? "proximo-evento" : undefined}
                   className={`rounded-[18px] border bg-paper px-[18px] py-4 ${
                     euEstouEscalado
-                      ? "border-[#4f46e5]/40 bg-[#eef2ff]"
+                      ? "border-[#6B3521]/40 bg-[#F2E7D4]"
                       : "border-black/[0.06]"
                   }`}
                 >
@@ -230,7 +230,7 @@ export default async function MinhaEscalaPage({
                       )}
                     </div>
                     {euEstouEscalado && (
-                      <span className="flex-none rounded-full bg-[#eef2ff] px-2.5 py-1 text-[11px] font-semibold text-[#4f46e5]">
+                      <span className="flex-none rounded-full bg-[#F2E7D4] px-2.5 py-1 text-[11px] font-semibold text-[#6B3521]">
                         Você
                       </span>
                     )}
@@ -264,7 +264,7 @@ export default async function MinhaEscalaPage({
                               )}
                             </div>
                             {isMine && (
-                              <span className="text-[11px] font-semibold text-[#4f46e5]">
+                              <span className="text-[11px] font-semibold text-[#6B3521]">
                                 você
                               </span>
                             )}

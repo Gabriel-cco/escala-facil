@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
   let totalEnviados = 0;
 
   for (const evento of eventos) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const atribuicoes = (evento.assignments ?? []) as unknown as Array<{
       account_id: string;
       role: { name: string } | { name: string }[] | null;

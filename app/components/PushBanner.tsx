@@ -8,34 +8,38 @@ const LS_KEY = "ef_push_dismissed";
 
 export default function PushBanner() {
   const { data: currentAccount } = useCurrentAccount();
-  const [visivel, setVisivel] = useState(false);
+  const [descartado, setDescartado] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem(LS_KEY);
+  });
   const [ativando, setAtivando] = useState(false);
   const [erro, setErro] = useState(false);
 
+  const temSupporte =
+    typeof window !== "undefined" &&
+    "Notification" in window &&
+    "serviceWorker" in navigator;
+  const permissao = temSupporte ? Notification.permission : "denied";
+
+  const visivel =
+    !descartado &&
+    !!currentAccount &&
+    temSupporte &&
+    permissao === "default";
+
+  // Auto-register silently when permission already granted but no subscription
   useEffect(() => {
-    if (!currentAccount) return;
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
-    if (Notification.permission === "denied") return;
-
-    if (Notification.permission === "granted") {
-      // Permissão já concedida — verifica se há assinatura local ativa.
-      // Se não houver (ex: registro falhou antes, app reinstalado), re-registra silenciosamente.
-      navigator.serviceWorker.ready.then((reg) => {
-        reg.pushManager.getSubscription().then((sub) => {
-          if (!sub) {
-            registerPushSubscription(currentAccount.account.id).then((ok) => {
-              if (ok) localStorage.setItem(LS_KEY, "accepted");
-            });
-          }
-        });
+    if (!currentAccount || !temSupporte || permissao !== "granted") return;
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => {
+        if (!sub) {
+          registerPushSubscription(currentAccount.account.id).then((ok) => {
+            if (ok) localStorage.setItem(LS_KEY, "accepted");
+          });
+        }
       });
-      return;
-    }
-
-    // permission === "default"
-    if (localStorage.getItem(LS_KEY)) return;
-    setVisivel(true);
-  }, [currentAccount]);
+    });
+  }, [currentAccount, temSupporte, permissao]);
 
   async function ativar() {
     if (!currentAccount) return;
@@ -45,16 +49,15 @@ export default function PushBanner() {
     setAtivando(false);
     if (ok) {
       localStorage.setItem(LS_KEY, "accepted");
-      setVisivel(false);
+      setDescartado(true);
     } else {
-      // Mantém o banner visível mas mostra o erro para o usuário tentar de novo
       setErro(true);
     }
   }
 
   function dispensar() {
     localStorage.setItem(LS_KEY, "dismissed");
-    setVisivel(false);
+    setDescartado(true);
   }
 
   if (!visivel) return null;

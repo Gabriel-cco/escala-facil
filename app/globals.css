@@ -1,49 +1,50 @@
 @import "tailwindcss";
 
 /*
- * Escala Fácil — design system (índigo + cinza-frio, tipografia Inter).
- * A cor trabalha pouco (índigo pontual como acento), o espaço trabalha muito.
+ * Escala Fácil — design system variante paroquial.
+ * Paleta: marrom (#6B3521) como primária, creme (#FAF6EC) como fundo,
+ * neutros quentes, Newsreader para títulos de página.
  */
 @theme {
   /* Superfícies */
-  --color-screen: #fafafa; /* fundo da página */
-  --color-app: #f3f4f6; /* moldura do app (web/desktop) */
-  --color-surface: #f3f4f6; /* preenchimento sutil / hover */
-  --color-paper: #ffffff; /* cartão branco */
-  --color-border: #e5e7eb; /* bordas */
+  --color-screen: #FAF6EC; /* fundo da página — creme */
+  --color-app: #F2E7D4;   /* moldura do app (web/desktop) */
+  --color-surface: #F2E7D4; /* preenchimento sutil / hover */
+  --color-paper: #ffffff;  /* cartão branco */
+  --color-border: #E3D2B6; /* bordas quentes */
 
-  /* Primário (índigo — acento, 1 ponto de cor por tela) */
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-light: #eef2ff;
+  /* Primário (marrom paroquial — 1 ponto de cor por tela) */
+  --color-primary: #6B3521;
+  --color-primary-hover: #4A2415;
+  --color-primary-light: #F2E7D4;
 
   /* Texto (hierarquia por tamanho/peso, não por cor) */
-  --color-ink: #171717; /* texto principal */
-  --color-ink-soft: #4b5563; /* texto secundário forte */
-  --color-muted: #6b7280; /* texto secundário */
-  --color-faint: #9ca3af; /* terciário / placeholder */
-  --color-tab-off: #9ca3af; /* aba inativa */
+  --color-ink: #2E1A11;    /* texto principal */
+  --color-ink-soft: #4A3A31; /* texto secundário forte */
+  --color-muted: #6E5A4E;  /* texto secundário */
+  --color-faint: #B3A296;  /* terciário / placeholder */
+  --color-tab-off: #B3A296; /* aba inativa */
 
-  /* Avatares e trilhas (tom índigo suave) */
-  --color-avatar: #eef2ff;
-  --color-avatar-ink: #4f46e5;
-  --color-track: #f3f4f6; /* trilha de progresso */
+  /* Avatares e trilhas (tom marrom suave) */
+  --color-avatar: #F2E7D4;
+  --color-avatar-ink: #6B3521;
+  --color-track: #F2E7D4;  /* trilha de progresso */
 
   /* Semânticos */
-  --color-success: #16a34a;
-  --color-warning: #f59e0b; /* suspenso / ações reversíveis */
-  --color-danger: #dc2626; /* destrutivo (deletar evento) */
-  --color-error: #dc2626;
+  --color-success: #2F6B44;
+  --color-warning: #B07A1E; /* suspenso / ações reversíveis */
+  --color-danger: #A8232B;  /* destrutivo (deletar evento) */
+  --color-error: #A8232B;
 
-  /* Sombras (discretas, só onde separa camadas) */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-modal: 0 4px 24px rgba(0, 0, 0, 0.12);
+  /* Sombras (quentes, discretas — só onde separa camadas) */
+  --shadow-card: 0 1px 2px rgba(74,36,21,0.06), 0 1px 3px rgba(74,36,21,0.08);
+  --shadow-hover: 0 2px 8px rgba(74,36,21,0.12);
+  --shadow-modal: 0 8px 24px rgba(74,36,21,0.14), 0 2px 6px rgba(74,36,21,0.08);
 
-  /* Tipografia — Inter em todo o app. --font-inter injetada pelo next/font. */
+  /* Tipografia — Inter para UI, Newsreader para títulos de página. */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
-  --font-serif: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), "Georgia", ui-serif, serif;
 }
 
 html,
@@ -71,7 +72,7 @@ body {
   box-shadow: var(--shadow-hover);
 }
 
-/* Focus ring índigo consistente em todos os campos de formulário. */
+/* Focus ring marrom consistente em todos os campos de formulário. */
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
@@ -127,4 +128,10 @@ textarea:focus-visible {
 
 .ef-pop {
   animation: ef-pop 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Seleção de texto com realce dourado paroquial. */
+::selection {
+  background: #E0A73C;
+  color: #3D1F12;
 }

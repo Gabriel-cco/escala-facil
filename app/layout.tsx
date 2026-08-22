@@ -1,15 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Newsreader } from "next/font/google";
 import AppShell, { type ShellUser } from "./components/shell/AppShell";
 import { iniciais } from "@/lib/iniciais";
 import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import "./globals.css";
 
-// Inter em todo o app (design system). Hierarquia por tamanho e peso.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+// Newsreader para títulos de página (evoca a serifa do brasão paroquial).
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal"],
+  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {
@@ -58,7 +66,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full`}>
+    <html lang="pt-BR" className={`${inter.variable} ${newsreader.variable} h-full`}>
       <body className="min-h-full font-sans">
         <AppShell user={shellUser}>{children}</AppShell>
       </body>

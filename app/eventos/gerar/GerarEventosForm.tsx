@@ -506,13 +506,15 @@ export default function GerarEventosForm({
         </div>
 
         {/* Salvar padrões como template */}
-        {podePrevisualizar && (
+        {grupoId && (
           <div className="rounded-[14px] border border-black/[0.07] bg-paper px-4 py-3.5">
             {!mostrarSalvarTemplate ? (
               <button
                 type="button"
                 onClick={() => setMostrarSalvarTemplate(true)}
-                className="text-[13px] font-semibold text-ink-soft hover:text-ink"
+                disabled={!podePrevisualizar}
+                className="text-[13px] font-semibold text-ink-soft hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                title={!podePrevisualizar ? "Preencha todos os padrões antes de salvar" : undefined}
               >
                 Salvar estes padrões como template →
               </button>

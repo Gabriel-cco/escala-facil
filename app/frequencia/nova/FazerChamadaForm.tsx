@@ -16,6 +16,8 @@ export type EntradaRoster = {
   presente: boolean;
 };
 
+type ModoAvulso = null | "escolhendo" | "manual" | "qr";
+
 function hojeStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -87,9 +89,12 @@ export default function FazerChamadaForm({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
+  const [modoAvulso, setModoAvulso] = useState<ModoAvulso>(null);
+
   const onGrupoChange = useCallback(
     async (novoGrupoId: string) => {
       setGrupoId(novoGrupoId);
+      setModoAvulso(null);
       if (!novoGrupoId) return;
 
       const grupo = grupos.find((g) => g.id === novoGrupoId);
@@ -176,6 +181,8 @@ export default function FazerChamadaForm({
     setSalvando(true);
     setErro("");
 
+    const isAvulsoManual = modoAvulso === "manual";
+
     try {
       if (editando) {
         const { error: updError } = await supabase
@@ -220,17 +227,19 @@ export default function FazerChamadaForm({
           .single();
         if (listError || !lista) throw listError;
 
-        const { error: recError } = await supabase
-          .from("attendance_records")
-          .insert(
-            roster.map((r) => ({
-              list_id: lista.id,
-              account_id: r.tipo === "membro" ? r.id : null,
-              external_name: r.tipo === "externo" ? r.nome : null,
-              present: r.presente,
-            }))
-          );
-        if (recError) throw recError;
+        if (roster.length > 0) {
+          const { error: recError } = await supabase
+            .from("attendance_records")
+            .insert(
+              roster.map((r) => ({
+                list_id: lista.id,
+                account_id: r.tipo === "membro" ? r.id : null,
+                external_name: r.tipo === "externo" ? r.nome : null,
+                present: isAvulsoManual ? true : r.presente,
+              }))
+            );
+          if (recError) throw recError;
+        }
       }
 
       router.push("/frequencia");
@@ -241,24 +250,80 @@ export default function FazerChamadaForm({
     }
   };
 
+  const salvarQr = async () => {
+    if (!grupoId || !nome.trim() || !data) {
+      setErro("Preencha grupo, nome e data da chamada.");
+      return;
+    }
+    setSalvando(true);
+    setErro("");
+
+    try {
+      const qrToken = crypto.randomUUID();
+      const { data: lista, error: listError } = await supabase
+        .from("attendance_lists")
+        .insert({
+          group_id: grupoId,
+          event_id: eventoId || null,
+          name: nome.trim(),
+          date: data,
+          time: hora || null,
+          created_by: accountId,
+          qr_token: qrToken,
+        })
+        .select("id")
+        .single();
+      if (listError || !lista) throw listError;
+
+      router.push(`/frequencia/${lista.id}/qr`);
+    } catch (e: unknown) {
+      setErro((e as { message?: string })?.message ?? "Erro ao criar lista.");
+      setSalvando(false);
+    }
+  };
+
   const presentCount = roster.filter((r) => r.presente).length;
   const totalCount = roster.length;
   const absentCount = totalCount - presentCount;
 
+  const rosterVazio = roster.length === 0 && grupoId && !carregandoGrupo;
+  const mostrarAvulsoPrompt = rosterVazio && !editando && modoAvulso !== "manual" && modoAvulso !== "qr";
+  const mostrarRoster = modoAvulso === "manual" || (!mostrarAvulsoPrompt && !carregandoGrupo);
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Barra de contagem */}
-      <div className="flex flex-none items-center justify-between border-b border-[#A7F3D0] bg-[#ECFDF5] px-[18px] py-3 md:px-6">
-        <div className="text-[14px] font-semibold text-[#065F46]">
-          {presentCount} de {totalCount} presentes
+      {/* Barra de contagem — oculta em modo QR */}
+      {modoAvulso !== "qr" && (
+        <div className="flex flex-none items-center justify-between border-b border-[#A7F3D0] bg-[#ECFDF5] px-[18px] py-3 md:px-6">
+          {modoAvulso === "manual" ? (
+            <div className="text-[14px] font-semibold text-[#065F46]">
+              {roster.length} {roster.length === 1 ? "pessoa adicionada" : "pessoas adicionadas"}
+            </div>
+          ) : (
+            <>
+              <div className="text-[14px] font-semibold text-[#065F46]">
+                {presentCount} de {totalCount} presentes
+              </div>
+              <button
+                onClick={marcarTodosPresentes}
+                className="text-[12.5px] font-semibold text-[#047857]"
+              >
+                Marcar todos presentes
+              </button>
+            </>
+          )}
         </div>
-        <button
-          onClick={marcarTodosPresentes}
-          className="text-[12.5px] font-semibold text-[#047857]"
-        >
-          Marcar todos presentes
-        </button>
-      </div>
+      )}
+
+      {/* Banner modo QR */}
+      {modoAvulso === "qr" && (
+        <div className="flex flex-none items-center gap-3 border-b border-[#C7D2FE] bg-[#EEF2FF] px-[18px] py-3 md:px-6">
+          <span className="text-[18px]">📱</span>
+          <p className="text-[13px] font-semibold text-[#3730A3]">
+            Modo QR — o código será gerado ao salvar
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         {/* Campos do formulário */}
@@ -355,18 +420,80 @@ export default function FazerChamadaForm({
         <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-[18px] pb-28 md:p-6 md:pb-28">
           {carregandoGrupo ? (
             <p className="text-[13px] text-muted">Carregando membros…</p>
-          ) : roster.length === 0 && !grupoId ? (
+          ) : !grupoId && modoAvulso === null ? (
             <p className="text-[13px] text-muted">
               Selecione um grupo para ver os membros.
             </p>
-          ) : roster.length === 0 ? (
-            <p className="text-[13px] text-muted">
-              Nenhum membro ativo neste grupo.
-            </p>
-          ) : (
+          ) : modoAvulso === "qr" ? (
+            /* ── Modo QR ── */
+            <div className="flex flex-col items-center gap-4 py-6 text-center">
+              <div className="text-[48px]">📱</div>
+              <div>
+                <p className="text-[15px] font-semibold text-ink">
+                  QR Code de presença
+                </p>
+                <p className="mt-1 max-w-[280px] text-[13px] text-muted">
+                  Ao salvar, um QR será gerado. Os participantes escaneiam e
+                  digitam o nome para se registrar.
+                </p>
+              </div>
+              <button
+                onClick={() => setModoAvulso("escolhendo")}
+                className="text-[12.5px] font-semibold text-muted underline underline-offset-2"
+              >
+                Voltar à escolha
+              </button>
+            </div>
+          ) : mostrarAvulsoPrompt ? (
+            /* ── Sem membros: prompt avulso ── */
+            <div className="flex flex-col gap-3 py-2">
+              <p className="text-[13px] text-muted">
+                Nenhum membro ativo neste grupo.
+              </p>
+              {modoAvulso === "escolhendo" ? (
+                <>
+                  <p className="text-[13px] font-semibold text-ink">
+                    Como deseja registrar a presença?
+                  </p>
+                  <button
+                    onClick={() => setModoAvulso("manual")}
+                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D4D4D4] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAFBFF]"
+                  >
+                    <span className="text-[14px] font-semibold text-ink">
+                      ✏️ Adicionar manualmente
+                    </span>
+                    <span className="text-[12.5px] text-muted">
+                      Você digita o nome de cada pessoa
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setModoAvulso("qr")}
+                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D4D4D4] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAFBFF]"
+                  >
+                    <span className="text-[14px] font-semibold text-ink">
+                      📱 Gerar QR Code
+                    </span>
+                    <span className="text-[12.5px] text-muted">
+                      Participantes escaneiam e se registram sozinhos
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setModoAvulso("escolhendo")}
+                  className="self-start rounded-[10px] border border-[#C7D2FE] bg-[#EEF2FF] px-4 py-2.5 text-[13px] font-semibold text-[#3730A3]"
+                >
+                  Deseja começar uma frequência avulsa?
+                </button>
+              )}
+            </div>
+          ) : mostrarRoster ? (
+            /* ── Roster normal ou avulso manual ── */
             <>
               <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-[1.1px] text-muted">
-                Toque em quem estava presente
+                {modoAvulso === "manual"
+                  ? "Adicione quem está presente"
+                  : "Toque em quem estava presente"}
               </div>
 
               {roster.map((r) => {
@@ -376,15 +503,27 @@ export default function FazerChamadaForm({
                     key={r.id}
                     className="flex items-center gap-3 rounded-[8px] border px-4 py-3"
                     style={{
-                      background: isPresente ? "#F7FDFA" : "#FFFDF5",
-                      borderColor: isPresente ? "#A7F3D0" : "#FDE68A",
+                      background:
+                        modoAvulso === "manual"
+                          ? "#F7FDFA"
+                          : isPresente
+                            ? "#F7FDFA"
+                            : "#FFFDF5",
+                      borderColor:
+                        modoAvulso === "manual"
+                          ? "#A7F3D0"
+                          : isPresente
+                            ? "#A7F3D0"
+                            : "#FDE68A",
                     }}
                   >
                     <div
                       className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12.5px] font-bold"
                       style={{
-                        background: isPresente ? "#ECFDF5" : "#FFFBEB",
-                        color: isPresente ? "#047857" : "#92400E",
+                        background:
+                          modoAvulso === "manual" ? "#ECFDF5" : isPresente ? "#ECFDF5" : "#FFFBEB",
+                        color:
+                          modoAvulso === "manual" ? "#047857" : isPresente ? "#047857" : "#92400E",
                       }}
                     >
                       {r.iniciais}
@@ -393,11 +532,14 @@ export default function FazerChamadaForm({
                     <div className="min-w-0 flex-1">
                       <div
                         className="truncate text-[14px] font-semibold"
-                        style={{ color: isPresente ? "#171717" : "#404040" }}
+                        style={{
+                          color:
+                            modoAvulso === "manual" ? "#171717" : isPresente ? "#171717" : "#404040",
+                        }}
                       >
                         {r.nome}
                       </div>
-                      {r.tipo === "externo" && (
+                      {r.tipo === "externo" && modoAvulso !== "manual" && (
                         <div className="text-[11.5px] text-muted">
                           Membro externo
                         </div>
@@ -414,17 +556,19 @@ export default function FazerChamadaForm({
                       </button>
                     )}
 
-                    <button
-                      onClick={() => togglePresente(r.id)}
-                      className="min-w-[104px] flex-none rounded-full border px-4 py-1.5 text-[12.5px] font-semibold"
-                      style={{
-                        background: isPresente ? "#ECFDF5" : "#FFFBEB",
-                        color: isPresente ? "#047857" : "#92400E",
-                        borderColor: isPresente ? "#A7F3D0" : "#FDE68A",
-                      }}
-                    >
-                      {isPresente ? "✓ Presente" : "Faltou"}
-                    </button>
+                    {modoAvulso !== "manual" && (
+                      <button
+                        onClick={() => togglePresente(r.id)}
+                        className="min-w-[104px] flex-none rounded-full border px-4 py-1.5 text-[12.5px] font-semibold"
+                        style={{
+                          background: isPresente ? "#ECFDF5" : "#FFFBEB",
+                          color: isPresente ? "#047857" : "#92400E",
+                          borderColor: isPresente ? "#A7F3D0" : "#FDE68A",
+                        }}
+                      >
+                        {isPresente ? "✓ Presente" : "Faltou"}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -434,7 +578,11 @@ export default function FazerChamadaForm({
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Nome do membro externo…"
+                    placeholder={
+                      modoAvulso === "manual"
+                        ? "Nome da pessoa…"
+                        : "Nome do membro externo…"
+                    }
                     value={novoExternoNome}
                     onChange={(e) => setNovoExternoNome(e.target.value)}
                     onKeyDown={(e) => {
@@ -468,11 +616,13 @@ export default function FazerChamadaForm({
                   className="flex items-center gap-2 rounded-[8px] border border-dashed border-[#D4D4D4] px-4 py-3 text-[13px] font-semibold text-ink-soft hover:border-primary hover:text-primary"
                 >
                   <span className="text-[16px] leading-none">+</span>
-                  Adicionar membro externo
+                  {modoAvulso === "manual"
+                    ? "Adicionar pessoa"
+                    : "Adicionar membro externo"}
                 </button>
               )}
             </>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -482,19 +632,37 @@ export default function FazerChamadaForm({
           <p className="mb-2 text-[12.5px] text-danger">{erro}</p>
         )}
         <div className="flex items-center justify-between gap-4">
-          <div className="text-[13px] text-muted">
-            {absentCount === 0
-              ? "Todos presentes"
-              : absentCount === 1
-                ? "1 falta registrada"
-                : `${absentCount} faltas registradas`}
-          </div>
+          {modoAvulso === "qr" ? (
+            <p className="text-[13px] text-muted">
+              O QR será gerado após salvar
+            </p>
+          ) : modoAvulso === "manual" ? (
+            <p className="text-[13px] text-muted">
+              {roster.length === 0
+                ? "Adicione pessoas à lista"
+                : roster.length === 1
+                  ? "1 pessoa na lista"
+                  : `${roster.length} pessoas na lista`}
+            </p>
+          ) : (
+            <div className="text-[13px] text-muted">
+              {absentCount === 0
+                ? "Todos presentes"
+                : absentCount === 1
+                  ? "1 falta registrada"
+                  : `${absentCount} faltas registradas`}
+            </div>
+          )}
           <button
-            onClick={salvar}
+            onClick={modoAvulso === "qr" ? salvarQr : salvar}
             disabled={salvando}
             className="rounded-[10px] bg-primary px-5 py-2.5 text-[14px] font-semibold text-white disabled:opacity-60"
           >
-            {salvando ? "Salvando…" : "Salvar chamada"}
+            {salvando
+              ? "Salvando…"
+              : modoAvulso === "qr"
+                ? "Salvar e gerar QR"
+                : "Salvar chamada"}
           </button>
         </div>
       </div>

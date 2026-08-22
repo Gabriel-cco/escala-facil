@@ -31,7 +31,7 @@ export async function updateSession(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     // Rotas públicas (não exigem login)
-    const rotasPublicas = ['/login', '/auth', '/escala']
+    const rotasPublicas = ['/login', '/auth', '/escala', '/frequencia/avulsa', '/api/frequencia/avulsa']
     const ehRotaPublica = rotasPublicas.some((rota) =>
         request.nextUrl.pathname.startsWith(rota)
     )

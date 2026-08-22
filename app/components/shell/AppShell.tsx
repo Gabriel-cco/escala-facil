@@ -56,7 +56,8 @@ export default function AppShell({
     pathname === "/login" ||
     pathname === "/acesso-pendente" ||
     pathname === "/selecionar-grupo" ||
-    pathname.startsWith("/escala/");
+    pathname.startsWith("/escala/") ||
+    pathname.startsWith("/frequencia/avulsa/");
 
   const contextValue = {
     openMenu,

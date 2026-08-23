@@ -50,7 +50,7 @@ export default function Header(props: HeaderProps) {
 
   if (props.variant === "home") {
     return (
-      <header className="sticky top-0 z-30 flex flex-none items-center justify-between bg-screen px-5 pb-3.5 pt-4 md:hidden">
+      <header className="sticky top-0 z-30 flex flex-none items-center justify-between bg-app px-5 pb-3.5 pt-4 md:hidden">
         <button
           onClick={openMenu}
           aria-label="Abrir menu"

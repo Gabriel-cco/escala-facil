@@ -44,24 +44,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Nenhum evento hoje.", count: 0 });
   }
 
-  // Coordenadores e admins ativos — buscados uma vez para todos os grupos
-  const { data: gestores } = await admin
+  // Coordenadores ativos por grupo — buscados uma vez para todos os grupos
+  const { data: coordenadores } = await admin
     .from("accounts")
-    .select("id, profile, group_id")
-    .in("profile", ["coordinator", "admin"])
+    .select("id, group_id")
+    .eq("profile", "coordinator")
     .eq("active", true);
 
-  // group_id → [account_id] para coordenadores; admins são globais
+  // group_id → [account_id]
   const coordsPorGrupo = new Map<string, string[]>();
-  const adminIds: string[] = [];
-  for (const g of gestores ?? []) {
-    if (g.profile === "admin") {
-      adminIds.push(g.id);
-    } else if (g.group_id) {
-      const lista = coordsPorGrupo.get(g.group_id) ?? [];
-      lista.push(g.id);
-      coordsPorGrupo.set(g.group_id, lista);
-    }
+  for (const c of coordenadores ?? []) {
+    if (!c.group_id) continue;
+    const lista = coordsPorGrupo.get(c.group_id) ?? [];
+    lista.push(c.id);
+    coordsPorGrupo.set(c.group_id, lista);
   }
 
   let totalEnviados = 0;
@@ -98,12 +94,11 @@ export async function GET(request: NextRequest) {
     const title = `Ei, ${grupoNome}! Hoje é dia de servir 🕊️`;
     const body = `${evento.name} · ${hora}\n\n${escalaTxt}`;
 
-    // Membros escalados + coordenadores do grupo + todos os admins
+    // Membros escalados + coordenadores do grupo
     const destinatarios = [
       ...new Set([
         ...escala.map((e) => e.accountId),
         ...(coordsPorGrupo.get(evento.group_id) ?? []),
-        ...adminIds,
       ]),
     ];
 

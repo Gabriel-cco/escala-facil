@@ -44,6 +44,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Nenhum evento hoje.", count: 0 });
   }
 
+  // Coordenadores e admins ativos — buscados uma vez para todos os grupos
+  const { data: gestores } = await admin
+    .from("accounts")
+    .select("id, profile, group_id")
+    .in("profile", ["coordinator", "admin"])
+    .eq("active", true);
+
+  // group_id → [account_id] para coordenadores; admins são globais
+  const coordsPorGrupo = new Map<string, string[]>();
+  const adminIds: string[] = [];
+  for (const g of gestores ?? []) {
+    if (g.profile === "admin") {
+      adminIds.push(g.id);
+    } else if (g.group_id) {
+      const lista = coordsPorGrupo.get(g.group_id) ?? [];
+      lista.push(g.id);
+      coordsPorGrupo.set(g.group_id, lista);
+    }
+  }
+
   let totalEnviados = 0;
 
   for (const evento of eventos) {
@@ -77,7 +97,15 @@ export async function GET(request: NextRequest) {
 
     const title = `Ei, ${grupoNome}! Hoje é dia de servir 🕊️`;
     const body = `${evento.name} · ${hora}\n\n${escalaTxt}`;
-    const destinatarios = [...new Set(escala.map((e) => e.accountId))];
+
+    // Membros escalados + coordenadores do grupo + todos os admins
+    const destinatarios = [
+      ...new Set([
+        ...escala.map((e) => e.accountId),
+        ...(coordsPorGrupo.get(evento.group_id) ?? []),
+        ...adminIds,
+      ]),
+    ];
 
     // Persiste no banco para aparecer no sino
     await admin.from("notifications").insert(

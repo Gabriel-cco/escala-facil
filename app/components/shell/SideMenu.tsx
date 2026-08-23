@@ -59,27 +59,36 @@ export default function SideMenu({
           {/* Grupo ativo (dropdown para admin; fixo para os demais) */}
           <SeletorGrupo className="mb-1 mt-2 px-1" />
 
-          <button
-            onClick={onClose}
-            className="w-full px-1.5 py-3.5 text-left text-[14.5px] text-ink"
-          >
-            Meu perfil
-          </button>
-          {(user.perfil === "admin" || user.perfil === "coordinator") && (
-            <Link
-              href="/notificacoes"
-              onClick={onClose}
-              className="block w-full px-1.5 py-3.5 text-left text-[14.5px] text-ink"
-            >
-              Notificações
-            </Link>
+          {/* Navegação — itens fora da TabBar */}
+          {user.perfil !== "member" && (
+            <div className="border-b border-black/[0.07] py-1">
+              {user.perfil === "coordinator" && (
+                <Link href="/funcoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                  <span className="text-faint">✦</span> Funções
+                </Link>
+              )}
+              {user.perfil === "admin" && (
+                <>
+                  <Link href="/funcoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                    <span className="text-faint">✦</span> Funções
+                  </Link>
+                  <Link href="/usuarios" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                    <span className="text-faint">👤</span> Usuários
+                  </Link>
+                  <Link href="/trocas" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                    <span className="text-faint">⇄</span> Trocas
+                  </Link>
+                </>
+              )}
+              <Link href="/frequencia" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                <span className="text-faint">✓</span> Frequência
+              </Link>
+              <Link href="/notificacoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                <span className="text-faint">🔔</span> Notificações
+              </Link>
+            </div>
           )}
-          <button
-            onClick={onClose}
-            className="w-full px-1.5 py-3.5 text-left text-[14.5px] text-ink"
-          >
-            Configurações
-          </button>
+
           <button
             onClick={sair}
             disabled={saindo}

@@ -54,23 +54,14 @@ export default function Header(props: HeaderProps) {
         <button
           onClick={openMenu}
           aria-label="Abrir menu"
-          className="flex h-[38px] w-[38px] items-center justify-center text-xl text-ink"
+          className="flex h-[38px] w-[38px] items-center justify-center text-[22px] leading-none text-ink"
         >
           ☰
         </button>
-        <div className="font-serif text-[21px] font-semibold text-ink">
-          Escala Fácil
+        <div className="text-[20px] tracking-tight text-ink">
+          <span className="font-light">escala</span><span className="font-bold">fácil</span>
         </div>
-        <div className="flex items-center gap-1">
-          <NotificationBell />
-          <button
-            onClick={openMenu}
-            aria-label="Abrir menu"
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
-          >
-            {userIniciais || "··"}
-          </button>
-        </div>
+        <NotificationBell />
       </header>
     );
   }

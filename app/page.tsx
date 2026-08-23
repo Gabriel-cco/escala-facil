@@ -18,7 +18,7 @@ const MESES = [
 function formatarDataCompleta(dateStr: string, time: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  return `${DIAS_SEMANA[date.getDay()]}, ${d} de ${MESES[m - 1]} · ${time.slice(0, 5)}`;
+  return `${DIAS_SEMANA[date.getDay()]}, ${d} de ${MESES[m - 1]} · ${time.slice(0, 2)}h`;
 }
 
 export default async function Home() {
@@ -241,325 +241,259 @@ export default async function Home() {
     },
   ].filter((a) => a.count > 0);
 
-  const stats = [
-    { value: String(eventos?.length ?? 0), label: "Eventos agendados" },
-    { value: String(totalMembros ?? 0), label: "Membros ativos" },
-    {
-      value: `${totalAssignmentsUpcoming}/${totalSlotsUpcoming}`,
-      label: "Funções atribuídas",
-    },
-  ];
+  const iniciais = primeiroNome ? primeiroNome.slice(0, 1).toUpperCase() : "?";
 
   return (
     <>
       <Header variant="home" />
-      <main className="flex flex-1 flex-col gap-5 px-[18px] pb-6 pt-1 md:gap-6 md:p-0">
-        {/* Saudação + criar evento (desktop) */}
-        <div className="flex items-start justify-between gap-4">
+      <main className="flex flex-1 flex-col gap-5 px-[18px] pb-8 pt-2 md:gap-6 md:p-0">
+
+        {/* ── Saudação ────────────────────────────────────────────────── */}
+        <div className="flex items-center gap-4">
+          <div className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-full border-2 border-border bg-paper text-[18px] font-bold text-primary md:h-[60px] md:w-[60px]">
+            {iniciais}
+          </div>
           <div>
-            <h1 className="text-[22px] font-bold tracking-tight text-ink md:text-[26px]">
+            <h1 className="font-serif text-[26px] font-semibold leading-tight text-ink md:text-[30px]">
               {primeiroNome ? `Olá, ${primeiroNome}` : "Olá"}
             </h1>
             <p className="mt-0.5 text-[13px] text-muted">
               {activeGroupId
-                ? `Panorama do grupo ${grupoAtivoNome}.`
-                : "Panorama de todos os grupos da paróquia."}
+                ? `Panorama do grupo ${grupoAtivoNome}`
+                : "Panorama de todos os grupos da paróquia"}
             </p>
           </div>
           <Link
             href="/eventos/novo"
-            className="hidden flex-none items-center gap-2 rounded-[14px] bg-primary px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary-hover md:inline-flex"
+            className="ml-auto hidden flex-none items-center gap-2 rounded-[14px] bg-primary px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary-hover md:inline-flex"
           >
             + Criar evento
           </Link>
         </div>
 
-        {/* Stats — 3 colunas */}
+        {/* ── Stats — 3 colunas com ícone ─────────────────────────────── */}
         <div className="grid grid-cols-3 gap-2.5 md:gap-4">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl border border-black/[0.06] bg-paper shadow-card p-3.5 md:rounded-[18px] md:p-[22px]"
-            >
-              <div className="text-[20px] font-bold leading-none text-ink md:text-[30px]">
-                {s.value}
-              </div>
-              <div className="mt-1.5 text-[10.5px] leading-tight text-muted md:mt-2 md:text-[13px]">
-                {s.label}
-              </div>
+          {/* Eventos agendados */}
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-black/[0.06] bg-paper p-3.5 shadow-card md:rounded-[18px] md:p-[22px]">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <div className="text-[22px] font-bold leading-none text-ink md:text-[28px]">
+              {eventos?.length ?? 0}
             </div>
-          ))}
-        </div>
-
-        {/* Widgets — 3 colunas no desktop para admin/coord, 2 para member */}
-        <div
-          className={`grid grid-cols-1 gap-4 ${mostraFrequencia ? "md:grid-cols-3" : "md:grid-cols-2"}`}
-        >
-          {/* ── Widget: Próximo Evento ──────────────────────────────────── */}
-          <div className="flex flex-col gap-2.5">
-            <div className="text-[11px] font-semibold uppercase tracking-[1.2px] text-muted">
-              Próximo evento
+            <div className="text-center text-[10.5px] leading-tight text-muted md:text-[12px]">
+              Eventos agendados
             </div>
-
-            {proximoEvento ? (
-              <div className="flex flex-col rounded-[18px] border border-black/[0.06] bg-paper shadow-card p-5">
-                {/* Liturgical */}
-                {proximoEvento.liturgical_name && (
-                  <div className="mb-2 flex items-center gap-1.5 text-[12px] text-muted">
-                    <LiturgicalDot color={proximoEvento.liturgical_color} />
-                    {proximoEvento.liturgical_name}
-                  </div>
-                )}
-
-                {/* Nome do evento */}
-                <div className="font-serif text-[22px] font-semibold leading-tight text-ink">
-                  {proximoEvento.name}
-                </div>
-
-                {/* Data e hora */}
-                <div className="mt-1 text-[13px] text-muted">
-                  {formatarDataCompleta(proximoEvento.date, proximoEvento.time)}
-                </div>
-
-                {/* Nome do grupo (só em visão geral) */}
-                {!activeGroupId && grupoNomeDoProximo && (
-                  <div className="mt-2.5">
-                    <span className="rounded-full bg-surface px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
-                      {grupoNomeDoProximo}
-                    </span>
-                  </div>
-                )}
-
-                {/* Barra de progresso */}
-                <div className="mt-4">
-                  <div className="mb-1.5 flex items-center justify-between text-[12.5px]">
-                    <span className="text-muted">
-                      {assignmentsCount} de {totalRolesProximo} funções preenchidas
-                    </span>
-                    <span className="font-semibold text-ink-soft">
-                      {assignmentsCount}/{totalRolesProximo}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-track">
-                    <div
-                      className={`h-full rounded-full transition-all ${completoProximo ? "bg-success" : "bg-primary"}`}
-                      style={{ width: `${pctProximo}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <Link
-                  href={`/eventos/${proximoEvento.id}`}
-                  className="mt-4 flex w-full items-center justify-center rounded-[14px] bg-primary py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary-hover"
-                >
-                  Ver escala →
-                </Link>
-              </div>
-            ) : (
-              /* Estado vazio */
-              <div className="flex flex-col items-center rounded-[18px] border border-black/[0.06] bg-paper shadow-card px-5 py-7 text-center">
-                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-surface">
-                  <svg
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-muted"
-                  >
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                </div>
-                <div className="text-[15px] font-semibold text-ink">
-                  Nenhum evento agendado
-                </div>
-                <div className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
-                  Gere os eventos fixos do mês a partir do molde — é o caminho mais
-                  rápido para começar.
-                </div>
-                <div className="mt-5 flex w-full flex-col gap-2">
-                  <Link
-                    href="/eventos/gerar"
-                    className="flex items-center justify-center rounded-[14px] bg-primary py-3 text-[14px] font-semibold text-white hover:bg-primary-hover"
-                  >
-                    Gerar escala do mês
-                  </Link>
-                  <Link
-                    href="/eventos/novo"
-                    className="flex items-center justify-center rounded-[14px] border border-black/10 py-3 text-[14px] font-semibold text-ink hover:bg-surface"
-                  >
-                    Criar evento
-                  </Link>
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* ── Widget: Frequência ─────────────────────────────────────── */}
-          {mostraFrequencia && (
-            <div className="flex flex-col gap-2.5">
-              <div className="text-[11px] font-semibold uppercase tracking-[1.2px] text-muted">
-                Frequência
-              </div>
+          {/* Membros ativos */}
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-black/[0.06] bg-paper p-3.5 shadow-card md:rounded-[18px] md:p-[22px]">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <div className="text-[22px] font-bold leading-none text-ink md:text-[28px]">
+              {totalMembros ?? 0}
+            </div>
+            <div className="text-center text-[10.5px] leading-tight text-muted md:text-[12px]">
+              Membros ativos
+            </div>
+          </div>
 
-              <div className="flex flex-col rounded-[18px] border border-black/[0.06] bg-paper p-5 shadow-card">
-                <div className="mb-4 flex items-start gap-3.5">
-                  <div
-                    className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-[10px] text-[17px]"
-                    style={{
-                      background: ultimaChamada ? "#F2E7D4" : "#F2E7D4",
-                      color: ultimaChamada ? "#6B3521" : "#8A7466",
-                    }}
-                  >
-                    ✓
-                  </div>
-                  <div>
-                    {ultimaChamada ? (
-                      <>
-                        <div className="text-[12px] font-semibold uppercase tracking-[0.05em] text-muted">
-                          Última chamada
-                        </div>
-                        <div className="mt-1 text-[15px] font-semibold leading-tight text-ink">
-                          {ultimaChamada.list_name}
-                        </div>
-                        <div className="mt-0.5 text-[13.5px] text-muted">
-                          <strong className="text-ink">
-                            {ultimaChamada.present_count} de{" "}
-                            {ultimaChamada.total_count}
-                          </strong>{" "}
-                          presentes
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-[15px] font-semibold text-ink">
-                          Nenhuma chamada registrada
-                        </div>
-                        <div className="mt-1 text-[13px] leading-snug text-muted">
-                          Registre a presença de um encontro, missa ou reunião.
-                        </div>
-                      </>
-                    )}
-                  </div>
+          {/* Funções atribuídas */}
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-black/[0.06] bg-paper p-3.5 shadow-card md:rounded-[18px] md:p-[22px]">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+              <circle cx="19" cy="11" r="2" />
+              <line x1="19" y1="9" x2="19" y2="8" />
+              <line x1="19" y1="13" x2="19" y2="14" />
+              <line x1="17" y1="11" x2="16" y2="11" />
+              <line x1="21" y1="11" x2="22" y2="11" />
+            </svg>
+            <div className="text-[22px] font-bold leading-none text-ink md:text-[28px]">
+              {totalAssignmentsUpcoming}/{totalSlotsUpcoming}
+            </div>
+            <div className="text-center text-[10.5px] leading-tight text-muted md:text-[12px]">
+              Funções atribuídas
+            </div>
+          </div>
+        </div>
+
+        {/* ── Próximos eventos ─────────────────────────────────────────── */}
+        <div className="flex flex-col gap-3">
+          <h2 className="text-[18px] font-bold text-ink">Próximos eventos</h2>
+
+          {proximoEvento ? (
+            <div className="flex flex-col rounded-[18px] border border-black/[0.06] bg-paper shadow-card p-5">
+              {proximoEvento.liturgical_name && (
+                <div className="mb-2 flex items-center gap-1.5 text-[12px] text-muted">
+                  <LiturgicalDot color={proximoEvento.liturgical_color} />
+                  {proximoEvento.liturgical_name}
                 </div>
-
-                <Link
-                  href="/frequencia/nova"
-                  className="flex w-full items-center justify-center rounded-[14px] bg-primary py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary-hover"
-                >
-                  Fazer chamada
+              )}
+              <div className="font-serif text-[20px] font-bold leading-tight text-ink">
+                {proximoEvento.name}
+              </div>
+              <div className="mt-1 text-[13px] text-muted">
+                {formatarDataCompleta(proximoEvento.date, proximoEvento.time)}
+              </div>
+              {!activeGroupId && grupoNomeDoProximo && (
+                <div className="mt-2">
+                  <span className="rounded-full bg-surface px-2.5 py-1 text-[12px] font-semibold text-ink-soft">
+                    {grupoNomeDoProximo}
+                  </span>
+                </div>
+              )}
+              <div className="mt-4">
+                <div className="mb-1.5 flex items-center justify-between text-[12.5px]">
+                  <span className="text-muted">Funções preenchidas</span>
+                  <span className="font-semibold text-ink-soft">
+                    {assignmentsCount}/{totalRolesProximo}
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-track">
+                  <div
+                    className={`h-full rounded-full transition-all ${completoProximo ? "bg-success" : "bg-primary"}`}
+                    style={{ width: `${pctProximo}%` }}
+                  />
+                </div>
+              </div>
+              <Link
+                href={`/eventos/${proximoEvento.id}`}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-[14px] bg-ink py-3.5 text-[14px] font-semibold text-paper transition-colors hover:bg-primary-hover"
+              >
+                Ver escala <span>→</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center rounded-[18px] border border-black/[0.06] bg-paper shadow-card px-5 py-7 text-center">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-surface">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
+              <div className="text-[15px] font-semibold text-ink">Nenhum evento agendado</div>
+              <div className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+                Gere os eventos fixos do mês a partir do molde.
+              </div>
+              <div className="mt-5 flex w-full flex-col gap-2">
+                <Link href="/eventos/gerar" className="flex items-center justify-center rounded-[14px] bg-ink py-3.5 text-[14px] font-semibold text-paper hover:bg-primary-hover">
+                  Gerar escala do mês
                 </Link>
-
-                {ultimaChamada && (
-                  <div className="mt-3 text-center">
-                    <Link
-                      href="/frequencia"
-                      className="text-[13px] font-semibold text-primary hover:underline"
-                    >
-                      Ver histórico e relatório
-                    </Link>
-                  </div>
-                )}
+                <Link href="/eventos/novo" className="flex items-center justify-center rounded-[14px] border border-black/10 py-3 text-[14px] font-semibold text-ink hover:bg-surface">
+                  Criar evento
+                </Link>
               </div>
             </div>
           )}
-
-          {/* ── Widget: Ações Pendentes ─────────────────────────────────── */}
-          <div className="flex flex-col gap-2.5">
-            <div className="text-[11px] font-semibold uppercase tracking-[1.2px] text-muted">
-              Ações pendentes
-            </div>
-
-            {acoesPendentes.length === 0 ? (
-              /* Estado "tudo em dia" */
-              <div className="flex flex-col items-center rounded-[18px] bg-[#d1fae5] px-5 py-7 text-center">
-                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-[#10b981]">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <div className="text-[15px] font-semibold text-[#065f46]">
-                  Tudo em dia por aqui!
-                </div>
-                <div className="mt-1 text-[13px] text-[#047857]">
-                  Nenhuma pendência no momento.
-                </div>
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-[18px] border border-black/[0.06] bg-paper shadow-card">
-                {acoesPendentes.map((acao, i) => (
-                  <Link
-                    key={i}
-                    href={acao.href}
-                    className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface [&:not(:last-child)]:border-b [&:not(:last-child)]:border-black/[0.05]"
-                  >
-                    {/* Ícone */}
-                    <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-surface">
-                      {acao.icon === "list" && (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-soft">
-                          <line x1="8" y1="6" x2="21" y2="6" />
-                          <line x1="8" y1="12" x2="21" y2="12" />
-                          <line x1="8" y1="18" x2="21" y2="18" />
-                          <line x1="3" y1="6" x2="3.01" y2="6" />
-                          <line x1="3" y1="12" x2="3.01" y2="12" />
-                          <line x1="3" y1="18" x2="3.01" y2="18" />
-                        </svg>
-                      )}
-                      {acao.icon === "swap" && (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-soft">
-                          <polyline points="17 1 21 5 17 9" />
-                          <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                          <polyline points="7 23 3 19 7 15" />
-                          <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                        </svg>
-                      )}
-                      {acao.icon === "person" && (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-soft">
-                          <circle cx="12" cy="8" r="4" />
-                          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                        </svg>
-                      )}
-                    </div>
-
-                    {/* Texto */}
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13.5px] font-semibold leading-tight text-ink">
-                        {acao.count} {acao.label}
-                      </div>
-                      <div className="mt-0.5 text-[11.5px] text-muted">
-                        {acao.sublabel}
-                      </div>
-                    </div>
-
-                    {/* Badge + seta */}
-                    <div className="flex flex-none items-center gap-2">
-                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[12px] font-bold text-primary">
-                        {acao.count}
-                      </span>
-                      <span className="text-[18px] leading-none text-faint">›</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
+
+        {/* ── Frequência ───────────────────────────────────────────────── */}
+        {mostraFrequencia && (
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[18px] font-bold text-ink">Frequência</h2>
+
+            <div className="flex flex-col rounded-[18px] border border-black/[0.06] bg-paper p-5 shadow-card">
+              <div className="mb-4 flex items-start gap-3.5">
+                <div className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-[12px] bg-surface text-[20px] text-muted">
+                  ✓
+                </div>
+                <div>
+                  {ultimaChamada ? (
+                    <>
+                      <div className="text-[12px] font-semibold uppercase tracking-[0.05em] text-muted">
+                        Última chamada
+                      </div>
+                      <div className="mt-0.5 text-[15px] font-semibold leading-tight text-ink">
+                        {ultimaChamada.list_name}
+                      </div>
+                      <div className="mt-0.5 text-[13.5px] text-muted">
+                        <strong className="text-ink">{ultimaChamada.present_count} de {ultimaChamada.total_count}</strong> presentes
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-[15px] font-semibold text-ink">
+                        Nenhuma chamada registrada
+                      </div>
+                      <div className="mt-1 text-[13px] leading-snug text-muted">
+                        Registre a presença de um encontro, missa ou reunião
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <Link
+                href="/frequencia/nova"
+                className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-ink py-3.5 text-[14px] font-semibold text-paper transition-colors hover:bg-primary-hover"
+              >
+                Fazer chamada <span>→</span>
+              </Link>
+
+              {ultimaChamada && (
+                <div className="mt-3 text-center">
+                  <Link href="/frequencia" className="text-[13px] font-semibold text-primary hover:underline">
+                    Ver histórico e relatório
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Ações Pendentes ──────────────────────────────────────────── */}
+        {acoesPendentes.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[18px] font-bold text-ink">Ações pendentes</h2>
+            <div className="overflow-hidden rounded-[18px] border border-black/[0.06] bg-paper shadow-card">
+              {acoesPendentes.map((acao, i) => (
+                <Link
+                  key={i}
+                  href={acao.href}
+                  className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface [&:not(:last-child)]:border-b [&:not(:last-child)]:border-black/[0.05]"
+                >
+                  <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-surface">
+                    {acao.icon === "list" && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-soft">
+                        <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+                      </svg>
+                    )}
+                    {acao.icon === "swap" && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-soft">
+                        <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                      </svg>
+                    )}
+                    {acao.icon === "person" && (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-ink-soft">
+                        <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13.5px] font-semibold leading-tight text-ink">
+                      {acao.count} {acao.label}
+                    </div>
+                    <div className="mt-0.5 text-[11.5px] text-muted">{acao.sublabel}</div>
+                  </div>
+                  <div className="flex flex-none items-center gap-2">
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[12px] font-bold text-primary">{acao.count}</span>
+                    <span className="text-[18px] leading-none text-faint">›</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </>
   );

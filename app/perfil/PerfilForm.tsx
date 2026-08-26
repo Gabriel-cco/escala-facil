@@ -18,6 +18,7 @@ export default function PerfilForm({
   const [nome, setNome] = useState(nomeInicial);
   const [birthDate, setBirthDate] = useState(birthDateInicial);
   const [salvando, setSalvando] = useState(false);
+  const [saindo, setSaindo] = useState(false);
   const [erro, setErro] = useState("");
   const [salvo, setSalvo] = useState(false);
   const router = useRouter();
@@ -25,6 +26,14 @@ export default function PerfilForm({
   const alterado =
     nome.trim() !== nomeInicial || birthDate !== birthDateInicial;
   const podeSalvar = nome.trim().length > 0 && alterado;
+
+  async function sair() {
+    setSaindo(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   async function salvar() {
     if (!podeSalvar || salvando) return;
@@ -95,6 +104,16 @@ export default function PerfilForm({
           className="w-full rounded-2xl bg-primary py-4 text-[15px] font-semibold text-paper transition-opacity disabled:pointer-events-none disabled:opacity-40 md:w-auto md:rounded-[11px] md:px-6 md:py-3 md:text-[14px]"
         >
           {salvando ? "Salvando..." : "Salvar alterações"}
+        </button>
+      </div>
+
+      <div className="mt-4 border-t border-black/[0.07] pt-4">
+        <button
+          onClick={sair}
+          disabled={saindo}
+          className="text-[13.5px] font-semibold text-danger disabled:opacity-50"
+        >
+          {saindo ? "Saindo..." : "Sair da conta"}
         </button>
       </div>
     </div>

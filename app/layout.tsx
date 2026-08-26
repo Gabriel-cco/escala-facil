@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Inter, Newsreader } from "next/font/google";
-import AppShell, { type ShellUser } from "./components/shell/AppShell";
-import { iniciais } from "@/lib/iniciais";
-import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
+import AuthShell from "./components/shell/AuthShell";
+import LoadingScreen from "./components/LoadingScreen";
 import "./globals.css";
 
 const inter = Inter({
@@ -36,38 +36,17 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getAuthUser();
-
-  let shellUser: ShellUser | null = null;
-  if (user) {
-    const nome =
-      (user.user_metadata?.full_name as string | undefined) ??
-      (user.user_metadata?.name as string | undefined) ??
-      user.email ??
-      "Usuário";
-
-    // getCurrentAccount reaproveita o getAuthUser acima (cache por request).
-    const account = await getCurrentAccount();
-
-    shellUser = {
-      nome,
-      email: user.email ?? "",
-      iniciais: iniciais(nome),
-      perfil: (account?.profile as ShellUser["perfil"]) ?? null,
-      accountId: account?.account_id ?? null,
-      groupId: account?.group_id ?? null,
-    };
-  }
-
   return (
     <html lang="pt-BR" className={`${inter.variable} ${newsreader.variable} h-full`}>
       <body className="min-h-full font-sans">
-        <AppShell user={shellUser}>{children}</AppShell>
+        <Suspense fallback={<LoadingScreen />}>
+          <AuthShell>{children}</AuthShell>
+        </Suspense>
       </body>
     </html>
   );

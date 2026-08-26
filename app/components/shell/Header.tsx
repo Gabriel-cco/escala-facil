@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
 import NotificationBell from "./NotificationBell";
@@ -61,7 +62,16 @@ export default function Header(props: HeaderProps) {
         <div className="text-[20px] tracking-tight text-ink">
           <span className="font-light">escala</span><span className="font-bold">fácil</span>
         </div>
-        <NotificationBell />
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <Link
+            href="/perfil"
+            aria-label="Meu Perfil"
+            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
+          >
+            {userIniciais || "··"}
+          </Link>
+        </div>
       </header>
     );
   }
@@ -83,13 +93,13 @@ export default function Header(props: HeaderProps) {
         </div>
         <div className="flex items-center gap-1">
           <NotificationBell />
-          <button
-            onClick={openMenu}
-            aria-label="Abrir menu"
+          <Link
+            href="/perfil"
+            aria-label="Meu Perfil"
             className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
           >
             {userIniciais || "··"}
-          </button>
+          </Link>
         </div>
       </header>
     );
@@ -102,13 +112,13 @@ export default function Header(props: HeaderProps) {
       </div>
       <div className="flex items-center gap-1">
         <NotificationBell />
-        <button
-          onClick={openMenu}
-          aria-label="Abrir menu"
+        <Link
+          href="/perfil"
+          aria-label="Meu Perfil"
           className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
         >
           {userIniciais || "··"}
-        </button>
+        </Link>
       </div>
     </header>
   );

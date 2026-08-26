@@ -23,10 +23,11 @@ const ABAS_COORDINATOR: Aba[] = [
 const ABAS_MEMBER: Aba[] = [
   { href: "/minha-escala", label: "Minha Escala" },
   { href: "/trocas", label: "Trocas" },
+  { href: "/perfil", label: "Perfil" },
 ];
 
 const TELAS_RAIZ = [
-  "/", "/eventos", "/membros", "/grupos", "/funcoes", "/usuarios", "/minha-escala", "/notificacoes", "/trocas",
+  "/", "/eventos", "/membros", "/grupos", "/funcoes", "/usuarios", "/minha-escala", "/notificacoes", "/trocas", "/perfil",
 ];
 
 function abaAtiva(pathname: string, href: string): boolean {

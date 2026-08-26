@@ -17,6 +17,7 @@ const ITENS_ADMIN = [
   { href: "/trocas", label: "Trocas" },
   { href: "/usuarios", label: "Usuários" },
   { href: "/notificacoes", label: "Notificações" },
+  { href: "/perfil", label: "Meu Perfil" },
 ];
 
 const ITENS_COORDINATOR = [
@@ -26,11 +27,13 @@ const ITENS_COORDINATOR = [
   { href: "/eventos", label: "Eventos" },
   { href: "/trocas", label: "Trocas" },
   { href: "/notificacoes", label: "Notificações" },
+  { href: "/perfil", label: "Meu Perfil" },
 ];
 
 const ITENS_MEMBER = [
   { href: "/minha-escala", label: "Minha Escala" },
   { href: "/trocas", label: "Trocas" },
+  { href: "/perfil", label: "Meu Perfil" },
 ];
 
 function itemAtivo(pathname: string, href: string): boolean {
@@ -105,6 +108,14 @@ function IconeNav({ href }: { href: string }) {
         <svg {...p}>
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+      );
+    case "/perfil":
+      return (
+        <svg {...p}>
+          <rect x="3" y="5.5" width="18" height="13" rx="2" />
+          <circle cx="8.5" cy="10.5" r="2" />
+          <path d="M13 10.5h4.5M13 13.5h3" />
         </svg>
       );
     default:

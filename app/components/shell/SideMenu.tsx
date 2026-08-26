@@ -60,34 +60,39 @@ export default function SideMenu({
           <SeletorGrupo className="mb-1 mt-2 px-1" />
 
           {/* Navegação — itens fora da TabBar */}
-          {user.perfil !== "member" && (
-            <div className="border-b border-black/[0.07] py-1">
-              {user.perfil === "coordinator" && (
-                <Link href="/funcoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
-                  <span className="text-faint">✦</span> Funções
-                </Link>
-              )}
-              {user.perfil === "admin" && (
-                <>
+          <div className="border-b border-black/[0.07] py-1">
+            {user.perfil !== "member" && (
+              <>
+                {user.perfil === "coordinator" && (
                   <Link href="/funcoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
                     <span className="text-faint">✦</span> Funções
                   </Link>
-                  <Link href="/usuarios" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
-                    <span className="text-faint">👤</span> Usuários
-                  </Link>
-                  <Link href="/trocas" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
-                    <span className="text-faint">⇄</span> Trocas
-                  </Link>
-                </>
-              )}
-              <Link href="/frequencia" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
-                <span className="text-faint">✓</span> Frequência
-              </Link>
-              <Link href="/notificacoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
-                <span className="text-faint">🔔</span> Notificações
-              </Link>
-            </div>
-          )}
+                )}
+                {user.perfil === "admin" && (
+                  <>
+                    <Link href="/funcoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                      <span className="text-faint">✦</span> Funções
+                    </Link>
+                    <Link href="/usuarios" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                      <span className="text-faint">👤</span> Usuários
+                    </Link>
+                    <Link href="/trocas" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                      <span className="text-faint">⇄</span> Trocas
+                    </Link>
+                  </>
+                )}
+                <Link href="/frequencia" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                  <span className="text-faint">✓</span> Frequência
+                </Link>
+                <Link href="/notificacoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                  <span className="text-faint">🔔</span> Notificações
+                </Link>
+              </>
+            )}
+            <Link href="/perfil" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+              <span className="text-faint">⊙</span> Meu Perfil
+            </Link>
+          </div>
 
           <button
             onClick={sair}

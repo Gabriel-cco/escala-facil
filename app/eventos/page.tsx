@@ -8,6 +8,7 @@ import CalendarioEventos, { type EventoCal } from "./CalendarioEventos";
 import { LiturgicalDot } from "../components/LiturgicalDot";
 import { getCurrentAccount } from "@/lib/current-user";
 import ScrollToEvento from "./ScrollToEvento";
+import MembroSelect from "./MembroSelect";
 
 const iconeLapis = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -19,12 +20,14 @@ const iconeLapis = (
 export default async function EventosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ passados?: string; grupo?: string; vista?: string }>;
+  searchParams: Promise<{ passados?: string; grupo?: string; vista?: string; mes?: string; membro?: string }>;
 }) {
-  const { passados, grupo, vista } = await searchParams;
+  const { passados, grupo, vista, mes, membro } = await searchParams;
 
   const mostrarPassados = passados === "1";
   const vistaCalendario = vista === "calendario";
+  const mesFiltro = mes ?? null;       // "AAAA-MM" ou null
+  const membroFiltro = membro ?? null; // account_id ou null
 
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
@@ -64,15 +67,22 @@ export default async function EventosPage({
     passados?: boolean;
     grupo?: string | null;
     vista?: string | null;
+    mes?: string | null;
+    membro?: string | null;
   }) {
     const p = new URLSearchParams();
     const passadosFinal = over.passados ?? mostrarPassados;
     const grupoFinal = over.grupo === undefined ? grupoFiltro : over.grupo;
     const vistaFinal =
       over.vista === undefined ? (vistaCalendario ? "calendario" : null) : over.vista;
-    if (passadosFinal) p.set("passados", "1");
+    const mesFinal = over.mes === undefined ? mesFiltro : over.mes;
+    const membroFinal = over.membro === undefined ? membroFiltro : over.membro;
+    // passados não faz sentido quando mês está selecionado (mostramos o mês todo)
+    if (passadosFinal && !mesFinal) p.set("passados", "1");
     if (grupoFinal) p.set("grupo", grupoFinal);
     if (vistaFinal === "calendario") p.set("vista", "calendario");
+    if (mesFinal) p.set("mes", mesFinal);
+    if (membroFinal) p.set("membro", membroFinal);
     const qs = p.toString();
     return qs ? `/eventos?${qs}` : "/eventos";
   }
@@ -108,6 +118,37 @@ export default async function EventosPage({
     (minhasAtribuicoes ?? []).map((a) => a.event_id)
   );
 
+  // Membros ativos do grupo para o seletor de filtro (C.2).
+  const membrosParaFiltro: { id: string; nome: string }[] = [];
+  if (activeGroupId) {
+    const { data: membrosData } = await supabase
+      .from("accounts")
+      .select("id, user:users(name)")
+      .eq("group_id", activeGroupId)
+      .eq("profile", "member")
+      .eq("active", true);
+    (membrosData ?? []).forEach((a) => {
+      const u = Array.isArray(a.user) ? a.user[0] : a.user;
+      if (u?.name) membrosParaFiltro.push({ id: a.id, nome: u.name });
+    });
+    membrosParaFiltro.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }
+
+  // Atribuições do membro selecionado: eventId → nomeFunção (C.2).
+  let membroFuncaoPorEvento: Map<string, string> | null = null;
+  if (membroFiltro) {
+    const { data: memAtrib } = await supabase
+      .from("assignments")
+      .select("event_id, role:roles(name)")
+      .eq("account_id", membroFiltro);
+    membroFuncaoPorEvento = new Map(
+      (memAtrib ?? []).map((a) => {
+        const role = Array.isArray(a.role) ? a.role[0] : a.role;
+        return [a.event_id, (role as { name?: string } | null)?.name ?? "—"];
+      })
+    );
+  }
+
   // Data de hoje como "AAAA-MM-DD" (local) para comparar com events.date.
   const agora = new Date();
   const hojeStr = `${agora.getFullYear()}-${String(
@@ -118,10 +159,26 @@ export default async function EventosPage({
   const filtrados = grupoFiltro
     ? todos.filter((e) => e.group_id === grupoFiltro)
     : todos;
-  // Eventos de hoje permanecem visíveis o dia todo (>= hoje).
+
+  // Filtro por mês (C.1).
+  const filtradosMes = mesFiltro
+    ? filtrados.filter((e) => e.date.startsWith(mesFiltro))
+    : filtrados;
+
   const ehFuturo = (e: Evento) => e.date >= hojeStr;
-  const totalPassados = filtrados.filter((e) => !ehFuturo(e)).length;
-  const visiveis = mostrarPassados ? filtrados : filtrados.filter(ehFuturo);
+  const totalPassados = filtradosMes.filter((e) => !ehFuturo(e)).length;
+
+  // Quando mês está selecionado, mostramos todos os eventos daquele mês.
+  const visiveisBase = mesFiltro
+    ? filtradosMes
+    : mostrarPassados
+    ? filtradosMes
+    : filtradosMes.filter(ehFuturo);
+
+  // Filtro por membro (C.2): restringe aos eventos em que esse membro está escalado.
+  const visiveis = membroFuncaoPorEvento
+    ? visiveisBase.filter((e) => membroFuncaoPorEvento!.has(e.id))
+    : visiveisBase;
 
   // Próximo evento futuro (na lista visível) onde o usuário está escalado.
   const proximoMeuEvento = visiveis.find(
@@ -143,6 +200,23 @@ export default async function EventosPage({
     };
   });
 
+  // Navegador de mês: calcula mês anterior e próximo para os Links (C.1).
+  const prevMes = mesFiltro
+    ? (() => {
+        const [y, m] = mesFiltro.split("-").map(Number);
+        const d = new Date(y, m - 2, 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      })()
+    : null;
+  const nextMes = mesFiltro
+    ? (() => {
+        const [y, m] = mesFiltro.split("-").map(Number);
+        const d = new Date(y, m, 1);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      })()
+    : null;
+  const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+
   // Agrupa por mês mantendo a ordem cronológica (a query já vem ascendente).
   const gruposPorMes: { chave: string; rotulo: string; eventos: Evento[] }[] =
     [];
@@ -158,14 +232,19 @@ export default async function EventosPage({
     gruposPorMes[i].eventos.push(e);
   });
 
-  function renderEventoCard(evento: Evento) {
-    // O join groups pode vir como objeto ou array; normalizamos.
-    const grupo = Array.isArray(evento.groups)
-      ? evento.groups[0]
-      : evento.groups;
+  function renderEventoCard(evento: Evento, roleName?: string) {
+    const g = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
     const total = totalPorGrupo.get(evento.group_id) ?? 0;
     const atribuidas = atribuidasPorEvento.get(evento.id)?.size ?? 0;
     const pct = total ? Math.round((atribuidas / total) * 100) : 0;
+
+    // Subtítulo: quando filtro por membro ativo, destaca a função escalada.
+    const subtituloMobile = roleName
+      ? `${g?.name ?? "Sem grupo"} · ${roleName}`
+      : g?.name ?? "Sem grupo";
+    const subtituloDesktop = roleName
+      ? `${g?.name ?? "Sem grupo"} · ${roleName}`
+      : [g?.name ?? "Sem grupo", evento.liturgical_name].filter(Boolean).join(" · ");
 
     return (
       <div
@@ -185,7 +264,7 @@ export default async function EventosPage({
                   <LiturgicalDot color={evento.liturgical_color} />
                   {evento.name}
                 </div>
-                {evento.liturgical_name && (
+                {evento.liturgical_name && !roleName && (
                   <div className="mt-0.5 text-[12px] text-muted">
                     {evento.liturgical_name}
                   </div>
@@ -195,20 +274,20 @@ export default async function EventosPage({
                 {rotuloData(evento.date)} · {rotuloHora(evento.time)}
               </div>
             </div>
-            <div className="text-[12px] text-muted">
-              {grupo?.name ?? "Sem grupo"}
-            </div>
-            <div className="flex items-center gap-2.5">
-              <div className="h-[5px] flex-1 overflow-hidden rounded-[3px] bg-surface">
-                <div
-                  className="h-full rounded-[3px] bg-primary"
-                  style={{ width: `${pct}%` }}
-                />
+            <div className="text-[12px] text-muted">{subtituloMobile}</div>
+            {!roleName && (
+              <div className="flex items-center gap-2.5">
+                <div className="h-[5px] flex-1 overflow-hidden rounded-[3px] bg-surface">
+                  <div
+                    className="h-full rounded-[3px] bg-primary"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="text-[11.5px] font-semibold text-ink-soft">
+                  {atribuidas}/{total}
+                </div>
               </div>
-              <div className="text-[11.5px] font-semibold text-ink-soft">
-                {atribuidas}/{total}
-              </div>
-            </div>
+            )}
           </Link>
           {podeGerenciar && (
             <div className="flex flex-none items-center gap-0.5 pr-2">
@@ -236,24 +315,25 @@ export default async function EventosPage({
                 {evento.name}
               </div>
               <div className="mt-1 text-[12.5px] text-muted">
-                {grupo?.name ?? "Sem grupo"}
-                {evento.liturgical_name && ` · ${evento.liturgical_name}`}
+                {subtituloDesktop}
               </div>
             </div>
             <div className="w-[120px] flex-none text-[13px] font-semibold text-ink-soft">
               {rotuloData(evento.date)} · {rotuloHora(evento.time)}
             </div>
-            <div className="flex w-[170px] flex-none items-center gap-2.5">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface">
-                <div
-                  className="h-full rounded-[3px] bg-primary"
-                  style={{ width: `${pct}%` }}
-                />
+            {!roleName && (
+              <div className="flex w-[170px] flex-none items-center gap-2.5">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface">
+                  <div
+                    className="h-full rounded-[3px] bg-primary"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="whitespace-nowrap text-[12px] font-semibold text-ink-soft">
+                  {atribuidas}/{total}
+                </div>
               </div>
-              <div className="whitespace-nowrap text-[12px] font-semibold text-ink-soft">
-                {atribuidas}/{total}
-              </div>
-            </div>
+            )}
             <div className="flex-none text-[20px] text-[#9ca3af]">›</div>
           </Link>
           {podeGerenciar && (
@@ -375,6 +455,56 @@ export default async function EventosPage({
           </div>
         )}
 
+        {/* Filtros C.1 (mês) e C.2 (membro) — somente na vista lista */}
+        {!vistaCalendario && todos.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {mesFiltro ? (
+              <div className="flex items-center gap-0.5">
+                <Link
+                  href={montarHref({ mes: prevMes })}
+                  scroll={false}
+                  aria-label="Mês anterior"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-[16px] text-ink-soft hover:bg-black/[0.04]"
+                >
+                  ‹
+                </Link>
+                <span className="min-w-[148px] px-1 text-center text-[13.5px] font-semibold text-ink">
+                  {rotuloMes(`${mesFiltro}-01`)}
+                </span>
+                <Link
+                  href={montarHref({ mes: nextMes })}
+                  scroll={false}
+                  aria-label="Próximo mês"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-[16px] text-ink-soft hover:bg-black/[0.04]"
+                >
+                  ›
+                </Link>
+                <Link
+                  href={montarHref({ mes: null })}
+                  scroll={false}
+                  aria-label="Ver todos os meses"
+                  className="ml-1 flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-[13px] text-ink-soft hover:bg-black/[0.04]"
+                >
+                  ×
+                </Link>
+              </div>
+            ) : (
+              <Link
+                href={montarHref({ mes: mesAtual })}
+                scroll={false}
+                className="flex items-center gap-1 rounded-full border border-black/10 px-3.5 py-1.5 text-[13px] font-medium text-ink-soft hover:bg-black/[0.04]"
+              >
+                Por mês
+                <span className="text-[11px]">›</span>
+              </Link>
+            )}
+
+            {membrosParaFiltro.length > 0 && (
+              <MembroSelect membros={membrosParaFiltro} membroId={membroFiltro} />
+            )}
+          </div>
+        )}
+
         {todos.length === 0 && (
           <p className="text-[13px] text-muted">Nenhum evento cadastrado ainda.</p>
         )}
@@ -397,54 +527,68 @@ export default async function EventosPage({
         {!vistaCalendario && filtrados.length > 0 && (
           <>
             {scrollTargetId && <ScrollToEvento targetId={scrollTargetId} />}
-            {/* Toggle de eventos passados (dirigido por ?passados=1) */}
-            <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
-              <div className="text-[12px] text-muted">
-                {mostrarPassados
-                  ? "Mostrando todos os eventos"
-                  : "Apenas próximos eventos"}
-              </div>
-              <Link
-                href={montarHref({ passados: !mostrarPassados })}
-                scroll={false}
-                className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
-              >
-                <span
-                  className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
-                    mostrarPassados ? "bg-primary" : "bg-black/15"
-                  }`}
+
+            {/* Toggle de eventos passados — oculto quando mês está selecionado */}
+            {!mesFiltro && (
+              <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
+                <div className="text-[12px] text-muted">
+                  {mostrarPassados
+                    ? "Mostrando todos os eventos"
+                    : "Apenas próximos eventos"}
+                </div>
+                <Link
+                  href={montarHref({ passados: !mostrarPassados })}
+                  scroll={false}
+                  className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
                 >
                   <span
-                    className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
-                      mostrarPassados ? "left-[14px]" : "left-[2px]"
+                    className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
+                      mostrarPassados ? "bg-primary" : "bg-black/15"
                     }`}
-                  />
-                </span>
-                Mostrar passados
-              </Link>
-            </div>
+                  >
+                    <span
+                      className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
+                        mostrarPassados ? "left-[14px]" : "left-[2px]"
+                      }`}
+                    />
+                  </span>
+                  Mostrar passados
+                </Link>
+              </div>
+            )}
 
             {visiveis.length === 0 && (
               <p className="text-[13px] text-muted">
-                Nenhum evento próximo.
-                {totalPassados > 0 &&
-                  ` Há ${totalPassados} evento${
-                    totalPassados > 1 ? "s" : ""
-                  } passado${
-                    totalPassados > 1 ? "s" : ""
-                  } — use o botão acima para mostrá-${
-                    totalPassados > 1 ? "los" : "lo"
-                  }.`}
+                {membroFiltro
+                  ? "Este membro não está escalado em nenhum evento."
+                  : mesFiltro
+                  ? "Nenhum evento neste mês."
+                  : `Nenhum evento próximo.${
+                      totalPassados > 0
+                        ? ` Há ${totalPassados} evento${
+                            totalPassados > 1 ? "s" : ""
+                          } passado${
+                            totalPassados > 1 ? "s" : ""
+                          } — use o botão acima para mostrá-${
+                            totalPassados > 1 ? "los" : "lo"
+                          }.`
+                        : ""
+                    }`}
               </p>
             )}
 
             <div className="flex flex-col gap-5 md:gap-6">
               {gruposPorMes.map((g) => (
                 <div key={g.chave} className="flex flex-col gap-2.5">
-                  <div className="px-1 text-[11px] font-semibold uppercase tracking-[1.2px] text-faint md:px-0">
-                    {g.rotulo}
-                  </div>
-                  {g.eventos.map((e) => renderEventoCard(e))}
+                  {/* Oculta o cabeçalho de mês quando o filtro já delimita o mês */}
+                  {!mesFiltro && (
+                    <div className="px-1 text-[11px] font-semibold uppercase tracking-[1.2px] text-faint md:px-0">
+                      {g.rotulo}
+                    </div>
+                  )}
+                  {g.eventos.map((e) =>
+                    renderEventoCard(e, membroFuncaoPorEvento?.get(e.id))
+                  )}
                 </div>
               ))}
             </div>

@@ -57,7 +57,7 @@ export default async function UsuariosPage() {
       userId: user?.id ?? "",
       groupName: group?.name ?? null,
     };
-  });
+  }).sort((a, b) => a.userName.localeCompare(b.userName, "pt-BR"));
 
   return (
     <>

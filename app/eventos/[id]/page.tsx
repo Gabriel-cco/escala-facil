@@ -54,6 +54,7 @@ export default async function EventoDetalhePage({
     .from("accounts")
     .select("id, user:users(name)")
     .eq("group_id", evento.group_id)
+    .eq("profile", "member")
     .eq("active", true)
     .or(`suspended_until.is.null,suspended_until.lt.${evento.date}`);
 

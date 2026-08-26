@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { iniciais } from "@/lib/iniciais";
@@ -53,6 +53,24 @@ export default function AtribuicoesManager({
   const [notificando, setNotificando] = useState(false);
   const [notifyErro, setNotifyErro] = useState("");
   const router = useRouter();
+
+  // Fechar sheets com Esc + travar scroll do body enquanto aberto
+  useEffect(() => {
+    const isOpen = !!sheetRoleId || !!swapRoleId;
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSheetRoleId(null);
+        setSwapRoleId(null);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [sheetRoleId, swapRoleId]);
 
   const porFuncao = new Map(atribuicoes.map((a) => [a.roleId, a]));
   const total = funcoes.length;
@@ -295,11 +313,20 @@ export default function AtribuicoesManager({
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
             <div className="ef-sheet mx-auto mt-auto flex max-h-[76vh] w-full max-w-[440px] flex-col rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-h-[80vh] md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
-              <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">ATRIBUIR</div>
+              <div className="mb-1 flex items-center justify-between">
+                <div className="text-[12px] tracking-[0.4px] text-muted">ATRIBUIR</div>
+                <button
+                  onClick={() => setSheetRoleId(null)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-ink"
+                  aria-label="Fechar"
+                >
+                  ✕
+                </button>
+              </div>
               <div className="mb-3.5 font-serif text-[19px] font-semibold text-ink">
                 {grupoNome} · {funcaoSheet?.nome}
               </div>
-              <div className="ef-scroll flex flex-col gap-2 overflow-y-auto">
+              <div className="ef-scroll flex flex-col gap-2 overflow-y-auto overscroll-contain">
                 {membros.length === 0 && (
                   <p className="py-2 text-[13px] text-muted">Nenhum membro elegível neste grupo.</p>
                 )}
@@ -346,15 +373,18 @@ export default function AtribuicoesManager({
                 {grupoNome} · {dataLabel}
               </div>
               <label className="mb-1 block text-[12.5px] font-medium text-ink-soft">
-                Motivo (opcional)
+                Motivo <span className="text-danger">*</span>
               </label>
               <textarea
                 value={swapMotivo}
                 onChange={(e) => setSwapMotivo(e.target.value)}
                 placeholder="Ex.: vou viajar nesse fim de semana"
                 rows={3}
-                className="mb-1 w-full rounded-[12px] border border-black/10 bg-surface px-3.5 py-2.5 text-[13.5px] text-ink placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                className="mb-1 w-full resize-none rounded-[12px] border border-black/10 bg-surface px-3.5 py-2.5 text-[13.5px] text-ink placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
+              {swapMotivo.trim().length === 0 && (
+                <p className="mb-1 text-[12px] text-muted">Descreva o motivo da troca.</p>
+              )}
               {swapErro && (
                 <p className="mb-2 text-[12.5px] text-danger">{swapErro}</p>
               )}
@@ -367,7 +397,7 @@ export default function AtribuicoesManager({
                 </button>
                 <button
                   onClick={solicitarTroca}
-                  disabled={swapBusy}
+                  disabled={swapBusy || swapMotivo.trim().length < 3}
                   className="flex-1 rounded-[14px] bg-primary py-3.5 text-[14px] font-semibold text-white disabled:opacity-50"
                 >
                   {swapBusy ? "Enviando..." : "Solicitar troca"}

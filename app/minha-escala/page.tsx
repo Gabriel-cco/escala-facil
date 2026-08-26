@@ -6,7 +6,7 @@ import Header from "../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
 import { LiturgicalDot } from "../components/LiturgicalDot";
 import { rotuloData } from "@/lib/datas";
-import { getAuthUser } from "@/lib/current-user";
+import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import SolicitarTrocaButton from "./SolicitarTrocaButton";
 import ScrollToProximoEvento from "./ScrollToProximoEvento";
 
@@ -43,23 +43,27 @@ export default async function MinhaEscalaPage({
   const user = await getAuthUser();
   if (!user) redirect("/login");
 
+  // RPC SECURITY DEFINER — bypassa RLS, mais robusto que join via policy
+  const conta = await getCurrentAccount();
+  if (!conta) redirect("/acesso-pendente");
+
+  const accountId = conta.account_id;
+  const groupId = conta.group_id;
+
   const supabase = await createClient();
 
-  // Busca account via join (RPC só retorna profile)
+  // Nome e suspended_until em paralelo com as demais queries
   const { data: userRow } = await supabase
     .from("users")
-    .select("id, name, accounts(id, profile, group_id, suspended_until)")
+    .select("name")
     .eq("auth_id", user.id)
     .single();
 
-  type AccRow = { id: string; profile: string; group_id: string | null; suspended_until: string | null };
-  const rawAcc = (userRow as { accounts?: AccRow[] | AccRow | null } | null)?.accounts;
-  const acc = (Array.isArray(rawAcc) ? rawAcc[0] : rawAcc) as AccRow | null;
-
-  if (!acc) redirect("/acesso-pendente");
-
-  const accountId = acc.id;
-  const groupId = acc.group_id;
+  const { data: accDetails } = await supabase
+    .from("accounts")
+    .select("suspended_until")
+    .eq("id", accountId)
+    .single();
 
   if (!groupId) {
     return (
@@ -126,7 +130,8 @@ export default async function MinhaEscalaPage({
 
   // Suspensão
   const hoje = new Date().toISOString().split("T")[0];
-  const estaSuspenso = acc.suspended_until && acc.suspended_until >= hoje;
+  const suspendedUntil = accDetails?.suspended_until ?? null;
+  const estaSuspenso = suspendedUntil && suspendedUntil >= hoje;
 
   // Atribuições do membro que já têm uma solicitação de troca pendente
   // (admin client evita depender de policy de leitura em swap_requests).
@@ -140,7 +145,7 @@ export default async function MinhaEscalaPage({
     (trocasPendentes ?? []).map((t) => t.assignment_id)
   );
 
-  const membroNome = (userRow as { name?: string } | null)?.name ?? "Membro";
+  const membroNome = userRow?.name ?? "Membro";
 
   const proximoEventoId = eventos.find((e) => e.date >= hoje)?.id ?? null;
 
@@ -160,7 +165,7 @@ export default async function MinhaEscalaPage({
         {estaSuspenso && (
           <div className="rounded-[14px] border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-[13px] text-[#92400e]">
             Você está suspenso até{" "}
-            {new Date(acc.suspended_until! + "T00:00").toLocaleDateString("pt-BR", {
+            {new Date(suspendedUntil! + "T00:00").toLocaleDateString("pt-BR", {
               day: "2-digit",
               month: "2-digit",
             })}

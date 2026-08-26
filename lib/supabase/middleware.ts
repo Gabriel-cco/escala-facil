@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
         if (pathname.startsWith('/usuarios') && perfil && perfil !== 'admin') {
             const url = request.nextUrl.clone()
             url.pathname = '/'
-            return NextResponse.redirect(url)
+            return comCookies(NextResponse.redirect(url), supabaseResponse)
         }
 
         // member: só pode acessar /minha-escala e rotas de sistema
@@ -70,10 +70,25 @@ export async function updateSession(request: NextRequest) {
             if (!ehRotaMember) {
                 const url = request.nextUrl.clone()
                 url.pathname = '/minha-escala'
-                return NextResponse.redirect(url)
+                return comCookies(NextResponse.redirect(url), supabaseResponse)
             }
         }
     }
 
     return supabaseResponse
+}
+
+/**
+ * Copia os cookies de `origem` para `destino` (redirect). Necessário para
+ * preservar tokens de sessão recém-renovados quando o middleware precisa
+ * redirecionar: sem isso, o Supabase renova o access token em `supabaseResponse`
+ * mas a resposta devolvida é outro NextResponse, e o browser nunca recebe os
+ * cookies atualizados — a próxima requisição usa o refresh token já "queimado"
+ * (rotating refresh tokens) e perde a sessão.
+ */
+function comCookies(destino: NextResponse, origem: NextResponse): NextResponse {
+    origem.cookies.getAll().forEach(({ name, value, ...opts }) =>
+        destino.cookies.set(name, value, opts)
+    )
+    return destino
 }

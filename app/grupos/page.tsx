@@ -5,14 +5,7 @@ import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../components/shell/Header";
 import GrupoItem from "./GrupoItem";
 
-export default async function GruposPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ inativos?: string }>;
-}) {
-  const { inativos } = await searchParams;
-  const mostrarInativos = inativos === "1";
-
+export default async function GruposPage() {
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
@@ -23,10 +16,10 @@ export default async function GruposPage({
 
   let gruposQuery = supabase
     .from("groups")
-    .select("id, name, description, active")
+    .select("id, name, description")
+    .eq("active", true)
     .order("name", { ascending: true });
   if (activeGroupId) gruposQuery = gruposQuery.eq("id", activeGroupId);
-  if (!mostrarInativos) gruposQuery = gruposQuery.eq("active", true);
   const { data: grupos, error } = await gruposQuery;
 
   // Counts (sempre só ativos para refletir estado atual).
@@ -53,8 +46,6 @@ export default async function GruposPage({
   funcoes?.forEach((f) =>
     funcoesPorGrupo.set(f.group_id, (funcoesPorGrupo.get(f.group_id) ?? 0) + 1)
   );
-
-  const totalInativos = (grupos ?? []).filter((g) => !g.active).length;
 
   return (
     <>
@@ -88,41 +79,8 @@ export default async function GruposPage({
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
         )}
 
-        {/* Toggle mostrar inativos */}
-        {podeGerenciar && (
-          <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
-            <div className="text-[12px] text-muted">
-              {mostrarInativos ? "Mostrando ativos e inativos" : "Apenas grupos ativos"}
-            </div>
-            <Link
-              href={mostrarInativos ? "/grupos" : "/grupos?inativos=1"}
-              scroll={false}
-              className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
-            >
-              <span
-                className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
-                  mostrarInativos ? "bg-primary" : "bg-black/15"
-                }`}
-              >
-                <span
-                  className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
-                    mostrarInativos ? "left-[14px]" : "left-[2px]"
-                  }`}
-                />
-              </span>
-              Mostrar inativos
-            </Link>
-          </div>
-        )}
-
         {grupos && grupos.length === 0 && (
-          <p className="text-[13px] text-muted">
-            {mostrarInativos
-              ? "Nenhum grupo cadastrado ainda."
-              : totalInativos > 0
-              ? `Nenhum grupo ativo. Há ${totalInativos} inativo${totalInativos > 1 ? "s" : ""} — ative o toggle acima para ver.`
-              : "Nenhum grupo cadastrado ainda."}
-          </p>
+          <p className="text-[13px] text-muted">Nenhum grupo cadastrado ainda.</p>
         )}
 
         <div className="flex flex-col gap-2.5 md:grid md:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] md:gap-3.5">
@@ -133,7 +91,6 @@ export default async function GruposPage({
                 id: grupo.id,
                 name: grupo.name,
                 description: grupo.description,
-                active: grupo.active,
                 membroCount: membrosPorGrupo.get(grupo.id) ?? 0,
                 funcaoCount: funcoesPorGrupo.get(grupo.id) ?? 0,
               }}

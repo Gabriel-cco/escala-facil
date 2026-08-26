@@ -5,14 +5,7 @@ import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../components/shell/Header";
 import FuncaoItem from "./FuncaoItem";
 
-export default async function FuncoesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ inativos?: string }>;
-}) {
-  const { inativos } = await searchParams;
-  const mostrarInativos = inativos === "1";
-
+export default async function FuncoesPage() {
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
 
@@ -31,19 +24,19 @@ export default async function FuncoesPage({
 
   let funcoesQuery = supabase
     .from("roles")
-    .select("id, name, group_id, active")
+    .select("id, name, group_id")
+    .eq("active", true)
     .order("name", { ascending: true });
   if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
-  if (!mostrarInativos) funcoesQuery = funcoesQuery.eq("active", true);
   const { data: funcoes, error } = await funcoesQuery;
 
   const funcoesPorGrupo = new Map<
     string,
-    { id: string; nome: string; active: boolean }[]
+    { id: string; nome: string }[]
   >();
   funcoes?.forEach((f) => {
     const lista = funcoesPorGrupo.get(f.group_id) ?? [];
-    lista.push({ id: f.id, nome: f.name, active: f.active });
+    lista.push({ id: f.id, nome: f.name });
     funcoesPorGrupo.set(f.group_id, lista);
   });
 
@@ -73,35 +66,6 @@ export default async function FuncoesPage({
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
-        )}
-
-        {/* Toggle mostrar inativos */}
-        {podeGerenciar && (
-          <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
-            <div className="text-[12px] text-muted">
-              {mostrarInativos
-                ? "Mostrando ativas e inativas"
-                : "Apenas funções ativas"}
-            </div>
-            <Link
-              href={mostrarInativos ? "/funcoes" : "/funcoes?inativos=1"}
-              scroll={false}
-              className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
-            >
-              <span
-                className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
-                  mostrarInativos ? "bg-primary" : "bg-black/15"
-                }`}
-              >
-                <span
-                  className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
-                    mostrarInativos ? "left-[14px]" : "left-[2px]"
-                  }`}
-                />
-              </span>
-              Mostrar inativos
-            </Link>
-          </div>
         )}
 
         <div className="flex flex-col gap-6">

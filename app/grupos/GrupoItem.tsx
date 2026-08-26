@@ -9,7 +9,6 @@ type Grupo = {
   id: string;
   name: string;
   description: string | null;
-  active: boolean;
   membroCount: number;
   funcaoCount: number;
 };
@@ -21,11 +20,12 @@ const iconeLapis = (
   </svg>
 );
 
-const iconeArquivar = (
+const iconeExcluir = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="21 8 21 21 3 21 3 8" />
-    <rect x="1" y="3" width="22" height="5" />
-    <line x1="10" y1="12" x2="14" y2="12" />
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14H6L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4h6v2" />
   </svg>
 );
 
@@ -40,40 +40,25 @@ export default function GrupoItem({
   const [processando, setProcessando] = useState(false);
   const router = useRouter();
 
-  async function arquivar() {
+  async function excluir() {
     setProcessando(true);
     const supabase = createClient();
-    await supabase.from("groups").update({ active: false }).eq("id", grupo.id);
+    // accounts.group_id → groups ON DELETE SET NULL violaria o CHECK (member must have group)
+    // → deletamos os accounts do grupo primeiro
+    await supabase.from("accounts").delete().eq("group_id", grupo.id);
+    // O CASCADE cuida do resto: roles, events, assignments, attendance_lists, etc.
+    await supabase.from("groups").delete().eq("id", grupo.id);
     setProcessando(false);
     setConfirmando(false);
     router.refresh();
   }
 
-  async function reativar() {
-    setProcessando(true);
-    const supabase = createClient();
-    await supabase.from("groups").update({ active: true }).eq("id", grupo.id);
-    setProcessando(false);
-    router.refresh();
-  }
-
   return (
     <>
-      <div
-        className={`group flex items-start gap-2.5 rounded-2xl border border-black/[0.06] bg-paper shadow-card transition-shadow hover:shadow-hover px-[18px] py-[18px] md:rounded-[18px] md:px-[22px] md:py-[20px] ${
-          !grupo.active ? "opacity-55" : ""
-        }`}
-      >
+      <div className="group flex items-start gap-2.5 rounded-2xl border border-black/[0.06] bg-paper shadow-card transition-shadow hover:shadow-hover px-[18px] py-[18px] md:rounded-[18px] md:px-[22px] md:py-[20px]">
         <Link href={`/grupos/${grupo.id}`} className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[17px] font-semibold text-ink md:text-[18px]">
-              {grupo.name}
-            </span>
-            {!grupo.active && (
-              <span className="rounded-full bg-[#E3D2B6] px-2 py-0.5 text-[10.5px] font-semibold text-[#6E5A4E]">
-                Inativo
-              </span>
-            )}
+          <div className="text-[17px] font-semibold text-ink md:text-[18px]">
+            {grupo.name}
           </div>
           {grupo.description && (
             <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted">
@@ -101,24 +86,13 @@ export default function GrupoItem({
             >
               {iconeLapis}
             </Link>
-
-            {grupo.active ? (
-              <button
-                onClick={() => setConfirmando(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-[#8a6200]"
-                title="Arquivar grupo"
-              >
-                {iconeArquivar}
-              </button>
-            ) : (
-              <button
-                onClick={reativar}
-                disabled={processando}
-                className="whitespace-nowrap rounded-full border border-black/10 px-3 py-1.5 text-[12px] font-medium text-ink disabled:opacity-50"
-              >
-                Reativar
-              </button>
-            )}
+            <button
+              onClick={() => setConfirmando(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-danger"
+              title="Excluir grupo"
+            >
+              {iconeExcluir}
+            </button>
           </div>
         ) : (
           <div className="text-[22px] text-[#B3A296] md:hidden">›</div>
@@ -135,14 +109,15 @@ export default function GrupoItem({
             <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
-                ARQUIVAR
+                EXCLUIR
               </div>
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
-                Arquivar grupo?
+                Excluir grupo?
               </div>
-              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
-                &ldquo;{grupo.name}&rdquo; ficará inativo e não aparecerá nas
-                listas, mas poderá ser reativado depois.
+              <p className="mb-5 text-[13.5px] leading-relaxed text-muted">
+                Esta ação é permanente e não pode ser desfeita. Serão removidos
+                todos os dados de &ldquo;{grupo.name}&rdquo;: funções, eventos,
+                escalas e o acesso de todos os membros.
               </p>
               <div className="flex flex-col gap-2.5 md:flex-row md:justify-end">
                 <button
@@ -153,11 +128,11 @@ export default function GrupoItem({
                   Cancelar
                 </button>
                 <button
-                  onClick={arquivar}
+                  onClick={excluir}
                   disabled={processando}
-                  className="rounded-[14px] bg-[#8a6200] py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
+                  className="rounded-[14px] bg-danger py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
                 >
-                  {processando ? "Arquivando..." : "Arquivar grupo"}
+                  {processando ? "Excluindo..." : "Excluir grupo"}
                 </button>
               </div>
             </div>

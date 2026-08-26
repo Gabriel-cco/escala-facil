@@ -36,9 +36,11 @@ export async function GET(request: NextRequest) {
     .eq("date", hoje);
 
   if (error) {
-    console.error("[cron/notify-events]", error.message);
+    console.error("[cron/notify-events] erro ao buscar eventos:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  console.log(`[cron/notify-events] ${hoje} | ${eventos?.length ?? 0} evento(s) encontrado(s)`);
 
   if (!eventos?.length) {
     return NextResponse.json({ message: "Nenhum evento hoje.", count: 0 });
@@ -69,7 +71,10 @@ export async function GET(request: NextRequest) {
       account: { user: { name: string } | { name: string }[] | null } | null;
     }>;
 
-    if (!atribuicoes.length) continue;
+    if (!atribuicoes.length) {
+      console.log(`[cron/notify-events] evento ${evento.id} "${evento.name}" — sem atribuições, pulado`);
+      continue;
+    }
 
     const grupoRow = Array.isArray(evento.group) ? evento.group[0] : evento.group;
     const grupoNome: string = (grupoRow as { name?: string } | null)?.name ?? "Grupo";
@@ -116,8 +121,11 @@ export async function GET(request: NextRequest) {
 
     await sendPushToAccounts(destinatarios, { title, body, url: "/minha-escala" });
 
+    console.log(`[cron/notify-events] evento ${evento.id} "${evento.name}" ${hora} → ${destinatarios.length} notificado(s)`);
     totalEnviados += destinatarios.length;
   }
+
+  console.log(`[cron/notify-events] concluído | ${eventos.length} evento(s) | ${totalEnviados} notificação(ões) enviada(s)`);
 
   return NextResponse.json({
     date: hoje,

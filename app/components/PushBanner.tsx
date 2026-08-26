@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { registerPushSubscription } from "@/lib/push";
 import { useCurrentAccount } from "@/hooks/useCurrentAccount";
+import { isIOSSafari, isRunningAsPWA } from "@/hooks/useInstallPrompt";
 
 const LS_KEY = "ef_push_dismissed";
 
@@ -14,6 +15,7 @@ export default function PushBanner() {
   });
   const [ativando, setAtivando] = useState(false);
   const [erro, setErro] = useState(false);
+  const [precisaInstalar, setPrecisaInstalar] = useState(false);
 
   const temSupporte =
     typeof window !== "undefined" &&
@@ -43,15 +45,27 @@ export default function PushBanner() {
 
   async function ativar() {
     if (!currentAccount) return;
+
+    // iOS Safari sem PWA instalado não suporta Web Push — orientar instalação
+    if (isIOSSafari() && !isRunningAsPWA()) {
+      setPrecisaInstalar(true);
+      return;
+    }
+
     setAtivando(true);
     setErro(false);
-    const ok = await registerPushSubscription(currentAccount.account.id);
-    setAtivando(false);
-    if (ok) {
-      localStorage.setItem(LS_KEY, "accepted");
-      setDescartado(true);
-    } else {
+    try {
+      const ok = await registerPushSubscription(currentAccount.account.id);
+      if (ok) {
+        localStorage.setItem(LS_KEY, "accepted");
+        setDescartado(true);
+      } else {
+        setErro(true);
+      }
+    } catch {
       setErro(true);
+    } finally {
+      setAtivando(false);
     }
   }
 
@@ -67,21 +81,27 @@ export default function PushBanner() {
       <div className="flex w-full max-w-[440px] flex-col gap-1.5 rounded-[16px] bg-ink px-4 py-3.5 shadow-lg md:max-w-[400px]">
         <div className="flex items-center gap-3">
           <p className="flex-1 text-[13px] text-white">
-            {erro ? "Não foi possível ativar. Tente novamente." : "Quer receber avisos sobre sua escala?"}
+            {precisaInstalar
+              ? "Para ativar no iPhone, adicione o app à Tela de Início primeiro."
+              : erro
+              ? "Não foi possível ativar. Tente novamente."
+              : "Quer receber avisos sobre sua escala?"}
           </p>
           <button
             onClick={dispensar}
             className="flex-none text-[12.5px] font-medium text-white/60 hover:text-white"
           >
-            Agora não
+            {precisaInstalar ? "Entendi" : "Agora não"}
           </button>
-          <button
-            onClick={ativar}
-            disabled={ativando}
-            className="flex-none rounded-[10px] bg-white px-3 py-1.5 text-[12.5px] font-semibold text-ink disabled:opacity-50"
-          >
-            {ativando ? "..." : "Ativar"}
-          </button>
+          {!precisaInstalar && (
+            <button
+              onClick={ativar}
+              disabled={ativando}
+              className="flex-none rounded-[10px] bg-white px-3 py-1.5 text-[12.5px] font-semibold text-ink disabled:opacity-50"
+            >
+              {ativando ? "..." : "Ativar"}
+            </button>
+          )}
         </div>
       </div>
     </div>

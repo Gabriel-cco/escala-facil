@@ -48,10 +48,10 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-dvh flex-col bg-gradient-to-b from-[#f7f7fe] via-[#f0f0fb] to-[#e7e6f8] px-5 py-5 md:items-center md:justify-center md:p-6">
       {/* Mobile: cartão branco ocupando a tela. Desktop: bloco centralizado sem moldura. */}
-      <div className="flex min-h-0 flex-1 flex-col rounded-[28px] bg-white px-6 pb-8 pt-10 shadow-[0_12px_44px_rgba(79,70,229,0.10)] ring-1 ring-black/[0.04] md:w-[404px] md:flex-none md:bg-transparent md:p-10 md:shadow-none md:ring-0">
+      <div className="flex min-h-0 flex-1 flex-col rounded-[28px] bg-white px-6 pb-8 pt-10 shadow-[0_12px_44px_rgba(74,36,21,0.10)] ring-1 ring-black/[0.04] md:w-[404px] md:flex-none md:bg-transparent md:p-10 md:shadow-none md:ring-0">
         {/* Marca: logo + título + subtítulo */}
         <div className="flex flex-1 flex-col items-center justify-center text-center md:flex-none">
-          <div className="flex h-[60px] w-[60px] items-center justify-center rounded-[18px] bg-primary text-[28px] font-bold leading-none text-white shadow-[0_10px_26px_rgba(79,70,229,0.40)]">
+          <div className="flex h-[60px] w-[60px] items-center justify-center rounded-[18px] bg-primary text-[28px] font-bold leading-none text-white shadow-[0_10px_26px_rgba(74,36,21,0.35)]">
             E
           </div>
           <h1 className="mt-6 text-[26px] font-bold tracking-tight text-ink">

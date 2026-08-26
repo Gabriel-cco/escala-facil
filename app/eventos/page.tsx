@@ -87,13 +87,13 @@ export default async function EventosPage({
     return qs ? `/eventos?${qs}` : "/eventos";
   }
 
-  // Total de funções por grupo (para o denominador do progresso).
-  let funcoesQuery = supabase.from("roles").select("id, group_id");
-  if (activeGroupId) funcoesQuery = funcoesQuery.eq("group_id", activeGroupId);
-  const { data: funcoes } = await funcoesQuery;
-  const totalPorGrupo = new Map<string, number>();
-  funcoes?.forEach((f) => {
-    totalPorGrupo.set(f.group_id, (totalPorGrupo.get(f.group_id) ?? 0) + 1);
+  // Total de funções por evento (denominador do progresso, via event_roles).
+  const { data: eventRolesCount } = await supabase
+    .from("event_roles")
+    .select("event_id");
+  const totalPorEvento = new Map<string, number>();
+  eventRolesCount?.forEach((er) => {
+    totalPorEvento.set(er.event_id, (totalPorEvento.get(er.event_id) ?? 0) + 1);
   });
 
   // Funções já atribuídas por evento (distintas por função).
@@ -196,7 +196,7 @@ export default async function EventosPage({
       time: e.time,
       grupoNome: g?.name ?? "Sem grupo",
       atribuidas: atribuidasPorEvento.get(e.id)?.size ?? 0,
-      total: totalPorGrupo.get(e.group_id) ?? 0,
+      total: totalPorEvento.get(e.id) ?? 0,
     };
   });
 
@@ -234,7 +234,7 @@ export default async function EventosPage({
 
   function renderEventoCard(evento: Evento, roleName?: string) {
     const g = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
-    const total = totalPorGrupo.get(evento.group_id) ?? 0;
+    const total = totalPorEvento.get(evento.id) ?? 0;
     const atribuidas = atribuidasPorEvento.get(evento.id)?.size ?? 0;
     const pct = total ? Math.round((atribuidas / total) * 100) : 0;
 

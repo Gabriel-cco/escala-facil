@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Header from "../../../components/shell/Header";
 import EditarEventoForm from "../../EditarEventoForm";
+import EventRolesEditor from "../../EventRolesEditor";
 
 export default async function EditarEventoPage({
   params,
@@ -19,16 +20,19 @@ export default async function EditarEventoPage({
 
   if (!evento) notFound();
 
-  const { data: grupos } = await supabase
-    .from("groups")
-    .select("id, name")
-    .eq("active", true)
-    .order("name", { ascending: true });
+  const [gruposResult, grupoRolesResult, eventRolesResult] = await Promise.all([
+    supabase.from("groups").select("id, name").eq("active", true).order("name", { ascending: true }),
+    supabase.from("roles").select("id, name").eq("group_id", evento.group_id).eq("active", true).order("name", { ascending: true }),
+    supabase.from("event_roles").select("role_id").eq("event_id", id),
+  ]);
+
+  const grupoRoles = grupoRolesResult.data ?? [];
+  const activeRoleIds = (eventRolesResult.data ?? []).map((er) => er.role_id);
 
   return (
     <>
       <Header variant="back" title="Editar evento" />
-      <main className="flex flex-1 flex-col px-[22px] pb-6 pt-0.5 md:p-0">
+      <main className="flex flex-1 flex-col gap-6 px-[22px] pb-6 pt-0.5 md:p-0">
         <EditarEventoForm
           id={evento.id}
           nomeInicial={evento.name}
@@ -37,8 +41,15 @@ export default async function EditarEventoPage({
           grupoIdInicial={evento.group_id}
           liturgicalNameInicial={evento.liturgical_name}
           liturgicalColorInicial={evento.liturgical_color}
-          grupos={grupos ?? []}
+          grupos={gruposResult.data ?? []}
         />
+        {grupoRoles.length > 0 && (
+          <EventRolesEditor
+            eventId={id}
+            roles={grupoRoles.map((r) => ({ id: r.id, nome: r.name }))}
+            initialActiveIds={activeRoleIds}
+          />
+        )}
       </main>
     </>
   );

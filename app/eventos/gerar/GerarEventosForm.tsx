@@ -295,21 +295,40 @@ export default function GerarEventosForm({
     const supabase = createClient();
 
     // Cria SOMENTE os novos selecionados (os que já existem nem entram aqui).
-    const { error: erroInsert } = await supabase.from("events").insert(
-      selecionados.map((e) => ({
-        name: e.nome,
-        date: e.date,
-        time: `${e.horario}:00`,
-        group_id: e.grupoId,
-        liturgical_name: e.liturgicalName,
-        liturgical_color: e.liturgicalColor,
-      }))
-    );
+    const { data: criadosGerar, error: erroInsert } = await supabase
+      .from("events")
+      .insert(
+        selecionados.map((e) => ({
+          name: e.nome,
+          date: e.date,
+          time: `${e.horario}:00`,
+          group_id: e.grupoId,
+          liturgical_name: e.liturgicalName,
+          liturgical_color: e.liturgicalColor,
+        }))
+      )
+      .select("id");
 
     if (erroInsert) {
       setErro("Erro ao criar eventos: " + erroInsert.message);
       setCarregando(false);
       return;
+    }
+
+    // Popula event_roles com todas as funções ativas do grupo.
+    if (criadosGerar?.length) {
+      const { data: grupoRolesGerar } = await supabase
+        .from("roles")
+        .select("id")
+        .eq("group_id", grupoId)
+        .eq("active", true);
+
+      if (grupoRolesGerar?.length) {
+        const erRows = criadosGerar.flatMap((ev) =>
+          grupoRolesGerar.map((r) => ({ event_id: ev.id, role_id: r.id }))
+        );
+        await supabase.from("event_roles").insert(erRows);
+      }
     }
 
     router.push(grupoId ? `/eventos?grupo=${grupoId}` : "/eventos");

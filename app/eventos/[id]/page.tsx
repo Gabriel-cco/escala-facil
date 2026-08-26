@@ -43,12 +43,18 @@ export default async function EventoDetalhePage({
 
   const grupo = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
 
-  const { data: funcoes } = await supabase
-    .from("roles")
-    .select("id, name")
-    .eq("group_id", evento.group_id)
-    .eq("active", true)
-    .order("name", { ascending: true });
+  const { data: eventRolesData } = await supabase
+    .from("event_roles")
+    .select("role_id, role:roles(id, name)")
+    .eq("event_id", id);
+
+  const funcoes = (eventRolesData ?? [])
+    .map((er) => {
+      const role = Array.isArray(er.role) ? er.role[0] : er.role;
+      return { id: (role as { id: string; name: string } | null)?.id ?? "", name: (role as { id: string; name: string } | null)?.name ?? "" };
+    })
+    .filter((f) => f.id)
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
   const { data: accounts } = await supabase
     .from("accounts")

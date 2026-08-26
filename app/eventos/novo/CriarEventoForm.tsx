@@ -94,12 +94,31 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
     const { data: criados, error } = await supabase
       .from("events")
       .insert(rows)
-      .select("id");
+      .select("id, group_id");
 
     if (error || !criados?.length) {
       setSalvando(false);
       setErro("Erro ao salvar: " + (error?.message ?? "desconhecido"));
       return;
+    }
+
+    // Popula event_roles com todas as funções ativas de cada grupo.
+    const { data: grupoRoles } = await supabase
+      .from("roles")
+      .select("id, group_id")
+      .in("group_id", [...grupoIds])
+      .eq("active", true);
+
+    if (grupoRoles?.length) {
+      const erRows: { event_id: string; role_id: string }[] = [];
+      for (const ev of criados) {
+        for (const r of grupoRoles) {
+          if (r.group_id === ev.group_id) {
+            erRows.push({ event_id: ev.id, role_id: r.id });
+          }
+        }
+      }
+      if (erRows.length) await supabase.from("event_roles").insert(erRows);
     }
 
     // Navegação "dura" de propósito: este form abre num modal interceptor

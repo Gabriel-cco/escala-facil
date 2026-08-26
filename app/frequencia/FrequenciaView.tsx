@@ -96,6 +96,7 @@ export default function FrequenciaView({
   const [relatorio, setRelatorio] = useState<ReportEntry[]>([]);
   const [loadingRel, setLoadingRel] = useState(false);
   const [excluindo, setExcluindo] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<"list" | "detail">("list");
 
   const fetchRelatorio = useCallback(
     async (p: "todo" | "30" | "90") => {
@@ -125,7 +126,10 @@ export default function FrequenciaView({
       return;
     setExcluindo(listId);
     await supabase.from("attendance_lists").delete().eq("id", listId);
-    if (selectedListId === listId) setSelectedListId(null);
+    if (selectedListId === listId) {
+      setSelectedListId(null);
+      setMobileView("list");
+    }
     router.refresh();
   };
 
@@ -154,7 +158,7 @@ export default function FrequenciaView({
       {tab === "historico" && (
         <div className="flex flex-1 overflow-hidden md:flex-row">
           {/* Lista lateral */}
-          <div className="flex flex-none flex-col gap-2 overflow-y-auto p-[18px] md:w-[320px] md:border-r md:border-black/[0.06] md:p-6">
+          <div className={`${mobileView === "list" ? "flex" : "hidden"} md:flex flex-none flex-col gap-2 overflow-y-auto p-[18px] md:w-[320px] md:border-r md:border-black/[0.06] md:p-6`}>
             <Link
               href="/frequencia/nova"
               className="mb-1 flex items-center justify-center gap-2 rounded-[12px] bg-primary py-3 text-[14px] font-semibold text-white hover:bg-primary-hover"
@@ -175,7 +179,10 @@ export default function FrequenciaView({
                 return (
                   <button
                     key={lista.id}
-                    onClick={() => setSelectedListId(lista.id)}
+                    onClick={() => {
+                      setSelectedListId(lista.id);
+                      setMobileView("detail");
+                    }}
                     className="w-full rounded-[10px] border px-4 py-3.5 text-left transition-colors"
                     style={{
                       background: selecionado ? "#F2E7D4" : "#fff",
@@ -211,7 +218,14 @@ export default function FrequenciaView({
           </div>
 
           {/* Detalhe */}
-          <div className="flex-1 overflow-y-auto p-[18px] md:p-6">
+          <div className={`${mobileView === "detail" ? "flex" : "hidden"} md:flex flex-1 flex-col overflow-y-auto p-[18px] md:p-6`}>
+            {/* Botão voltar (mobile) */}
+            <button
+              onClick={() => setMobileView("list")}
+              className="mb-4 flex w-fit items-center gap-1.5 text-[13px] font-medium text-muted md:hidden"
+            >
+              ← Voltar
+            </button>
             {!selectedLista ? (
               <p className="text-[13px] text-muted">
                 Selecione uma chamada para ver o detalhe.

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentAccount } from "./useCurrentAccount";
+import { logAccess } from "@/lib/access-log";
 import type { Notification } from "@/lib/types";
 
 const LIMIT = 20;
@@ -122,6 +123,7 @@ export function useNotifications(providedAccountId?: string | null): UseNotifica
         .from("notifications")
         .update({ read: true, read_at: now })
         .eq("id", id);
+      logAccess(accountId, "ler_notificacao", { notification_id: id });
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true, readAt: now } : n))
       );
@@ -139,6 +141,7 @@ export function useNotifications(providedAccountId?: string | null): UseNotifica
       .update({ read: true, read_at: now })
       .eq("account_id", accountId)
       .eq("read", false);
+    logAccess(accountId, "ler_notificacao", { all: true });
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true, readAt: now })));
     setUnreadCount(0);
   }, [accountId]);

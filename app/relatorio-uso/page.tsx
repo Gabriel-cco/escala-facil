@@ -219,7 +219,7 @@ export default async function RelatorioUsoPage({
               ) : (
                 <table className="w-full">
                   <tbody>
-                    {(rankingPessoas as { member_name: string; total_acoes: number }[]).map(
+                    {(rankingPessoas as { member_name: string; total_acoes: number; ultimo_acesso: string | null }[]).map(
                       (r, i) => (
                         <tr
                           key={i}
@@ -228,10 +228,15 @@ export default async function RelatorioUsoPage({
                           <td className="px-5 py-2.5 text-[13px] text-muted w-6">
                             {i + 1}
                           </td>
-                          <td className="py-2.5 text-[13.5px] font-medium text-ink flex-1">
-                            {r.member_name}
+                          <td className="py-2.5 text-[13.5px] font-medium text-ink">
+                            <div>{r.member_name}</div>
+                            {r.ultimo_acesso && (
+                              <div className="text-[11px] text-faint">
+                                {rotuloDataHora(r.ultimo_acesso)}
+                              </div>
+                            )}
                           </td>
-                          <td className="px-5 py-2.5 text-right text-[13px] font-semibold text-ink-soft">
+                          <td className="px-5 py-2.5 text-right text-[13px] font-semibold text-ink-soft whitespace-nowrap">
                             {r.total_acoes}
                           </td>
                         </tr>

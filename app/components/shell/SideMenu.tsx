@@ -8,6 +8,8 @@ import type { ShellUser } from "./AppShell";
 import { ROTULO_PERFIL } from "./AppShell";
 import SeletorGrupo from "./SeletorGrupo";
 
+const OWNER_EMAIL = "gabrielbatista1551@gmail.com";
+
 /** Menu lateral em bottom-sheet (handoff): perfil + ações + Sair. */
 export default function SideMenu({
   aberto,
@@ -86,6 +88,11 @@ export default function SideMenu({
               <Link href="/notificacoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
                 <span className="text-faint">🔔</span> Notificações
               </Link>
+              {user.email === OWNER_EMAIL && (
+                <Link href="/relatorio-uso" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
+                  <span className="text-faint">📊</span> Relatório de Uso
+                </Link>
+              )}
             </div>
           )}
 

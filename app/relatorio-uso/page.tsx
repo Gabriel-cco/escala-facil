@@ -24,7 +24,7 @@ function cartao(titulo: string, valor: string | number, sub?: string) {
       <div className="text-[11.5px] font-semibold uppercase tracking-[1px] text-muted">
         {titulo}
       </div>
-      <div className="font-serif text-[26px] font-semibold text-ink">
+      <div className="font-serif text-[20px] font-semibold leading-snug text-ink md:text-[26px]">
         {valor}
       </div>
       {sub && <div className="text-[11.5px] text-faint">{sub}</div>}

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../../../components/shell/Header";
 import EditarEventoForm from "../../EditarEventoForm";
 import EventRolesEditor from "../../EventRolesEditor";
@@ -11,6 +12,7 @@ export default async function EditarEventoPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const conta = await getCurrentAccount();
 
   const { data: evento } = await supabase
     .from("events")
@@ -42,6 +44,7 @@ export default async function EditarEventoPage({
           liturgicalNameInicial={evento.liturgical_name}
           liturgicalColorInicial={evento.liturgical_color}
           grupos={gruposResult.data ?? []}
+          accountId={conta?.account_id}
         />
         {grupoRoles.length > 0 && (
           <EventRolesEditor

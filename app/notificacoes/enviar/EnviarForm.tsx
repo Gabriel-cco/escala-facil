@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentAccount } from "@/hooks/useCurrentAccount";
+import { logAccess } from "@/lib/access-log";
 
 interface Grupo {
   id: string;
@@ -84,6 +85,8 @@ export default function EnviarForm({ grupos }: { grupos: Grupo[] }) {
       }
 
       const { count } = await res.json();
+      const accId = currentAccount?.account.id;
+      if (accId) logAccess(accId, "enviar_notificacao", { recipient_count: count });
       alert(`Notificação enviada para ${count} membro${count !== 1 ? "s" : ""}.`);
       router.back();
     } catch {

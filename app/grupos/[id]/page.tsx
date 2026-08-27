@@ -86,7 +86,7 @@ export default async function GrupoDetalhePage({
               </Link>
             )}
             {podeEditarMembro && (
-              <CompartilharEscala groupId={grupo.id} groupName={grupo.name} />
+              <CompartilharEscala groupId={grupo.id} groupName={grupo.name} accountId={conta?.account_id} />
             )}
           </div>
         )}

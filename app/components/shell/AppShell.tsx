@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ShellContext, type PageChrome } from "./menu-context";
+import { useAccessLogPageView } from "@/hooks/useAccessLogPageView";
 import { GroupProvider } from "@/contexts/GroupContext";
 import TabBar from "./TabBar";
 import SideMenu from "./SideMenu";
@@ -47,6 +48,8 @@ export default function AppShell({
   const [menuAberto, setMenuAberto] = useState(false);
   const [chrome, setChrome] = useState<PageChrome>(CHROME_INICIAL);
   const pathname = usePathname();
+
+  useAccessLogPageView(user?.accountId ?? undefined);
 
   const openMenu = useCallback(() => setMenuAberto(true), []);
   const closeMenu = useCallback(() => setMenuAberto(false), []);

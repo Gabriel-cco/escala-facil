@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getLiturgicalInfoAction } from "@/lib/liturgical-actions";
 import type { LiturgicalInfo } from "@/lib/liturgical";
 import { withRetry } from "@/lib/retry";
+import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 
@@ -21,7 +22,13 @@ function hojeStr(): string {
   )}-${String(hoje.getDate()).padStart(2, "0")}`;
 }
 
-export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
+export default function CriarEventoForm({
+  grupos,
+  accountId,
+}: {
+  grupos: Grupo[];
+  accountId?: string;
+}) {
   const [nome, setNome] = useState("");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
@@ -125,6 +132,8 @@ export default function CriarEventoForm({ grupos }: { grupos: Grupo[] }) {
     // (@modal/(.)novo) e um router.replace não desmonta o slot paralelo de
     // forma confiável — o modal fica preso com o botão travado. Trocar o
     // documento fecha o modal com certeza.
+    if (accountId) logAccess(accountId, "criar_evento", { count: criados.length });
+
     // 1 grupo → já abre a escala do evento; vários → volta pra lista.
     if (criados.length === 1) {
       window.location.replace(`/eventos/${criados[0].id}`);

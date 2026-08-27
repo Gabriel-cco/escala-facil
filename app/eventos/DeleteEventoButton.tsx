@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { logAccess } from "@/lib/access-log";
 
 export default function DeleteEventoButton({
   eventId,
   titulo,
   className = "",
+  accountId,
 }: {
   eventId: string;
   titulo: string;
   className?: string;
+  accountId?: string;
 }) {
   const [confirmando, setConfirmando] = useState(false);
   const [apagando, setApagando] = useState(false);
@@ -30,6 +33,7 @@ export default function DeleteEventoButton({
       setErro("Erro ao apagar: " + error.message);
       return;
     }
+    if (accountId) logAccess(accountId, "excluir_evento", { event_id: eventId });
     setApagando(false);
     setConfirmando(false);
     router.refresh();

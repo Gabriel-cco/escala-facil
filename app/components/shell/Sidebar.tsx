@@ -42,6 +42,8 @@ function itemAtivo(pathname: string, href: string): boolean {
 }
 
 /** Ícone de cada item da navegação (herda a cor via currentColor). */
+const OWNER_EMAIL = "gabrielbatista1551@gmail.com";
+
 function IconeNav({ href }: { href: string }) {
   const p = {
     width: 18,
@@ -118,6 +120,14 @@ function IconeNav({ href }: { href: string }) {
           <path d="M13 10.5h4.5M13 13.5h3" />
         </svg>
       );
+    case "/relatorio-uso":
+      return (
+        <svg {...p}>
+          <rect x="3" y="12" width="4" height="8" rx="1" />
+          <rect x="10" y="8" width="4" height="12" rx="1" />
+          <rect x="17" y="4" width="4" height="16" rx="1" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -184,6 +194,25 @@ export default function Sidebar({
             </Link>
           );
         })}
+        {/* Relatório de uso: visível apenas para o dono da plataforma */}
+        {user.email === OWNER_EMAIL && (() => {
+          const ativo = itemAtivo(pathname, "/relatorio-uso");
+          return (
+            <Link
+              href="/relatorio-uso"
+              className={`flex items-center gap-[11px] rounded-lg px-[13px] py-[10px] text-[14px] transition-colors ${
+                ativo
+                  ? "bg-primary-light font-semibold text-primary"
+                  : "font-medium text-muted hover:bg-surface hover:text-ink"
+              }`}
+            >
+              <span className={ativo ? "text-primary" : "text-faint"}>
+                <IconeNav href="/relatorio-uso" />
+              </span>
+              Relatório
+            </Link>
+          );
+        })()}
       </nav>
 
       <div className="flex-1" />

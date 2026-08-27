@@ -66,6 +66,15 @@ export async function GET(request: Request) {
     }
   });
 
+  // Log de login (fire-and-forget após a sessão já estar estabelecida).
+  supabase.from("access_logs").insert({
+    account_id: account.account_id,
+    action: "login",
+    path: "/auth/callback",
+  }).then(({ error }) => {
+    if (error) console.warn("Falha ao registrar log de login:", error);
+  });
+
   const response = NextResponse.redirect(destino);
   response.cookies.set("ef_profile", account.profile, {
     path: "/",

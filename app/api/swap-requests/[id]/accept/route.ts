@@ -112,5 +112,15 @@ export async function POST(
     url: `/eventos/${swap.event_id}`,
   });
 
+  // Log fire-and-forget — usa o server client (sessão autenticada via cookie).
+  supabase.from("access_logs").insert({
+    account_id: me.account_id,
+    action: "aceitar_troca",
+    path: `/api/swap-requests/${swapId}/accept`,
+    metadata: { swap_request_id: swapId },
+  }).then(({ error }) => {
+    if (error) console.warn("Falha ao registrar log aceitar_troca:", error);
+  });
+
   return NextResponse.json({ ok: true });
 }

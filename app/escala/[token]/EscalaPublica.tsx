@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { liturgicalEmoji } from "../../components/LiturgicalDot";
+import { logPublicScheduleView } from "@/lib/access-log";
 
 type Assignment = { role_name: string; member_name: string };
 type EventoPublico = {
@@ -41,17 +42,23 @@ function formatarData(dateStr: string): string {
 export default function EscalaPublica({
   token,
   groupName,
+  groupId,
   eventos,
   ano,
   mesNum,
 }: {
   token: string;
   groupName: string;
+  groupId: string | null;
   eventos: EventoPublico[];
   ano: number;
   mesNum: number;
 }) {
   const [busca, setBusca] = useState("");
+
+  useEffect(() => {
+    if (groupId) logPublicScheduleView(groupId);
+  }, [groupId]);
   const termo = busca.trim().toLowerCase();
 
   // Próximo evento (o mais iminente a partir de hoje).

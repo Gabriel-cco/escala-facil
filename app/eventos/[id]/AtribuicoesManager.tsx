@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { iniciais } from "@/lib/iniciais";
 import { LiturgicalDot } from "@/app/components/LiturgicalDot";
+import { logAccess } from "@/lib/access-log";
 
 type Funcao = { id: string; nome: string };
 type Membro = { id: string; nome: string; iniciais: string };
@@ -93,6 +94,7 @@ export default function AtribuicoesManager({
     const supabase = createClient();
     await supabase.from("assignments").delete().eq("event_id", eventId).eq("role_id", sheetRoleId);
     await supabase.from("assignments").insert({ event_id: eventId, role_id: sheetRoleId, account_id: accountId });
+    if (currentAccountId) logAccess(currentAccountId, "atribuir_membro", { event_id: eventId, role_id: sheetRoleId });
     setOcupado(false);
     setSheetRoleId(null);
     router.refresh();
@@ -103,6 +105,7 @@ export default function AtribuicoesManager({
     setOcupado(true);
     const supabase = createClient();
     await supabase.from("assignments").delete().eq("event_id", eventId).eq("role_id", sheetRoleId);
+    if (currentAccountId) logAccess(currentAccountId, "remover_atribuicao", { event_id: eventId, role_id: sheetRoleId });
     setOcupado(false);
     setSheetRoleId(null);
     router.refresh();
@@ -113,6 +116,7 @@ export default function AtribuicoesManager({
     setOcupado(true);
     const supabase = createClient();
     await supabase.from("assignments").delete().eq("event_id", eventId).eq("role_id", roleId);
+    if (currentAccountId) logAccess(currentAccountId, "remover_atribuicao", { event_id: eventId, role_id: roleId });
     setOcupado(false);
     router.refresh();
   }
@@ -138,6 +142,7 @@ export default function AtribuicoesManager({
       setSwapErro(b.error ?? "Erro ao solicitar troca.");
       return;
     }
+    if (currentAccountId) logAccess(currentAccountId, "solicitar_troca", { event_id: eventId, role_id: swapRoleId });
     setSwapRoleId(null);
     setSwapMotivo("");
     router.refresh();

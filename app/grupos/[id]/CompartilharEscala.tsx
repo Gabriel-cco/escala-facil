@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { logAccess } from "@/lib/access-log";
 
 const iconeLink = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -34,9 +35,11 @@ async function getOrCreateGroupLink(groupId: string): Promise<string | null> {
 export default function CompartilharEscala({
   groupId,
   groupName,
+  accountId,
 }: {
   groupId: string;
   groupName: string;
+  accountId?: string;
 }) {
   const [processando, setProcessando] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -55,6 +58,8 @@ export default function CompartilharEscala({
     }
 
     const url = `${window.location.origin}/escala/${token}`;
+
+    if (accountId) logAccess(accountId, "compartilhar_link", { group_id: groupId });
 
     if (typeof navigator !== "undefined" && navigator.share) {
       try {

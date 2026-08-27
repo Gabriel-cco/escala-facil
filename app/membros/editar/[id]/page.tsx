@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../../../components/shell/Header";
 import EditarMembroForm from "../../EditarMembroForm";
 
@@ -10,6 +11,7 @@ export default async function EditarMembroPage({
 }) {
   const { id } = await params; // id = account id
   const supabase = await createClient();
+  const conta = await getCurrentAccount();
 
   const { data: account } = await supabase
     .from("accounts")
@@ -41,6 +43,7 @@ export default async function EditarMembroPage({
           birthDateInicial={user.birth_date ?? ""}
           grupoIdInicial={account.group_id ?? ""}
           grupos={grupos ?? []}
+          currentAccountId={conta?.account_id}
         />
       </main>
     </>

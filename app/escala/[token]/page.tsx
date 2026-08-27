@@ -55,11 +55,10 @@ export default async function EscalaPublicaPage({
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_public_schedule", {
-    p_token: token,
-    p_year: ano,
-    p_month: mesNum,
-  });
+  const [{ data, error }, { data: linkRow }] = await Promise.all([
+    supabase.rpc("get_public_schedule", { p_token: token, p_year: ano, p_month: mesNum }),
+    supabase.from("group_public_links").select("group_id").eq("token", token).maybeSingle(),
+  ]);
 
   if (error) return <LinkInvalido />;
 
@@ -72,6 +71,7 @@ export default async function EscalaPublicaPage({
     <EscalaPublica
       token={token}
       groupName={schedule.group_name}
+      groupId={(linkRow as { group_id: string } | null)?.group_id ?? null}
       eventos={schedule.events ?? []}
       ano={ano}
       mesNum={mesNum}

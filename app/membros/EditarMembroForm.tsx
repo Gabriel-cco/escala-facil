@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 
@@ -15,6 +16,7 @@ export default function EditarMembroForm({
   birthDateInicial,
   grupoIdInicial,
   grupos,
+  currentAccountId,
 }: {
   accountId: string;
   userId: string;
@@ -24,6 +26,7 @@ export default function EditarMembroForm({
   birthDateInicial: string;
   grupoIdInicial: string;
   grupos: Grupo[];
+  currentAccountId?: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
@@ -65,6 +68,7 @@ export default function EditarMembroForm({
       return;
     }
 
+    if (currentAccountId) logAccess(currentAccountId, "editar_membro", { edited_account_id: accountId });
     router.back();
     router.refresh();
   }

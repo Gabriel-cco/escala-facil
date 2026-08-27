@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { iniciais } from "@/lib/iniciais";
+import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 type Evento = { id: string; name: string; date: string; time: string };
@@ -260,6 +261,7 @@ export default function FazerChamadaForm({
         }
       }
 
+      logAccess(accountId, "fazer_chamada", { group_id: grupoId });
       router.push("/frequencia");
       router.refresh();
     } catch (e: unknown) {

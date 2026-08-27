@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getLiturgicalInfoAction } from "@/lib/liturgical-actions";
 import type { LiturgicalColor } from "@/lib/liturgical";
 import { withRetry } from "@/lib/retry";
+import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 
@@ -22,6 +23,7 @@ export default function EditarEventoForm({
   liturgicalNameInicial,
   liturgicalColorInicial,
   grupos,
+  accountId,
 }: {
   id: string;
   nomeInicial: string;
@@ -31,6 +33,7 @@ export default function EditarEventoForm({
   liturgicalNameInicial: string | null;
   liturgicalColorInicial: string | null;
   grupos: Grupo[];
+  accountId?: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
   // time stored as "HH:MM:SS" → input type=time needs "HH:MM"
@@ -93,6 +96,7 @@ export default function EditarEventoForm({
       setErro("Erro ao salvar: " + error.message);
       return;
     }
+    if (accountId) logAccess(accountId, "editar_evento", { event_id: id });
     router.back();
     router.refresh();
   }

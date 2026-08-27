@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 
-export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
+export default function CadastrarMembroForm({
+  grupos,
+  accountId,
+}: {
+  grupos: Grupo[];
+  accountId?: string;
+}) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
@@ -58,6 +65,7 @@ export default function CadastrarMembroForm({ grupos }: { grupos: Grupo[] }) {
       return;
     }
 
+    if (accountId) logAccess(accountId, "criar_membro");
     // Fecha o modal interceptor (router.back) e revalida a lista. Usar
     // replace("/membros") não desmonta o slot @modal de forma confiável.
     router.back();

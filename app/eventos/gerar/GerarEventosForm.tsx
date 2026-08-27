@@ -7,6 +7,7 @@ import { getLiturgicalMonthAction } from "@/lib/liturgical-actions";
 import { LiturgicalDot } from "@/app/components/LiturgicalDot";
 import type { LiturgicalColor } from "@/lib/liturgical";
 import { withRetry } from "@/lib/retry";
+import { logAccess } from "@/lib/access-log";
 
 const DIAS_SEMANA = [
   "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado",
@@ -331,6 +332,7 @@ export default function GerarEventosForm({
       }
     }
 
+    logAccess(accountId, "gerar_escala_mes", { group_id: grupoId, mes: mesAno, count: selecionados.length });
     router.push(grupoId ? `/eventos?grupo=${grupoId}` : "/eventos");
     router.refresh();
   }

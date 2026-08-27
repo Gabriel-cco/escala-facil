@@ -40,8 +40,10 @@ function chaveDia(d: Date): string {
 
 export default function CalendarioEventos({
   eventos,
+  accountId,
 }: {
   eventos: EventoCal[];
+  accountId?: string;
 }) {
   const hoje = new Date();
   const chaveHoje = chaveDia(hoje);
@@ -205,7 +207,7 @@ export default function CalendarioEventos({
               </div>
             </Link>
             <div className="flex flex-none items-center pr-2">
-              <DeleteEventoButton eventId={e.id} titulo={e.nome} />
+              <DeleteEventoButton eventId={e.id} titulo={e.nome} accountId={accountId} />
             </div>
           </div>
         ))}

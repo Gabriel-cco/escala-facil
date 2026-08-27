@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAccount } from "@/lib/current-user";
 import Modal from "@/app/components/shell/Modal";
 import EditarEventoForm from "@/app/eventos/EditarEventoForm";
 
@@ -10,6 +11,7 @@ export default async function EditarEventoModal({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const conta = await getCurrentAccount();
 
   const { data: evento } = await supabase
     .from("events")
@@ -36,6 +38,7 @@ export default async function EditarEventoModal({
         liturgicalNameInicial={evento.liturgical_name}
         liturgicalColorInicial={evento.liturgical_color}
         grupos={grupos ?? []}
+        accountId={conta?.account_id}
       />
     </Modal>
   );

@@ -1,18 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAccount } from "@/lib/current-user";
 import Modal from "@/app/components/shell/Modal";
 import CadastrarMembroForm from "@/app/membros/novo/CadastrarMembroForm";
 
 // Versão interceptada de /membros/novo: abre como modal sobre a lista.
 export default async function CadastrarMembroModal() {
   const supabase = await createClient();
-  const { data: grupos } = await supabase
-    .from("groups")
-    .select("id, name")
-    .order("name", { ascending: true });
+  const [{ data: grupos }, conta] = await Promise.all([
+    supabase.from("groups").select("id, name").order("name", { ascending: true }),
+    getCurrentAccount(),
+  ]);
 
   return (
     <Modal title="Cadastrar membro">
-      <CadastrarMembroForm grupos={grupos ?? []} />
+      <CadastrarMembroForm grupos={grupos ?? []} accountId={conta?.account_id} />
     </Modal>
   );
 }

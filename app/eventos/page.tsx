@@ -298,7 +298,7 @@ export default async function EventosPage({
               >
                 {iconeLapis}
               </Link>
-              <DeleteEventoButton eventId={evento.id} titulo={evento.name} />
+              <DeleteEventoButton eventId={evento.id} titulo={evento.name} accountId={accountIdLogado ?? undefined} />
             </div>
           )}
         </div>
@@ -345,7 +345,7 @@ export default async function EventosPage({
               >
                 {iconeLapis}
               </Link>
-              <DeleteEventoButton eventId={evento.id} titulo={evento.name} />
+              <DeleteEventoButton eventId={evento.id} titulo={evento.name} accountId={accountIdLogado ?? undefined} />
             </div>
           )}
         </div>
@@ -520,7 +520,7 @@ export default async function EventosPage({
 
         {/* Vista calendário */}
         {vistaCalendario && filtrados.length > 0 && (
-          <CalendarioEventos eventos={eventosCal} />
+          <CalendarioEventos eventos={eventosCal} accountId={accountIdLogado ?? undefined} />
         )}
 
         {/* Vista lista */}

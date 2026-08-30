@@ -39,6 +39,7 @@ export default function MembroItem({
 }) {
   const [mostrarSuspensao, setMostrarSuspensao] = useState(false);
   const [dataSuspensao, setDataSuspensao] = useState("");
+  const [confirmandoSuspensao, setConfirmandoSuspensao] = useState(false);
   const [confirmandoArquivar, setConfirmandoArquivar] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erroData, setErroData] = useState("");
@@ -47,20 +48,25 @@ export default function MembroItem({
   const hoje = new Date().toISOString().split("T")[0];
   const estaSuspenso = membro.suspensoAte != null && membro.suspensoAte >= hoje;
 
-  async function suspender() {
+  function pedirConfirmacaoSuspensao() {
     if (!dataSuspensao) return;
     if (dataSuspensao <= hoje) {
       setErroData("A data de suspensão precisa ser futura.");
       return;
     }
     setErroData("");
+    setConfirmandoSuspensao(true);
+  }
+
+  async function suspender() {
     setProcessando(true);
-    const supabase = createClient();
-    await supabase
-      .from("accounts")
-      .update({ suspended_until: dataSuspensao })
-      .eq("id", membro.id);
+    await fetch(`/api/accounts/${membro.id}/suspend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ suspended_until: dataSuspensao }),
+    });
     setProcessando(false);
+    setConfirmandoSuspensao(false);
     setMostrarSuspensao(false);
     setDataSuspensao("");
     router.refresh();
@@ -201,16 +207,55 @@ export default function MembroItem({
               />
             </label>
             <button
-              onClick={suspender}
-              disabled={processando || !dataSuspensao}
+              onClick={pedirConfirmacaoSuspensao}
+              disabled={!dataSuspensao}
               className="rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-paper disabled:opacity-50"
             >
-              Confirmar
+              Salvar
             </button>
           </div>
         )}
         {erroData && <p className="mt-2 text-[12px] text-danger">{erroData}</p>}
       </div>
+
+      {confirmandoSuspensao && (
+        <>
+          <div
+            onClick={() => !processando && setConfirmandoSuspensao(false)}
+            className="ef-backdrop fixed inset-0 z-40 bg-black/30"
+          />
+          <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
+              <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
+              <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
+                SUSPENDER
+              </div>
+              <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
+                Suspender membro?
+              </div>
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
+                Você está prestes a suspender &ldquo;{membro.nome}&rdquo;. Deseja continuar a operação e notificá-lo?
+              </p>
+              <div className="flex flex-col gap-2.5 md:flex-row md:justify-end">
+                <button
+                  onClick={() => setConfirmandoSuspensao(false)}
+                  disabled={processando}
+                  className="rounded-[14px] border border-black/10 py-3.5 text-[14px] font-semibold text-ink disabled:opacity-50 md:rounded-[11px] md:px-5 md:py-3"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={suspender}
+                  disabled={processando}
+                  className="rounded-[14px] bg-primary py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
+                >
+                  {processando ? "Suspendendo..." : "Confirmar e notificar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {confirmandoArquivar && (
         <>

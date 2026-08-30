@@ -29,7 +29,10 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { suspended_until } = body as { suspended_until: string };
+  const { suspended_until, suspension_reason } = body as {
+    suspended_until: string;
+    suspension_reason?: string;
+  };
 
   if (!suspended_until) {
     return NextResponse.json({ error: "suspended_until é obrigatório" }, { status: 400 });
@@ -51,9 +54,11 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const reason = suspension_reason?.trim() || null;
+
   await admin
     .from("accounts")
-    .update({ suspended_until })
+    .update({ suspended_until, suspension_reason: reason })
     .eq("id", accountId);
 
   const dataFormatada = new Date(suspended_until + "T00:00").toLocaleDateString("pt-BR", {
@@ -63,7 +68,9 @@ export async function POST(
   });
 
   const title = "Suspensão de escala";
-  const notifBody = `Você foi suspenso das escalas até ${dataFormatada}. Entre em contato com seu coordenador para mais informações.`;
+  const notifBody = reason
+    ? `Você foi suspenso das escalas até ${dataFormatada}. Motivo: ${reason}`
+    : `Você foi suspenso das escalas até ${dataFormatada}. Entre em contato com seu coordenador para mais informações.`;
 
   await admin.from("notifications").insert({
     account_id: accountId,

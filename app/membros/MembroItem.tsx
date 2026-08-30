@@ -13,6 +13,7 @@ type Membro = {
   grupoNome: string;
   active: boolean;
   suspensoAte: string | null;
+  motivoSuspensao: string | null;
 };
 
 const iconeLapis = (
@@ -38,7 +39,9 @@ export default function MembroItem({
   podeGerenciar: boolean;
 }) {
   const [mostrarSuspensao, setMostrarSuspensao] = useState(false);
+  const [editandoSuspensao, setEditandoSuspensao] = useState(false);
   const [dataSuspensao, setDataSuspensao] = useState("");
+  const [motivoSuspensao, setMotivoSuspensao] = useState("");
   const [confirmandoSuspensao, setConfirmandoSuspensao] = useState(false);
   const [confirmandoArquivar, setConfirmandoArquivar] = useState(false);
   const [processando, setProcessando] = useState(false);
@@ -47,6 +50,13 @@ export default function MembroItem({
 
   const hoje = new Date().toISOString().split("T")[0];
   const estaSuspenso = membro.suspensoAte != null && membro.suspensoAte >= hoje;
+
+  function abrirEdicaoSuspensao() {
+    setDataSuspensao(membro.suspensoAte ?? "");
+    setMotivoSuspensao(membro.motivoSuspensao ?? "");
+    setErroData("");
+    setEditandoSuspensao(true);
+  }
 
   function pedirConfirmacaoSuspensao() {
     if (!dataSuspensao) return;
@@ -63,12 +73,14 @@ export default function MembroItem({
     await fetch(`/api/accounts/${membro.id}/suspend`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ suspended_until: dataSuspensao }),
+      body: JSON.stringify({ suspended_until: dataSuspensao, suspension_reason: motivoSuspensao }),
     });
     setProcessando(false);
     setConfirmandoSuspensao(false);
     setMostrarSuspensao(false);
+    setEditandoSuspensao(false);
     setDataSuspensao("");
+    setMotivoSuspensao("");
     router.refresh();
   }
 
@@ -154,19 +166,28 @@ export default function MembroItem({
               {membro.active ? (
                 <>
                   {estaSuspenso ? (
-                    <button
-                      onClick={removerSuspensao}
-                      disabled={processando}
-                      className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50"
-                    >
-                      Remover suspensão
-                    </button>
+                    <>
+                      <button
+                        onClick={abrirEdicaoSuspensao}
+                        className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink"
+                      >
+                        Editar suspensão
+                      </button>
+                      <button
+                        onClick={removerSuspensao}
+                        disabled={processando}
+                        className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50"
+                      >
+                        Remover
+                      </button>
+                    </>
                   ) : (
                     <button
                       onClick={() => {
                         setMostrarSuspensao((v) => !v);
                         setErroData("");
                         setDataSuspensao("");
+                        setMotivoSuspensao("");
                       }}
                       className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink"
                     >
@@ -194,9 +215,9 @@ export default function MembroItem({
           )}
         </div>
 
-        {mostrarSuspensao && membro.active && !estaSuspenso && (
-          <div className="mt-3 flex items-end gap-2 border-t border-black/[0.06] pt-3">
-            <label className="flex-1 text-[12px] text-ink-soft">
+        {(mostrarSuspensao || editandoSuspensao) && membro.active && (
+          <div className="mt-3 flex flex-col gap-2.5 border-t border-black/[0.06] pt-3">
+            <label className="text-[12px] text-ink-soft">
               Suspenso até:
               <input
                 type="date"
@@ -206,13 +227,33 @@ export default function MembroItem({
                 className="mt-1 block w-full rounded-[12px] border border-black/10 bg-paper px-3 py-2 text-[14px] outline-none"
               />
             </label>
-            <button
-              onClick={pedirConfirmacaoSuspensao}
-              disabled={!dataSuspensao}
-              className="rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-paper disabled:opacity-50"
-            >
-              Salvar
-            </button>
+            <label className="text-[12px] text-ink-soft">
+              Motivo (opcional):
+              <textarea
+                value={motivoSuspensao}
+                onChange={(e) => setMotivoSuspensao(e.target.value)}
+                rows={2}
+                placeholder="Ex: falta de comprometimento"
+                className="mt-1 block w-full resize-none rounded-[12px] border border-black/10 bg-paper px-3 py-2 text-[14px] outline-none placeholder:text-faint"
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              {editandoSuspensao && (
+                <button
+                  onClick={() => setEditandoSuspensao(false)}
+                  className="rounded-full border border-black/10 px-4 py-2 text-[13px] font-semibold text-ink"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                onClick={pedirConfirmacaoSuspensao}
+                disabled={!dataSuspensao}
+                className="rounded-full bg-primary px-4 py-2 text-[13px] font-semibold text-paper disabled:opacity-50"
+              >
+                Salvar
+              </button>
+            </div>
           </div>
         )}
         {erroData && <p className="mt-2 text-[12px] text-danger">{erroData}</p>}
@@ -231,10 +272,12 @@ export default function MembroItem({
                 SUSPENDER
               </div>
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
-                Suspender membro?
+                {editandoSuspensao ? "Editar suspensão?" : "Suspender membro?"}
               </div>
               <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
-                Você está prestes a suspender &ldquo;{membro.nome}&rdquo;. Deseja continuar a operação e notificá-lo?
+                {editandoSuspensao
+                  ? `Você está prestes a alterar a suspensão de “${membro.nome}”. Deseja continuar e notificá-lo?`
+                  : `Você está prestes a suspender “${membro.nome}”. Deseja continuar a operação e notificá-lo?`}
               </p>
               <div className="flex flex-col gap-2.5 md:flex-row md:justify-end">
                 <button

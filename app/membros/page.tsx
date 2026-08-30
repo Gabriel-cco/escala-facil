@@ -24,7 +24,7 @@ export default async function MembrosPage({
   let query = supabase
     .from("accounts")
     .select(
-      "id, active, suspended_until, user:users(id, name), group:groups(name)"
+      "id, active, suspended_until, suspension_reason, user:users(id, name), group:groups(name)"
     )
     .eq("profile", "member");
   if (activeGroupId) query = query.eq("group_id", activeGroupId);
@@ -42,6 +42,7 @@ export default async function MembrosPage({
         grupoNome: g?.name ?? "Sem grupo",
         active: a.active,
         suspensoAte: a.suspended_until as string | null,
+        motivoSuspensao: a.suspension_reason as string | null,
       };
     })
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));

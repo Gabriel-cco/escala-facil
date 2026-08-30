@@ -120,7 +120,9 @@ export default async function RelatorioUsoPage({
   const todosLogs: LogRow[] = (logs ?? []) as LogRow[];
 
   // ── Cards de resumo ──────────────────────────────────────────────────────
-  const totalAcoes = todosLogs.length;
+  // view_page é navegação passiva; exclui do total de ações para não inflar o número.
+  const totalAcoes = todosLogs.filter((l) => l.action !== "view_page").length;
+  const totalNavegacoes = todosLogs.filter((l) => l.action === "view_page").length;
 
   const usuariosAtivos = new Set(
     todosLogs
@@ -186,11 +188,11 @@ export default async function RelatorioUsoPage({
 
         {/* Cards de resumo */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {cartao("Total de ações", totalAcoes)}
+          {cartao("Ações", totalAcoes, "exclui navegações de página")}
+          {cartao("Navegações", totalNavegacoes, "trocas de página")}
           {cartao("Usuários ativos", usuariosAtivos)}
-          {cartao("Views link público", viewsPublicas)}
           {cartao(
-            "Último acesso",
+            "Último login",
             loginRecente ? rotuloDataHora(loginRecente) : "—"
           )}
         </div>

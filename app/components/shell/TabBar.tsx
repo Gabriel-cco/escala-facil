@@ -58,6 +58,13 @@ export default function TabBar({
           <Link
             key={aba.href}
             href={aba.href}
+            data-tour={
+              aba.href === "/eventos"
+                ? "nav-eventos"
+                : aba.href === "/trocas"
+                ? "nav-trocas"
+                : undefined
+            }
             className="flex flex-1 flex-col items-center gap-1.5 py-1"
           >
             <span

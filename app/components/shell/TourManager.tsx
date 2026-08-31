@@ -61,7 +61,8 @@ export default function TourManager({
             back: "Voltar",
             close: "Fechar",
             last: "Concluir",
-            next: "Próximo",
+            next: "Avançar",
+            nextWithProgress: "Avançar",
             skip: "Pular",
           }}
         />

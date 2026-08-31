@@ -3,17 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { resetTour } from "@/lib/tour";
 
 export default function PerfilForm({
   userId,
   nomeInicial,
   email,
   birthDateInicial,
+  profile,
 }: {
   userId: string;
   nomeInicial: string;
   email: string;
   birthDateInicial: string;
+  profile: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [birthDate, setBirthDate] = useState(birthDateInicial);
@@ -107,11 +110,20 @@ export default function PerfilForm({
         </button>
       </div>
 
-      <div className="mt-4 border-t border-black/[0.07] pt-4">
+      <div className="mt-4 border-t border-black/[0.07] pt-4 flex flex-col gap-3">
+        <button
+          onClick={() => {
+            resetTour(profile);
+            router.push(profile === "member" ? "/minha-escala" : "/");
+          }}
+          className="text-left text-[13.5px] font-semibold text-primary"
+        >
+          Ver tour novamente
+        </button>
         <button
           onClick={sair}
           disabled={saindo}
-          className="text-[13.5px] font-semibold text-danger disabled:opacity-50"
+          className="text-left text-[13.5px] font-semibold text-danger disabled:opacity-50"
         >
           {saindo ? "Saindo..." : "Sair da conta"}
         </button>

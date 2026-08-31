@@ -3,12 +3,21 @@
 import { Joyride, STATUS, type EventData, type Step } from "react-joyride";
 import { markTourCompleted } from "@/lib/tour";
 
+function firstVisible(name: string): HTMLElement {
+  const all = document.querySelectorAll(`[data-tour="${name}"]`);
+  for (const el of Array.from(all)) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return el as HTMLElement;
+  }
+  return document.body;
+}
+
 export const coordinatorSteps: Step[] = [
   {
     target: "body",
     placement: "center",
     content:
-      "Bem-vindo ao Escala Fácil! Vamos te mostrar rapidinho como tudo funciona — leva menos de um minuto.",
+      "Bem-vindo ao Escala Fácil! Vamos te mostrar rapidinho como tudo funciona. Leva menos de um minuto.",
   },
   {
     target: '[data-tour="proximo-evento"]',
@@ -20,19 +29,19 @@ export const coordinatorSteps: Step[] = [
       "E aqui, tudo que precisa da sua atenção: funções vagas, trocas pendentes, suspensões terminando.",
   },
   {
-    target: '[data-tour="nav-eventos"]',
+    target: () => firstVisible("nav-eventos"),
     content:
-      "É aqui que você monta a escala — cria eventos e atribui cada função a um membro.",
+      "É aqui que você monta a escala: cria eventos e atribui cada função a um membro.",
   },
   {
-    target: '[data-tour="nav-trocas"]',
+    target: () => firstVisible("nav-trocas"),
     content:
-      "Se alguém não puder servir, a troca acontece por aqui — sem depender de mensagem perdida no WhatsApp.",
+      "Se alguém não puder servir, a troca acontece por aqui, sem depender de mensagem no WhatsApp.",
   },
   {
     target: '[data-tour="sino-notificacoes"]',
     content:
-      "Você recebe avisos automáticos aqui — inclusive no celular, mesmo com o app fechado.",
+      "Você recebe avisos automáticos aqui, inclusive no celular, mesmo com o app fechado.",
   },
   {
     target: "body",

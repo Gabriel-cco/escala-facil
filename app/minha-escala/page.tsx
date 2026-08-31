@@ -200,7 +200,7 @@ export default async function MinhaEscalaPage({
             Nenhum evento agendado para {MESES[mesNum - 1].toLowerCase()} de {ano}.
           </p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div data-tour="minha-escala-lista" className="flex flex-col gap-3">
             {eventos.map((evento) => {
               const atribuicoes = evento.assignments ?? [];
               const minhaAtribuicao = atribuicoes.find(

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
 import { useGroup } from "@/contexts/GroupContext";
 import NotificationBell from "./NotificationBell";
+import HelpTourButton from "./HelpTourButton";
 
 /**
  * Topbar (72px) do layout web: título em serifa + voltar (detalhes) +
@@ -50,6 +51,7 @@ export default function Topbar({ className = "" }: { className?: string }) {
       </div>
 
       <div className="flex items-center gap-3">
+        <HelpTourButton />
         <NotificationBell />
         {chrome.actionLabel && chrome.actionHref && (
           <Link

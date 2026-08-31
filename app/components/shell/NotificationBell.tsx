@@ -214,7 +214,7 @@ export default function NotificationBell() {
       </Link>
 
       {/* Desktop: dropdown */}
-      <div ref={ref} className="relative hidden md:block">
+      <div ref={ref} data-tour="sino-notificacoes" className="relative hidden md:block">
         <button
           onClick={() => setAberto((v) => !v)}
           aria-label="Notificações"

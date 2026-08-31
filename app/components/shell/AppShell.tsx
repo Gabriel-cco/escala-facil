@@ -12,6 +12,7 @@ import Topbar from "./Topbar";
 import PushBanner from "../PushBanner";
 import { InstallBanner } from "../InstallBanner";
 import { IOSInstallBanner } from "../IOSInstallBanner";
+import TourManager from "./TourManager";
 
 export type ShellUser = {
   nome: string;
@@ -84,6 +85,7 @@ export default function AppShell({
   return (
     <ShellContext.Provider value={contextValue}>
       <GroupProvider profile={user?.perfil ?? null} groupId={user?.groupId ?? null}>
+      <TourManager profile={user?.perfil ?? null}>
         <div className="min-h-dvh bg-screen md:flex md:h-dvh md:min-h-0 md:overflow-hidden md:bg-app">
           {user && <Sidebar className="hidden md:flex" user={user} />}
 
@@ -103,6 +105,7 @@ export default function AppShell({
         {user && <PushBanner />}
         {user && <InstallBanner />}
         {user && <IOSInstallBanner />}
+      </TourManager>
       </GroupProvider>
     </ShellContext.Provider>
   );

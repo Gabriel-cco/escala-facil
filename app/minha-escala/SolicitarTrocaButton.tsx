@@ -66,6 +66,7 @@ export default function SolicitarTrocaButton({
   return (
     <>
       <button
+        data-tour="solicitar-troca"
         onClick={() => {
           setAberto(true);
           setMotivo("");

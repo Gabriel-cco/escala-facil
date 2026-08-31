@@ -180,6 +180,13 @@ export default function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              data-tour={
+                item.href === "/eventos"
+                  ? "nav-eventos"
+                  : item.href === "/trocas"
+                  ? "nav-trocas"
+                  : undefined
+              }
               className={`flex items-center gap-[11px] rounded-lg px-[13px] py-[10px] text-[14px] transition-colors ${
                 ativo
                   ? "bg-primary-light font-semibold text-primary"

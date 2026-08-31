@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
 import NotificationBell from "./NotificationBell";
+import HelpTourButton from "./HelpTourButton";
 
 type HeaderProps =
   | { variant: "home" }
@@ -63,6 +64,7 @@ export default function Header(props: HeaderProps) {
           <span className="font-light">escala</span><span className="font-bold">fácil</span>
         </div>
         <div className="flex items-center gap-1">
+          <HelpTourButton />
           <NotificationBell />
           <Link
             href="/perfil"
@@ -92,6 +94,7 @@ export default function Header(props: HeaderProps) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <HelpTourButton />
           <NotificationBell />
           <Link
             href="/perfil"

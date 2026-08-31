@@ -326,7 +326,7 @@ export default async function Home() {
         </div>
 
         {/* ── Próximos eventos ─────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3">
+        <div data-tour="proximo-evento" className="flex flex-col gap-3">
           <h2 className="text-[18px] font-bold text-ink">Próximos eventos</h2>
 
           {proximoEvento ? (
@@ -453,7 +453,7 @@ export default async function Home() {
 
         {/* ── Ações Pendentes ──────────────────────────────────────────── */}
         {acoesPendentes.length > 0 && (
-          <div className="flex flex-col gap-3">
+          <div data-tour="acoes-pendentes" className="flex flex-col gap-3">
             <h2 className="text-[18px] font-bold text-ink">Ações pendentes</h2>
             <div className="overflow-hidden rounded-[18px] border border-black/[0.06] bg-paper shadow-card">
               {acoesPendentes.map((acao, i) => (

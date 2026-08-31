@@ -6,7 +6,7 @@ import { rotuloData, rotuloHora, rotuloMes, chaveMes } from "@/lib/datas";
 import DeleteEventoButton from "./DeleteEventoButton";
 import CalendarioEventos, { type EventoCal } from "./CalendarioEventos";
 import { LiturgicalDot } from "../components/LiturgicalDot";
-import { getCurrentAccount } from "@/lib/current-user";
+import { getCurrentAccount, getAuthUser } from "@/lib/current-user";
 import ScrollToEvento from "./ScrollToEvento";
 import MembroSelect from "./MembroSelect";
 
@@ -37,6 +37,11 @@ export default async function EventosPage({
   const perfil = conta?.profile;
   const accountIdLogado = conta?.account_id ?? null;
   const podeGerenciar = perfil === "admin" || perfil === "coordinator";
+
+  // TEMPORÁRIO: link "Gerenciar ministérios" visível só para o dono da plataforma.
+  // Revisitar quando decidirmos como abrir essa capacidade para outros coordenadores.
+  const authUser = await getAuthUser();
+  const podeGerenciarMinisterios = authUser?.email === "gabrielbatista1551@gmail.com";
 
   let eventosQuery = supabase
     .from("events")
@@ -389,6 +394,15 @@ export default async function EventosPage({
             Gerar Escala Mensal
           </Link>
         )}
+        {/* TEMPORÁRIO: visível só para gabrielbatista1551@gmail.com */}
+        {podeGerenciarMinisterios && (
+          <Link
+            href="/ministerios"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink-soft md:hidden"
+          >
+            Gerenciar ministérios
+          </Link>
+        )}
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
@@ -402,6 +416,17 @@ export default async function EventosPage({
               className="rounded-[11px] border border-blue-300 bg-blue-50 px-4 py-2.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-100"
             >
               Gerar Escala Mensal
+            </Link>
+          </div>
+        )}
+        {/* TEMPORÁRIO: visível só para gabrielbatista1551@gmail.com */}
+        {podeGerenciarMinisterios && (
+          <div className="hidden md:flex md:justify-end">
+            <Link
+              href="/ministerios"
+              className="rounded-[11px] border border-black/10 px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:bg-black/[0.03]"
+            >
+              Gerenciar ministérios
             </Link>
           </div>
         )}

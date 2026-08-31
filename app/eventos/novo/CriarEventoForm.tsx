@@ -23,13 +23,17 @@ function hojeStr(): string {
   )}-${String(hoje.getDate()).padStart(2, "0")}`;
 }
 
+// TEMPORÁRIO: campo de ministério visível só para o dono da plataforma.
+// Revisitar quando decidirmos como abrir essa capacidade para outros coordenadores.
 export default function CriarEventoForm({
   grupos,
   ministeriosPorGrupo,
+  podeGerenciarMinisterios,
   accountId,
 }: {
   grupos: Grupo[];
   ministeriosPorGrupo: Record<string, Ministerio[]>;
+  podeGerenciarMinisterios: boolean;
   accountId?: string;
 }) {
   const [nome, setNome] = useState("");
@@ -74,7 +78,7 @@ export default function CriarEventoForm({
   const todosMinisterios = [...ministeriosBase, ...ministeriosExtras].sort(
     (a, b) => a.name.localeCompare(b.name, "pt-BR")
   );
-  const mostrarCampoMinisterio = grupoIdUnico !== null && todosMinisterios.length > 0;
+  const mostrarCampoMinisterio = grupoIdUnico !== null && podeGerenciarMinisterios;
 
   function clearMinisterio() {
     setMinisterioId("");

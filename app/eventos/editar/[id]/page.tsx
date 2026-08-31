@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentAccount } from "@/lib/current-user";
+import { getCurrentAccount, getAuthUser } from "@/lib/current-user";
 import Header from "../../../components/shell/Header";
 import EditarEventoForm from "../../EditarEventoForm";
 import EventRolesEditor from "../../EventRolesEditor";
+
+// TEMPORÁRIO: campo de ministério visível só para o dono da plataforma.
+const OWNER_EMAIL = "gabrielbatista1551@gmail.com";
 
 export default async function EditarEventoPage({
   params,
@@ -12,7 +15,8 @@ export default async function EditarEventoPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const conta = await getCurrentAccount();
+  const [conta, authUser] = await Promise.all([getCurrentAccount(), getAuthUser()]);
+  const podeGerenciarMinisterios = authUser?.email === OWNER_EMAIL;
 
   const { data: evento } = await supabase
     .from("events")
@@ -31,19 +35,20 @@ export default async function EditarEventoPage({
   const grupoRoles = grupoRolesResult.data ?? [];
   const activeRoleIds = (eventRolesResult.data ?? []).map((er) => er.role_id);
 
-  const grupoIds = (gruposResult.data ?? []).map((g) => g.id);
-  const { data: ministeriosData } = grupoIds.length
-    ? await supabase
-        .from("ministerios")
-        .select("id, name, group_id")
-        .in("group_id", grupoIds)
-        .order("name", { ascending: true })
-    : { data: [] };
-
   const ministeriosPorGrupo: Record<string, { id: string; name: string }[]> = {};
-  for (const m of ministeriosData ?? []) {
-    if (!ministeriosPorGrupo[m.group_id]) ministeriosPorGrupo[m.group_id] = [];
-    ministeriosPorGrupo[m.group_id].push({ id: m.id, name: m.name });
+  if (podeGerenciarMinisterios) {
+    const grupoIds = (gruposResult.data ?? []).map((g) => g.id);
+    const { data: ministeriosData } = grupoIds.length
+      ? await supabase
+          .from("ministerios")
+          .select("id, name, group_id")
+          .in("group_id", grupoIds)
+          .order("name", { ascending: true })
+      : { data: [] };
+    for (const m of ministeriosData ?? []) {
+      if (!ministeriosPorGrupo[m.group_id]) ministeriosPorGrupo[m.group_id] = [];
+      ministeriosPorGrupo[m.group_id].push({ id: m.id, name: m.name });
+    }
   }
 
   const eventoComMin = evento as typeof evento & { ministerio_id?: string | null };
@@ -63,6 +68,7 @@ export default async function EditarEventoPage({
           ministerioIdInicial={eventoComMin.ministerio_id ?? null}
           grupos={gruposResult.data ?? []}
           ministeriosPorGrupo={ministeriosPorGrupo}
+          podeGerenciarMinisterios={podeGerenciarMinisterios}
           accountId={conta?.account_id}
         />
         {grupoRoles.length > 0 && (

@@ -15,6 +15,8 @@ const labelInput = "mb-2 text-[12px] font-semibold text-muted";
 const baseInput =
   "w-full rounded-[14px] border border-black/10 bg-paper text-ink outline-none";
 
+// TEMPORÁRIO: campo de ministério visível só para o dono da plataforma.
+// Revisitar quando decidirmos como abrir essa capacidade para outros coordenadores.
 export default function EditarEventoForm({
   id,
   nomeInicial,
@@ -26,6 +28,7 @@ export default function EditarEventoForm({
   ministerioIdInicial,
   grupos,
   ministeriosPorGrupo,
+  podeGerenciarMinisterios,
   accountId,
 }: {
   id: string;
@@ -38,6 +41,7 @@ export default function EditarEventoForm({
   ministerioIdInicial: string | null;
   grupos: Grupo[];
   ministeriosPorGrupo: Record<string, Ministerio[]>;
+  podeGerenciarMinisterios: boolean;
   accountId?: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
@@ -83,7 +87,7 @@ export default function EditarEventoForm({
   const todosMinisterios = [...ministeriosBase, ...ministeriosExtras].sort(
     (a, b) => a.name.localeCompare(b.name, "pt-BR")
   );
-  const mostrarCampoMinisterio = todosMinisterios.length > 0;
+  const mostrarCampoMinisterio = podeGerenciarMinisterios;
 
   function handleGrupoChange(newGrupoId: string) {
     setGrupoId(newGrupoId);

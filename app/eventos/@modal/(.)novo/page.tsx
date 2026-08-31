@@ -11,9 +11,28 @@ export default async function CriarEventoModal() {
     getCurrentAccount(),
   ]);
 
+  const grupoIds = (grupos ?? []).map((g) => g.id);
+  const { data: ministeriosData } = grupoIds.length
+    ? await supabase
+        .from("ministerios")
+        .select("id, name, group_id")
+        .in("group_id", grupoIds)
+        .order("name", { ascending: true })
+    : { data: [] };
+
+  const ministeriosPorGrupo: Record<string, { id: string; name: string }[]> = {};
+  for (const m of ministeriosData ?? []) {
+    if (!ministeriosPorGrupo[m.group_id]) ministeriosPorGrupo[m.group_id] = [];
+    ministeriosPorGrupo[m.group_id].push({ id: m.id, name: m.name });
+  }
+
   return (
     <Modal title="Criar evento">
-      <CriarEventoForm grupos={grupos ?? []} accountId={conta?.account_id} />
+      <CriarEventoForm
+        grupos={grupos ?? []}
+        ministeriosPorGrupo={ministeriosPorGrupo}
+        accountId={conta?.account_id}
+      />
     </Modal>
   );
 }

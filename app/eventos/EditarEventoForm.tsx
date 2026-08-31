@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ import { withRetry } from "@/lib/retry";
 import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
+type Ministerio = { id: string; name: string };
 
 const labelInput = "mb-2 text-[12px] font-semibold text-muted";
 const baseInput =
@@ -22,7 +23,9 @@ export default function EditarEventoForm({
   grupoIdInicial,
   liturgicalNameInicial,
   liturgicalColorInicial,
+  ministerioIdInicial,
   grupos,
+  ministeriosPorGrupo,
   accountId,
 }: {
   id: string;
@@ -32,11 +35,12 @@ export default function EditarEventoForm({
   grupoIdInicial: string;
   liturgicalNameInicial: string | null;
   liturgicalColorInicial: string | null;
+  ministerioIdInicial: string | null;
   grupos: Grupo[];
+  ministeriosPorGrupo: Record<string, Ministerio[]>;
   accountId?: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
-  // time stored as "HH:MM:SS" → input type=time needs "HH:MM"
   const [data, setData] = useState(dataInicial);
   const [hora, setHora] = useState(horaInicial.slice(0, 5));
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
@@ -46,10 +50,16 @@ export default function EditarEventoForm({
   const [liturgicalColor, setLiturgicalColor] = useState<LiturgicalColor | null>(
     (liturgicalColorInicial as LiturgicalColor | null) ?? null
   );
+
+  // Ministério
+  const [ministerioId, setMinisterioId] = useState(ministerioIdInicial ?? "");
+  const [ministeriosExtras, setMinisteriosExtras] = useState<Ministerio[]>([]);
+  const [novoMinNome, setNovoMinNome] = useState("");
+  const [mostrarNovoMin, setMostrarNovoMin] = useState(false);
+  const [criandoMin, setCriandoMin] = useState(false);
+
   const router = useRouter();
 
-  // Se a data mudar, recalcula o litúrgico automaticamente (mas não na
-  // primeira renderização — aí o valor já veio pronto do banco).
   const primeiraRenderizacao = useRef(true);
   useEffect(() => {
     if (primeiraRenderizacao.current) {
@@ -63,14 +73,48 @@ export default function EditarEventoForm({
         setLiturgicalName(info?.name ?? "");
         setLiturgicalColor(info?.color ?? null);
       })
-      .catch(() => {
-        // Falhou o recálculo automático — mantém o que já estava no campo,
-        // o coordenador ainda pode editar manualmente.
-      });
+      .catch(() => {});
     return () => {
       cancelado = true;
     };
   }, [data]);
+
+  const ministeriosBase = ministeriosPorGrupo[grupoId] ?? [];
+  const todosMinisterios = [...ministeriosBase, ...ministeriosExtras].sort(
+    (a, b) => a.name.localeCompare(b.name, "pt-BR")
+  );
+  const mostrarCampoMinisterio = todosMinisterios.length > 0;
+
+  function handleGrupoChange(newGrupoId: string) {
+    setGrupoId(newGrupoId);
+    if (newGrupoId !== grupoId) {
+      setMinisterioId("");
+      setMinisteriosExtras([]);
+      setMostrarNovoMin(false);
+      setNovoMinNome("");
+    }
+  }
+
+  async function criarMinisterioInline() {
+    const nome = novoMinNome.trim();
+    if (!nome || criandoMin) return;
+    setCriandoMin(true);
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("ministerios")
+      .insert({ group_id: grupoId, name: nome })
+      .select("id, name")
+      .single();
+    setCriandoMin(false);
+    if (error) return;
+    const novo = data as Ministerio;
+    setMinisteriosExtras((prev) =>
+      [...prev, novo].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    );
+    setMinisterioId(novo.id);
+    setNovoMinNome("");
+    setMostrarNovoMin(false);
+  }
 
   const podeSalvar = nome.trim().length > 0 && grupoId !== "";
 
@@ -89,6 +133,7 @@ export default function EditarEventoForm({
         group_id: grupoId,
         liturgical_name: liturgicalName.trim() || null,
         liturgical_color: liturgicalColor,
+        ministerio_id: ministerioId || null,
       })
       .eq("id", id);
     if (error) {
@@ -141,7 +186,7 @@ export default function EditarEventoForm({
         <div className="relative">
           <select
             value={grupoId}
-            onChange={(e) => setGrupoId(e.target.value)}
+            onChange={(e) => handleGrupoChange(e.target.value)}
             className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${
               grupoId ? "text-ink" : "text-muted"
             }`}
@@ -160,6 +205,75 @@ export default function EditarEventoForm({
           </span>
         </div>
       </div>
+
+      {mostrarCampoMinisterio && (
+        <div>
+          <div className={labelInput}>
+            MINISTÉRIO RESPONSÁVEL{" "}
+            <span className="text-[10px] font-normal normal-case text-faint">(opcional)</span>
+          </div>
+          <div className="relative">
+            <select
+              value={ministerioId}
+              onChange={(e) => setMinisterioId(e.target.value)}
+              className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[14px] outline-none ${
+                ministerioId ? "text-ink" : "text-muted"
+              }`}
+            >
+              <option value="">Nenhum</option>
+              {todosMinisterios.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+              ▾
+            </span>
+          </div>
+
+          {!mostrarNovoMin ? (
+            <button
+              type="button"
+              onClick={() => setMostrarNovoMin(true)}
+              className="mt-1.5 text-[12.5px] font-medium text-primary hover:underline"
+            >
+              + Novo ministério
+            </button>
+          ) : (
+            <div className="mt-2 flex gap-2">
+              <input
+                value={novoMinNome}
+                onChange={(e) => setNovoMinNome(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") criarMinisterioInline();
+                }}
+                placeholder="Nome do ministério"
+                className="flex-1 rounded-[12px] border border-black/10 bg-paper px-3.5 py-2.5 text-[14px] text-ink outline-none"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={criarMinisterioInline}
+                disabled={!novoMinNome.trim() || criandoMin}
+                className="rounded-[12px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-40"
+              >
+                {criandoMin ? "..." : "Criar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarNovoMin(false);
+                  setNovoMinNome("");
+                }}
+                className="rounded-[12px] border border-black/10 px-3.5 py-2.5 text-[13px] font-semibold text-ink"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div>
         <div className={labelInput}>NOME LITÚRGICO</div>

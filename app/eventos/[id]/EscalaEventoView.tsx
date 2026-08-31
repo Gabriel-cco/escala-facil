@@ -43,6 +43,7 @@ export default function EscalaEventoView({
   horaLabel,
   liturgicalName,
   liturgicalColor,
+  ministerioNome,
   podeGerenciar,
   currentAccountId,
   atribuicoesLeitura,
@@ -61,6 +62,7 @@ export default function EscalaEventoView({
   horaLabel: string;
   liturgicalName: string | null;
   liturgicalColor: string | null;
+  ministerioNome?: string | null;
   podeGerenciar: boolean;
   currentAccountId: string | null;
   atribuicoesLeitura: AtribuicaoLeitura[];
@@ -116,12 +118,15 @@ export default function EscalaEventoView({
               {liturgicalEmoji(liturgicalColor)} {liturgicalName}
             </div>
           )}
+          {ministerioNome && (
+            <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-surface px-2.5 py-0.5 text-[12px] font-medium text-ink-soft">
+              ♪ {ministerioNome}
+            </div>
+          )}
           <div className="mt-0.5 text-[12px] text-faint">{grupoNome}</div>
         </div>
 
-        {atribuicoesLeitura.length === 0 ? (
-          <p className="text-[12.5px] text-faint">Nenhuma função definida ainda.</p>
-        ) : (
+        {atribuicoesLeitura.length > 0 && (
           <div className="flex flex-col gap-1.5 border-t border-black/[0.06] pt-3">
             {atribuicoesLeitura.map((a) => (
               <div
@@ -135,6 +140,9 @@ export default function EscalaEventoView({
               </div>
             ))}
           </div>
+        )}
+        {atribuicoesLeitura.length === 0 && !ministerioNome && (
+          <p className="text-[12.5px] text-faint">Nenhuma função definida ainda.</p>
         )}
       </div>
 

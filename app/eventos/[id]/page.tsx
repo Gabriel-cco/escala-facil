@@ -17,7 +17,7 @@ export default async function EventoDetalhePage({
   const { data: evento, error } = await supabase
     .from("events")
     .select(
-      "id, name, date, time, group_id, liturgical_name, liturgical_color, groups(name)"
+      "id, name, date, time, group_id, liturgical_name, liturgical_color, ministerio_id, ministerio:ministerios(name), groups(name)"
     )
     .eq("id", id)
     .single();
@@ -42,6 +42,11 @@ export default async function EventoDetalhePage({
   }
 
   const grupo = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
+  type MinRow = { name: string };
+  const eventoComMin = evento as typeof evento & { ministerio?: MinRow | MinRow[] | null };
+  const eventoMinRaw = eventoComMin.ministerio;
+  const eventoMinisterioNome =
+    (Array.isArray(eventoMinRaw) ? eventoMinRaw[0] : eventoMinRaw)?.name ?? null;
 
   const { data: eventRolesData } = await supabase
     .from("event_roles")
@@ -197,6 +202,7 @@ export default async function EventoDetalhePage({
           horaLabel={rotuloHora(evento.time)}
           liturgicalName={evento.liturgical_name}
           liturgicalColor={evento.liturgical_color}
+          ministerioNome={eventoMinisterioNome}
           podeGerenciar={podeGerenciar}
           currentAccountId={currentAccountId}
           atribuicoesLeitura={atribuicoesLeitura}

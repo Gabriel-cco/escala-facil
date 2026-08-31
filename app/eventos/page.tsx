@@ -41,7 +41,7 @@ export default async function EventosPage({
   let eventosQuery = supabase
     .from("events")
     .select(
-      "id, name, date, time, group_id, liturgical_name, liturgical_color, groups(name)"
+      "id, name, date, time, group_id, liturgical_name, liturgical_color, ministerio_id, ministerio:ministerios(name), groups(name)"
     )
     .order("date", { ascending: true })
     .order("time", { ascending: true });
@@ -238,6 +238,9 @@ export default async function EventosPage({
     const atribuidas = atribuidasPorEvento.get(evento.id)?.size ?? 0;
     const pct = total ? Math.round((atribuidas / total) * 100) : 0;
 
+    const eventoExt = evento as Evento & { ministerio?: { name?: string } | null };
+    const ministerioNome = eventoExt.ministerio?.name ?? null;
+
     // Subtítulo: quando filtro por membro ativo, destaca a função escalada.
     const subtituloMobile = roleName
       ? `${g?.name ?? "Sem grupo"} · ${roleName}`
@@ -267,6 +270,11 @@ export default async function EventosPage({
                 {evento.liturgical_name && !roleName && (
                   <div className="mt-0.5 text-[12px] text-muted">
                     {evento.liturgical_name}
+                  </div>
+                )}
+                {ministerioNome && (
+                  <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-surface px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
+                    ♪ {ministerioNome}
                   </div>
                 )}
               </div>
@@ -317,6 +325,11 @@ export default async function EventosPage({
               <div className="mt-1 text-[12.5px] text-muted">
                 {subtituloDesktop}
               </div>
+              {ministerioNome && (
+                <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-surface px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
+                  ♪ {ministerioNome}
+                </div>
+              )}
             </div>
             <div className="w-[120px] flex-none text-[13px] font-semibold text-ink-soft">
               {rotuloData(evento.date)} · {rotuloHora(evento.time)}

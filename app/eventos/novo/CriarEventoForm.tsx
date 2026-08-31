@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ import { withRetry } from "@/lib/retry";
 import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
+type Ministerio = { id: string; name: string };
 
 const labelInput = "mb-2 text-[12px] font-semibold text-muted";
 const baseInput =
@@ -24,23 +25,30 @@ function hojeStr(): string {
 
 export default function CriarEventoForm({
   grupos,
+  ministeriosPorGrupo,
   accountId,
 }: {
   grupos: Grupo[];
+  ministeriosPorGrupo: Record<string, Ministerio[]>;
   accountId?: string;
 }) {
   const [nome, setNome] = useState("");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
-  // O schema associa cada evento a um único grupo (events.group_id). Para
-  // "impactar vários grupos" criamos um evento por grupo selecionado (lote).
   const [grupoIds, setGrupoIds] = useState<Set<string>>(new Set());
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [liturgico, setLiturgico] = useState<LiturgicalInfo | null>(null);
+
+  // Ministério
+  const [ministerioId, setMinisterioId] = useState("");
+  const [ministeriosExtras, setMinisteriosExtras] = useState<Ministerio[]>([]);
+  const [novoMinNome, setNovoMinNome] = useState("");
+  const [mostrarNovoMin, setMostrarNovoMin] = useState(false);
+  const [criandoMin, setCriandoMin] = useState(false);
+
   const router = useRouter();
 
-  // Sem data escolhida, cai no default (hoje) — busca o litúrgico dela também.
   const dataEfetiva = data || hojeStr();
 
   useEffect(() => {
@@ -50,7 +58,6 @@ export default function CriarEventoForm({
         if (!cancelado) setLiturgico(info);
       })
       .catch(() => {
-        // Informativo, não bloqueia o formulário — se falhar, só não mostra.
         if (!cancelado) setLiturgico(null);
       });
     return () => {
@@ -61,6 +68,21 @@ export default function CriarEventoForm({
   const todosSelecionados =
     grupos.length > 0 && grupoIds.size === grupos.length;
 
+  // Ministério só faz sentido quando há exatamente 1 grupo selecionado
+  const grupoIdUnico = grupoIds.size === 1 ? [...grupoIds][0] : null;
+  const ministeriosBase = grupoIdUnico ? (ministeriosPorGrupo[grupoIdUnico] ?? []) : [];
+  const todosMinisterios = [...ministeriosBase, ...ministeriosExtras].sort(
+    (a, b) => a.name.localeCompare(b.name, "pt-BR")
+  );
+  const mostrarCampoMinisterio = grupoIdUnico !== null && todosMinisterios.length > 0;
+
+  function clearMinisterio() {
+    setMinisterioId("");
+    setMinisteriosExtras([]);
+    setMostrarNovoMin(false);
+    setNovoMinNome("");
+  }
+
   function toggleGrupo(id: string) {
     setGrupoIds((prev) => {
       const next = new Set(prev);
@@ -68,10 +90,33 @@ export default function CriarEventoForm({
       else next.add(id);
       return next;
     });
+    clearMinisterio();
   }
 
   function toggleTodos() {
     setGrupoIds(todosSelecionados ? new Set() : new Set(grupos.map((g) => g.id)));
+    clearMinisterio();
+  }
+
+  async function criarMinisterioInline() {
+    const nome = novoMinNome.trim();
+    if (!nome || !grupoIdUnico || criandoMin) return;
+    setCriandoMin(true);
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("ministerios")
+      .insert({ group_id: grupoIdUnico, name: nome })
+      .select("id, name")
+      .single();
+    setCriandoMin(false);
+    if (error) return;
+    const novo = data as Ministerio;
+    setMinisteriosExtras((prev) =>
+      [...prev, novo].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    );
+    setMinisterioId(novo.id);
+    setNovoMinNome("");
+    setMostrarNovoMin(false);
   }
 
   const podeSalvar = nome.trim().length > 0 && grupoIds.size > 0;
@@ -81,13 +126,9 @@ export default function CriarEventoForm({
     setErro("");
     setSalvando(true);
 
-    // events.date e events.time são separados e obrigatórios: aplicamos
-    // defaults (hoje / 00:00) quando o usuário não preenche.
     const dataFinal = dataEfetiva;
     const horaFinal = `${hora || "00:00"}:00`;
 
-    // Um evento por grupo selecionado. Insert com array é all-or-nothing:
-    // não deixa um estado "meio criado".
     const rows = [...grupoIds].map((gid) => ({
       name: nome.trim(),
       date: dataFinal,
@@ -95,6 +136,7 @@ export default function CriarEventoForm({
       group_id: gid,
       liturgical_name: liturgico?.name ?? null,
       liturgical_color: liturgico?.color ?? null,
+      ministerio_id: grupoIdUnico === gid ? (ministerioId || null) : null,
     }));
 
     const supabase = createClient();
@@ -109,7 +151,6 @@ export default function CriarEventoForm({
       return;
     }
 
-    // Popula event_roles com todas as funções ativas de cada grupo.
     const { data: grupoRoles } = await supabase
       .from("roles")
       .select("id, group_id")
@@ -128,13 +169,8 @@ export default function CriarEventoForm({
       if (erRows.length) await supabase.from("event_roles").insert(erRows);
     }
 
-    // Navegação "dura" de propósito: este form abre num modal interceptor
-    // (@modal/(.)novo) e um router.replace não desmonta o slot paralelo de
-    // forma confiável — o modal fica preso com o botão travado. Trocar o
-    // documento fecha o modal com certeza.
     if (accountId) logAccess(accountId, "criar_evento", { count: criados.length });
 
-    // 1 grupo → já abre a escala do evento; vários → volta pra lista.
     if (criados.length === 1) {
       window.location.replace(`/eventos/${criados[0].id}`);
     } else {
@@ -236,6 +272,70 @@ export default function CriarEventoForm({
           </p>
         )}
       </div>
+
+      {mostrarCampoMinisterio && (
+        <div>
+          <div className={labelInput}>
+            MINISTÉRIO RESPONSÁVEL{" "}
+            <span className="text-[10px] font-normal normal-case text-faint">(opcional)</span>
+          </div>
+          <select
+            value={ministerioId}
+            onChange={(e) => setMinisterioId(e.target.value)}
+            className={`${baseInput} appearance-none px-4 py-3.5 text-[14px] ${
+              ministerioId ? "text-ink" : "text-muted"
+            }`}
+          >
+            <option value="">Nenhum</option>
+            {todosMinisterios.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+
+          {!mostrarNovoMin ? (
+            <button
+              type="button"
+              onClick={() => setMostrarNovoMin(true)}
+              className="mt-1.5 text-[12.5px] font-medium text-primary hover:underline"
+            >
+              + Novo ministério
+            </button>
+          ) : (
+            <div className="mt-2 flex gap-2">
+              <input
+                value={novoMinNome}
+                onChange={(e) => setNovoMinNome(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") criarMinisterioInline();
+                }}
+                placeholder="Nome do ministério"
+                className="flex-1 rounded-[12px] border border-black/10 bg-paper px-3.5 py-2.5 text-[14px] text-ink outline-none"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={criarMinisterioInline}
+                disabled={!novoMinNome.trim() || criandoMin}
+                className="rounded-[12px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-40"
+              >
+                {criandoMin ? "..." : "Criar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarNovoMin(false);
+                  setNovoMinNome("");
+                }}
+                className="rounded-[12px] border border-black/10 px-3.5 py-2.5 text-[13px] font-semibold text-ink"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}
 

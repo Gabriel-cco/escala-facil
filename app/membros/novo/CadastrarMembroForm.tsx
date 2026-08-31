@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { logAccess } from "@/lib/access-log";
+import { criarMembroAction } from "./actions";
 
 type Grupo = { id: string; name: string };
 
@@ -30,8 +29,10 @@ export default function CadastrarMembroForm({
   const [birthDate, setBirthDate] = useState("");
   const [profile, setProfile] = useState("member");
   const [grupoId, setGrupoId] = useState(isAdmin ? "" : (grupoIdFixo ?? ""));
+  const [enviarBoasVindas, setEnviarBoasVindas] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [sucesso, setSucesso] = useState("");
   const router = useRouter();
 
   const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -47,42 +48,32 @@ export default function CadastrarMembroForm({
     setErro("");
     setSalvando(true);
 
-    const supabase = createClient();
-
-    const { data: usuario, error: erroUser } = await supabase
-      .from("users")
-      .insert({
-        name: nome.trim(),
-        email: email.trim(),
-        cpf: cpf.trim() || null,
-        birth_date: birthDate || null,
-      })
-      .select("id")
-      .single();
-
-    if (erroUser || !usuario) {
-      setSalvando(false);
-      setErro("Erro ao salvar: " + (erroUser?.message ?? "desconhecido"));
-      return;
-    }
-
-    const groupId = precisaGrupo ? (grupoEfetivo || null) : null;
-
-    const { error: erroAccount } = await supabase.from("accounts").insert({
-      user_id: (usuario as { id: string }).id,
+    const resultado = await criarMembroAction({
+      nome: nome.trim(),
+      email: email.trim(),
+      cpf: cpf.trim() || null,
+      birthDate: birthDate || null,
       profile: isAdmin ? profile : "member",
-      group_id: groupId,
+      groupId: precisaGrupo ? (grupoEfetivo || null) : null,
+      enviarBoasVindas,
+      accountId,
     });
 
-    if (erroAccount) {
+    if ("error" in resultado) {
       setSalvando(false);
-      setErro("Erro ao salvar o acesso: " + erroAccount.message);
+      setErro("Erro ao salvar: " + resultado.error);
       return;
     }
 
-    if (accountId) logAccess(accountId, "criar_membro");
-    router.back();
-    router.refresh();
+    setSucesso(
+      enviarBoasVindas
+        ? "Membro criado — email de boas-vindas enviado"
+        : "Membro criado"
+    );
+    setTimeout(() => {
+      router.back();
+      router.refresh();
+    }, 1500);
   }
 
   return (
@@ -137,14 +128,21 @@ export default function CadastrarMembroForm({
           <div className="relative">
             <select
               value={profile}
-              onChange={(e) => { setProfile(e.target.value); if (e.target.value === "admin") setGrupoId(""); }}
+              onChange={(e) => {
+                setProfile(e.target.value);
+                if (e.target.value === "admin") setGrupoId("");
+              }}
               className="w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] text-ink outline-none"
             >
               {PERFIS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+              ▾
+            </span>
           </div>
         </div>
       )}
@@ -153,27 +151,55 @@ export default function CadastrarMembroForm({
         <div>
           <div className="mb-2.5 text-[12px] font-semibold text-muted">GRUPO</div>
           {grupos.length === 0 ? (
-            <p className="text-[13px] text-muted">Cadastre um grupo antes de cadastrar membros.</p>
+            <p className="text-[13px] text-muted">
+              Cadastre um grupo antes de cadastrar membros.
+            </p>
           ) : (
             <div className="relative">
               <select
                 value={grupoId}
                 onChange={(e) => setGrupoId(e.target.value)}
-                className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${grupoId ? "text-ink" : "text-muted"}`}
+                className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${
+                  grupoId ? "text-ink" : "text-muted"
+                }`}
               >
-                <option value="" disabled>Selecione um grupo</option>
+                <option value="" disabled>
+                  Selecione um grupo
+                </option>
                 {grupos.map((grupo) => (
-                  <option key={grupo.id} value={grupo.id}>{grupo.name}</option>
+                  <option key={grupo.id} value={grupo.id}>
+                    {grupo.name}
+                  </option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+                ▾
+              </span>
             </div>
           )}
         </div>
       )}
 
       {!isAdmin && grupos.length === 0 && (
-        <p className="text-[13px] text-muted">Cadastre um grupo antes de cadastrar membros.</p>
+        <p className="text-[13px] text-muted">
+          Cadastre um grupo antes de cadastrar membros.
+        </p>
+      )}
+
+      <label className="flex cursor-pointer items-center gap-3">
+        <input
+          type="checkbox"
+          checked={enviarBoasVindas}
+          onChange={(e) => setEnviarBoasVindas(e.target.checked)}
+          className="h-4 w-4 rounded accent-primary"
+        />
+        <span className="text-[14px] text-ink">Enviar email de boas-vindas</span>
+      </label>
+
+      {sucesso && (
+        <p className="rounded-[12px] bg-green-50 px-4 py-3 text-[13.5px] font-medium text-green-700">
+          {sucesso}
+        </p>
       )}
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}
@@ -188,7 +214,7 @@ export default function CadastrarMembroForm({
         </button>
         <button
           onClick={salvar}
-          disabled={!podeSalvar || salvando}
+          disabled={!podeSalvar || salvando || sucesso !== ""}
           className="w-full rounded-2xl bg-primary py-4 text-[15px] font-semibold text-paper transition-opacity disabled:pointer-events-none disabled:opacity-40 md:w-auto md:rounded-[11px] md:px-6 md:py-3 md:text-[14px]"
         >
           {salvando ? "Salvando..." : "Salvar"}

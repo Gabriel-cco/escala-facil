@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@react-email/components": "^1.0.12",
     "@romcal/calendar.brazil": "^3.0.0-dev.125",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
@@ -18,6 +19,7 @@
     "react-dom": "19.2.4",
     "react-qr-code": "^2.2.0",
     "recharts": "^3.10.1",
+    "resend": "^6.25.0",
     "romcal": "^3.0.0-dev.125",
     "web-push": "^3.6.7"
   },

@@ -74,9 +74,6 @@ export default function SideMenu({
                   <Link href="/funcoes" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
                     <span className="text-faint">✦</span> Funções
                   </Link>
-                  <Link href="/usuarios" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
-                    <span className="text-faint">👤</span> Usuários
-                  </Link>
                   <Link href="/trocas" onClick={onClose} className="flex items-center gap-2.5 w-full px-1.5 py-3 text-[14.5px] text-ink">
                     <span className="text-faint">⇄</span> Trocas
                   </Link>

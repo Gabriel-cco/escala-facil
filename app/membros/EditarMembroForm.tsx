@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,6 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
+type Qualificacao = { id: string; name: string };
+
+const PERFIS = [
+  { value: "member", label: "Membro" },
+  { value: "coordinator", label: "Coordenador" },
+  { value: "admin", label: "Administrador" },
+];
 
 export default function EditarMembroForm({
   accountId,
@@ -15,8 +22,12 @@ export default function EditarMembroForm({
   cpfInicial,
   birthDateInicial,
   grupoIdInicial,
+  perfilInicial,
   grupos,
+  isAdmin,
   currentAccountId,
+  qualificacoes = [],
+  qualificacoesAtuais = [],
 }: {
   accountId: string;
   userId: string;
@@ -25,20 +36,37 @@ export default function EditarMembroForm({
   cpfInicial: string;
   birthDateInicial: string;
   grupoIdInicial: string;
+  perfilInicial: string;
   grupos: Grupo[];
+  isAdmin: boolean;
   currentAccountId?: string;
+  qualificacoes?: Qualificacao[];
+  qualificacoesAtuais?: string[];
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
   const [cpf, setCpf] = useState(cpfInicial);
   const [birthDate, setBirthDate] = useState(birthDateInicial);
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
+  const [profile, setProfile] = useState(perfilInicial);
+  const [qualificacoesSel, setQualificacoesSel] = useState<string[]>(qualificacoesAtuais);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const router = useRouter();
 
+  const ehContaPropria = accountId === currentAccountId;
   const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const podeSalvar = nome.trim().length > 0 && emailValido && grupoId !== "";
+  const precisaGrupo = isAdmin && profile !== "admin";
+  const podeSalvar =
+    nome.trim().length > 0 &&
+    emailValido &&
+    (!precisaGrupo || grupoId !== "");
+
+  function toggleQualificacao(id: string) {
+    setQualificacoesSel((prev) =>
+      prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
+    );
+  }
 
   async function salvar() {
     if (!podeSalvar || salvando) return;
@@ -48,7 +76,12 @@ export default function EditarMembroForm({
 
     const { error: erroUser } = await supabase
       .from("users")
-      .update({ name: nome.trim(), email: email.trim(), cpf: cpf.trim() || null, birth_date: birthDate || null })
+      .update({
+        name: nome.trim(),
+        email: email.trim(),
+        cpf: cpf.trim() || null,
+        birth_date: birthDate || null,
+      })
       .eq("id", userId);
 
     if (erroUser) {
@@ -57,18 +90,42 @@ export default function EditarMembroForm({
       return;
     }
 
-    const { error: erroAccount } = await supabase
-      .from("accounts")
-      .update({ group_id: grupoId })
-      .eq("id", accountId);
+    if (isAdmin) {
+      const groupId = precisaGrupo ? (grupoId || null) : null;
+      const newProfile = ehContaPropria ? perfilInicial : profile;
+      const { error: erroAccount } = await supabase
+        .from("accounts")
+        .update({ profile: newProfile, group_id: groupId })
+        .eq("id", accountId);
 
-    if (erroAccount) {
-      setSalvando(false);
-      setErro("Erro ao atualizar grupo: " + erroAccount.message);
-      return;
+      if (erroAccount) {
+        setSalvando(false);
+        setErro("Erro ao atualizar: " + erroAccount.message);
+        return;
+      }
     }
 
-    if (currentAccountId) logAccess(currentAccountId, "editar_membro", { edited_account_id: accountId });
+    // Sincronizar qualificações (delete-all + insert)
+    if (qualificacoes.length > 0) {
+      await supabase
+        .from("account_qualifications")
+        .delete()
+        .eq("account_id", accountId);
+
+      if (qualificacoesSel.length > 0) {
+        await supabase.from("account_qualifications").insert(
+          qualificacoesSel.map((qId) => ({
+            account_id: accountId,
+            qualification_id: qId,
+          }))
+        );
+      }
+    }
+
+    if (currentAccountId)
+      logAccess(currentAccountId, "editar_membro", {
+        edited_account_id: accountId,
+      });
     router.back();
     router.refresh();
   }
@@ -122,30 +179,94 @@ export default function EditarMembroForm({
         />
       </div>
 
-      <div>
-        <div className="mb-2.5 text-[12px] font-semibold text-muted">GRUPO</div>
-        <div className="relative">
-          <select
-            value={grupoId}
-            onChange={(e) => setGrupoId(e.target.value)}
-            className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${
-              grupoId ? "text-ink" : "text-muted"
-            }`}
-          >
-            <option value="" disabled>
-              Selecione um grupo
-            </option>
-            {grupos.map((grupo) => (
-              <option key={grupo.id} value={grupo.id}>
-                {grupo.name}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
-            ▾
-          </span>
+      {isAdmin && (
+        <div>
+          <div className="mb-2 text-[12px] font-semibold text-muted">
+            PERFIL
+          </div>
+          <div className="relative">
+            <select
+              value={profile}
+              onChange={(e) => {
+                setProfile(e.target.value);
+                if (e.target.value === "admin") setGrupoId("");
+              }}
+              disabled={ehContaPropria}
+              className="w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] text-ink outline-none disabled:opacity-50"
+            >
+              {PERFIS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+              ▾
+            </span>
+          </div>
+          {ehContaPropria && (
+            <p className="mt-1.5 text-[11.5px] text-muted">
+              Não é possível alterar o próprio perfil.
+            </p>
+          )}
         </div>
-      </div>
+      )}
+
+      {isAdmin && precisaGrupo && (
+        <div>
+          <div className="mb-2.5 text-[12px] font-semibold text-muted">
+            GRUPO
+          </div>
+          <div className="relative">
+            <select
+              value={grupoId}
+              onChange={(e) => setGrupoId(e.target.value)}
+              className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${
+                grupoId ? "text-ink" : "text-muted"
+              }`}
+            >
+              <option value="" disabled>
+                Selecione um grupo
+              </option>
+              {grupos.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+              ▾
+            </span>
+          </div>
+        </div>
+      )}
+
+      {qualificacoes.length > 0 && (
+        <div>
+          <div className="mb-2.5 text-[12px] font-semibold text-muted">
+            QUALIFICAÇÕES
+          </div>
+          <div className="flex flex-col gap-2">
+            {qualificacoes.map((q) => {
+              const marcada = qualificacoesSel.includes(q.id);
+              return (
+                <label
+                  key={q.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-black/10 px-3.5 py-2.5 hover:bg-surface"
+                >
+                  <input
+                    type="checkbox"
+                    checked={marcada}
+                    onChange={() => toggleQualificacao(q.id)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-[14px] text-ink">{q.name}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}
 

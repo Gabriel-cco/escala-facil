@@ -45,13 +45,19 @@ export default async function EventoDetalhePage({
 
   const { data: eventRolesData } = await supabase
     .from("event_roles")
-    .select("role_id, role:roles(id, name)")
+    .select("role_id, role:roles(id, name, required_qualification_id, assignment_type)")
     .eq("event_id", id);
 
   const funcoes = (eventRolesData ?? [])
     .map((er) => {
       const role = Array.isArray(er.role) ? er.role[0] : er.role;
-      return { id: (role as { id: string; name: string } | null)?.id ?? "", name: (role as { id: string; name: string } | null)?.name ?? "" };
+      const r = role as { id: string; name: string; required_qualification_id?: string | null; assignment_type?: string | null } | null;
+      return {
+        id: r?.id ?? "",
+        name: r?.name ?? "",
+        requiredQualificationId: r?.required_qualification_id ?? null,
+        assignmentType: ((r?.assignment_type ?? "pessoa") as "pessoa" | "ministerio"),
+      };
     })
     .filter((f) => f.id)
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
@@ -71,13 +77,49 @@ export default async function EventoDetalhePage({
     })
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
 
+  // Ministérios do grupo (para funções do tipo "ministerio")
+  const { data: ministerios } = await supabase
+    .from("ministerios")
+    .select("id, name")
+    .eq("group_id", evento.group_id)
+    .order("name", { ascending: true });
+
+  // Qualificações: para funções do tipo pessoa que exigem, filtrar membros elegíveis
+  const requiredQualIds = [
+    ...new Set(
+      funcoes
+        .filter((f) => f.requiredQualificationId && f.assignmentType === "pessoa")
+        .map((f) => f.requiredQualificationId!)
+    ),
+  ];
+  const qualificadosPorQualId = new Map<string, Set<string>>();
+  if (requiredQualIds.length > 0) {
+    const { data: aqRows } = await supabase
+      .from("account_qualifications")
+      .select("account_id, qualification_id")
+      .in("qualification_id", requiredQualIds);
+    for (const row of aqRows ?? []) {
+      if (!qualificadosPorQualId.has(row.qualification_id)) {
+        qualificadosPorQualId.set(row.qualification_id, new Set());
+      }
+      qualificadosPorQualId.get(row.qualification_id)!.add(row.account_id);
+    }
+  }
+  // membrosElegiveisPorFuncao: roleId → accountIds qualificados (somente funções pessoa com exigência)
+  const membrosElegiveisPorFuncao: Record<string, string[]> = {};
+  for (const f of funcoes) {
+    if (!f.requiredQualificationId || f.assignmentType !== "pessoa") continue;
+    const qualSet = qualificadosPorQualId.get(f.requiredQualificationId) ?? new Set<string>();
+    membrosElegiveisPorFuncao[f.id] = membros.filter((m) => qualSet.has(m.id)).map((m) => m.id);
+  }
+
   const conta = await getCurrentAccount();
   const currentAccountId = conta?.account_id ?? null;
   const podeGerenciar = conta?.profile !== "member";
 
   const { data: atribuicoes } = await supabase
     .from("assignments")
-    .select("id, role_id, account_id, account:accounts(suspended_until, user:users(name))")
+    .select("id, role_id, account_id, ministerio_id, account:accounts(suspended_until, user:users(name)), ministerio:ministerios(id, name)")
     .eq("event_id", id);
 
   const { data: swapRows } = await supabase
@@ -91,26 +133,39 @@ export default async function EventoDetalhePage({
 
   const porFuncao = new Map<
     string,
-    { assignmentId: string; accountId: string; accountName: string; suspendedNaData: boolean }
+    {
+      assignmentId: string;
+      accountId: string | null;
+      accountName: string | null;
+      ministerioId: string | null;
+      ministerioName: string | null;
+      suspendedNaData: boolean;
+    }
   >();
   atribuicoes?.forEach((a) => {
     if (porFuncao.has(a.role_id)) return;
     const acc = Array.isArray(a.account) ? a.account[0] : a.account;
     const u = acc && (Array.isArray(acc.user) ? acc.user[0] : acc.user);
     const suspendedUntil = (acc as { suspended_until?: string | null } | null)?.suspended_until ?? null;
+    const min = Array.isArray(a.ministerio) ? a.ministerio[0] : a.ministerio;
     porFuncao.set(a.role_id, {
       assignmentId: a.id,
-      accountId: a.account_id,
-      accountName: u?.name ?? "—",
+      accountId: a.account_id ?? null,
+      accountName: u?.name ?? null,
+      ministerioId: a.ministerio_id ?? null,
+      ministerioName: (min as { id: string; name: string } | null)?.name ?? null,
       suspendedNaData: suspendedUntil != null && suspendedUntil >= evento.date,
     });
   });
 
-  const atribuicoesLeitura = (funcoes ?? []).map((f) => ({
-    roleId: f.id,
-    roleName: f.name,
-    memberName: porFuncao.get(f.id)?.accountName ?? null,
-  }));
+  const atribuicoesLeitura = (funcoes ?? []).map((f) => {
+    const a = porFuncao.get(f.id);
+    return {
+      roleId: f.id,
+      roleName: f.name,
+      memberName: a?.ministerioName ?? a?.accountName ?? null,
+    };
+  });
 
   const atribuicoesEdicao = (funcoes ?? []).map((f) => {
     const a = porFuncao.get(f.id);
@@ -120,6 +175,8 @@ export default async function EventoDetalhePage({
       assignmentId: a?.assignmentId ?? null,
       accountId: a?.accountId ?? null,
       accountName: a?.accountName ?? null,
+      ministerioId: a?.ministerioId ?? null,
+      ministerioName: a?.ministerioName ?? null,
       suspendedNaData: a?.suspendedNaData ?? false,
       pendingSwapId: pending?.swapId ?? null,
       pendingSwapRequesterId: pending?.requesterAccountId ?? null,
@@ -143,12 +200,14 @@ export default async function EventoDetalhePage({
           podeGerenciar={podeGerenciar}
           currentAccountId={currentAccountId}
           atribuicoesLeitura={atribuicoesLeitura}
-          funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name }))}
+          funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name, assignmentType: f.assignmentType }))}
           membros={membros.map((m) => ({
             id: m.id,
             nome: m.nome,
             iniciais: iniciais(m.nome),
           }))}
+          ministerios={ministerios ?? []}
+          membrosElegiveisPorFuncao={membrosElegiveisPorFuncao}
           atribuicoesEdicao={atribuicoesEdicao}
         />
       </main>

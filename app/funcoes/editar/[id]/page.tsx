@@ -13,17 +13,16 @@ export default async function EditarFuncaoPage({
 
   const { data: funcao } = await supabase
     .from("roles")
-    .select("id, name, group_id")
+    .select("id, name, group_id, required_qualification_id, assignment_type")
     .eq("id", id)
     .single();
 
   if (!funcao) notFound();
 
-  const { data: grupos } = await supabase
-    .from("groups")
-    .select("id, name")
-    .eq("active", true)
-    .order("name", { ascending: true });
+  const [{ data: grupos }, { data: qualificacoes }] = await Promise.all([
+    supabase.from("groups").select("id, name").eq("active", true).order("name", { ascending: true }),
+    supabase.from("qualifications").select("id, name, group_id").order("name", { ascending: true }),
+  ]);
 
   return (
     <>
@@ -34,6 +33,9 @@ export default async function EditarFuncaoPage({
           nomeInicial={funcao.name}
           grupoIdInicial={funcao.group_id}
           grupos={grupos ?? []}
+          qualificacoes={qualificacoes ?? []}
+          requiredQualificationIdInicial={funcao.required_qualification_id ?? null}
+          assignmentTypeInicial={(funcao.assignment_type ?? "pessoa") as "pessoa" | "ministerio"}
         />
       </main>
     </>

@@ -15,7 +15,6 @@ const ITENS_ADMIN = [
   { href: "/funcoes", label: "Funções" },
   { href: "/eventos", label: "Eventos" },
   { href: "/trocas", label: "Trocas" },
-  { href: "/usuarios", label: "Usuários" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];

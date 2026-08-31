@@ -1,29 +1,47 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Grupo = { id: string; name: string };
+type Qualificacao = { id: string; name: string; group_id: string };
 
 export default function EditarFuncaoForm({
   id,
   nomeInicial,
   grupoIdInicial,
   grupos,
+  qualificacoes = [],
+  requiredQualificationIdInicial = null,
+  assignmentTypeInicial = "pessoa",
 }: {
   id: string;
   nomeInicial: string;
   grupoIdInicial: string;
   grupos: Grupo[];
+  qualificacoes?: Qualificacao[];
+  requiredQualificationIdInicial?: string | null;
+  assignmentTypeInicial?: "pessoa" | "ministerio";
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
+  const [assignmentType, setAssignmentType] = useState<"pessoa" | "ministerio">(assignmentTypeInicial);
+  const [requiredQualificationId, setRequiredQualificationId] = useState(
+    requiredQualificationIdInicial ?? ""
+  );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const router = useRouter();
 
   const podeSalvar = nome.trim().length > 0 && grupoId !== "";
+  const qualificacoesDoGrupo = qualificacoes.filter((q) => q.group_id === grupoId);
+
+  function handleGrupoChange(novoId: string) {
+    const sel = grupoId === novoId;
+    setGrupoId(sel ? "" : novoId);
+    setRequiredQualificationId("");
+  }
 
   async function salvar() {
     if (!podeSalvar || salvando) return;
@@ -32,7 +50,12 @@ export default function EditarFuncaoForm({
     const supabase = createClient();
     const { error } = await supabase
       .from("roles")
-      .update({ name: nome.trim(), group_id: grupoId })
+      .update({
+        name: nome.trim(),
+        group_id: grupoId,
+        assignment_type: assignmentType,
+        required_qualification_id: assignmentType === "pessoa" ? (requiredQualificationId || null) : null,
+      })
       .eq("id", id);
     if (error) {
       setSalvando(false);
@@ -58,7 +81,9 @@ export default function EditarFuncaoForm({
       </div>
 
       <div>
-        <div className="mb-2.5 text-[12px] font-semibold text-muted">GRUPO</div>
+        <div className="mb-2.5 text-[12px] font-semibold text-muted">
+          GRUPO
+        </div>
         <div className="flex flex-wrap gap-2">
           {grupos.map((grupo) => {
             const sel = grupoId === grupo.id;
@@ -66,7 +91,7 @@ export default function EditarFuncaoForm({
               <button
                 key={grupo.id}
                 type="button"
-                onClick={() => setGrupoId(sel ? "" : grupo.id)}
+                onClick={() => handleGrupoChange(grupo.id)}
                 className={`rounded-full border px-4 py-2.5 text-[13px] font-medium ${
                   sel
                     ? "border-primary bg-primary text-paper"
@@ -79,6 +104,59 @@ export default function EditarFuncaoForm({
           })}
         </div>
       </div>
+
+      <div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">
+          TIPO DE ATRIBUIÇÃO
+        </div>
+        <div className="flex gap-2">
+          {(["pessoa", "ministerio"] as const).map((tipo) => {
+            const sel = assignmentType === tipo;
+            return (
+              <button
+                key={tipo}
+                type="button"
+                onClick={() => {
+                  setAssignmentType(tipo);
+                  if (tipo === "ministerio") setRequiredQualificationId("");
+                }}
+                className={`rounded-full border px-4 py-2.5 text-[13px] font-medium capitalize ${
+                  sel
+                    ? "border-primary bg-primary text-paper"
+                    : "border-black/10 bg-transparent text-ink"
+                }`}
+              >
+                {tipo === "pessoa" ? "Pessoa" : "Ministério"}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {assignmentType === "pessoa" && qualificacoesDoGrupo.length > 0 && (
+        <div>
+          <div className="mb-2 text-[12px] font-semibold text-muted">
+            EXIGE QUALIFICAÇÃO
+          </div>
+          <div className="relative">
+            <select
+              value={requiredQualificationId}
+              onChange={(e) => setRequiredQualificationId(e.target.value)}
+              className="w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] text-ink outline-none"
+            >
+              <option value="">Nenhuma</option>
+              {qualificacoesDoGrupo.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.name}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
+              ▾
+            </span>
+          </div>
+        </div>
+      )}
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}
 

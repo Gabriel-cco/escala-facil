@@ -4,16 +4,17 @@ import NovaFuncaoForm from "./NovaFuncaoForm";
 
 export default async function NovaFuncaoPage() {
   const supabase = await createClient();
-  const { data: grupos } = await supabase
-    .from("groups")
-    .select("id, name")
-    .order("name", { ascending: true });
+
+  const [{ data: grupos }, { data: qualificacoes }] = await Promise.all([
+    supabase.from("groups").select("id, name").order("name", { ascending: true }),
+    supabase.from("qualifications").select("id, name, group_id").order("name", { ascending: true }),
+  ]);
 
   return (
     <>
       <Header variant="back" title="Nova função" />
       <main className="flex flex-1 flex-col px-[22px] pb-6 pt-0.5 md:p-0">
-        <NovaFuncaoForm grupos={grupos ?? []} />
+        <NovaFuncaoForm grupos={grupos ?? []} qualificacoes={qualificacoes ?? []} />
       </main>
     </>
   );

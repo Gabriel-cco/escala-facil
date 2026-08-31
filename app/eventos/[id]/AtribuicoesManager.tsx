@@ -7,13 +7,16 @@ import { iniciais } from "@/lib/iniciais";
 import { LiturgicalDot } from "@/app/components/LiturgicalDot";
 import { logAccess } from "@/lib/access-log";
 
-type Funcao = { id: string; nome: string };
+type Funcao = { id: string; nome: string; assignmentType: "pessoa" | "ministerio" };
 type Membro = { id: string; nome: string; iniciais: string };
+type Ministerio = { id: string; name: string };
 type Atribuicao = {
   roleId: string;
   assignmentId: string | null;
   accountId: string | null;
   accountName: string | null;
+  ministerioId: string | null;
+  ministerioName: string | null;
   suspendedNaData: boolean;
   pendingSwapId: string | null;
   pendingSwapRequesterId: string | null;
@@ -30,6 +33,8 @@ export default function AtribuicoesManager({
   currentAccountId,
   funcoes,
   membros,
+  ministerios = [],
+  membrosElegiveisPorFuncao = {},
   atribuicoes,
 }: {
   eventId: string;
@@ -43,10 +48,12 @@ export default function AtribuicoesManager({
   currentAccountId: string | null;
   funcoes: Funcao[];
   membros: Membro[];
+  ministerios?: Ministerio[];
+  membrosElegiveisPorFuncao?: Record<string, string[]>;
   atribuicoes: Atribuicao[];
 }) {
   const [sheetRoleId, setSheetRoleId] = useState<string | null>(null);
-  const [swapRoleId, setSwapRoleId] = useState<string | null>(null); // modal solicitar troca
+  const [swapRoleId, setSwapRoleId] = useState<string | null>(null);
   const [swapMotivo, setSwapMotivo] = useState("");
   const [swapBusy, setSwapBusy] = useState(false);
   const [swapErro, setSwapErro] = useState("");
@@ -55,7 +62,6 @@ export default function AtribuicoesManager({
   const [notifyErro, setNotifyErro] = useState("");
   const router = useRouter();
 
-  // Fechar sheets com Esc + travar scroll do body enquanto aberto
   useEffect(() => {
     const isOpen = !!sheetRoleId || !!swapRoleId;
     if (!isOpen) return;
@@ -75,7 +81,7 @@ export default function AtribuicoesManager({
 
   const porFuncao = new Map(atribuicoes.map((a) => [a.roleId, a]));
   const total = funcoes.length;
-  const atribuidas = atribuicoes.filter((a) => a.accountId).length;
+  const atribuidas = atribuicoes.filter((a) => a.accountId || a.ministerioId).length;
   const pct = total ? Math.round((atribuidas / total) * 100) : 0;
 
   const funcaoSheet = funcoes.find((f) => f.id === sheetRoleId);
@@ -83,8 +89,6 @@ export default function AtribuicoesManager({
   const funcaoSwap = funcoes.find((f) => f.id === swapRoleId);
   const atribuicaoSwap = swapRoleId ? porFuncao.get(swapRoleId) : undefined;
 
-  // Apenas coordinator/admin vê os controles de atribuição
-  // (se currentAccountId nulo, assume que não é membro — não mostra nada sensível)
   const hoje = new Date().toISOString().slice(0, 10);
   const eventoPassado = eventDate < hoje;
 
@@ -95,6 +99,18 @@ export default function AtribuicoesManager({
     await supabase.from("assignments").delete().eq("event_id", eventId).eq("role_id", sheetRoleId);
     await supabase.from("assignments").insert({ event_id: eventId, role_id: sheetRoleId, account_id: accountId });
     if (currentAccountId) logAccess(currentAccountId, "atribuir_membro", { event_id: eventId, role_id: sheetRoleId });
+    setOcupado(false);
+    setSheetRoleId(null);
+    router.refresh();
+  }
+
+  async function atribuirMinisterio(ministerioId: string) {
+    if (!sheetRoleId || ocupado) return;
+    setOcupado(true);
+    const supabase = createClient();
+    await supabase.from("assignments").delete().eq("event_id", eventId).eq("role_id", sheetRoleId);
+    await supabase.from("assignments").insert({ event_id: eventId, role_id: sheetRoleId, account_id: null, ministerio_id: ministerioId });
+    if (currentAccountId) logAccess(currentAccountId, "atribuir_ministerio", { event_id: eventId, role_id: sheetRoleId });
     setOcupado(false);
     setSheetRoleId(null);
     router.refresh();
@@ -205,10 +221,12 @@ export default function AtribuicoesManager({
         <div className="flex flex-col gap-2">
           {funcoes.map((f) => {
             const a = porFuncao.get(f.id);
-            const atribuido = !!a?.accountId;
-            const isOwn = atribuido && a?.accountId === currentAccountId;
-            const hasPendingSwap = !!a?.pendingSwapId;
+            const ehMinisterio = f.assignmentType === "ministerio";
+            const atribuido = ehMinisterio ? !!a?.ministerioId : !!a?.accountId;
+            const isOwn = !ehMinisterio && atribuido && a?.accountId === currentAccountId;
+            const hasPendingSwap = !ehMinisterio && !!a?.pendingSwapId;
             const isMySwap = hasPendingSwap && a?.pendingSwapRequesterId === currentAccountId;
+            const displayName = ehMinisterio ? a?.ministerioName : a?.accountName;
 
             return (
               <div
@@ -221,11 +239,17 @@ export default function AtribuicoesManager({
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   {atribuido ? (
                     <>
-                      <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-avatar text-[11px] font-semibold text-avatar-ink">
-                        {iniciais(a?.accountName ?? "?")}
-                      </div>
-                      <span className="truncate text-[13.5px] text-ink">{a?.accountName}</span>
-                      {a?.suspendedNaData && (
+                      {ehMinisterio ? (
+                        <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-surface text-[11px] text-muted">
+                          ♪
+                        </div>
+                      ) : (
+                        <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-avatar text-[11px] font-semibold text-avatar-ink">
+                          {iniciais(a?.accountName ?? "?")}
+                        </div>
+                      )}
+                      <span className="truncate text-[13.5px] text-ink">{displayName}</span>
+                      {!ehMinisterio && a?.suspendedNaData && (
                         <span className="flex-none text-[12px] font-semibold text-warning" title="Suspenso na data do evento">
                           ⚠
                         </span>
@@ -237,13 +261,15 @@ export default function AtribuicoesManager({
                       )}
                     </>
                   ) : (
-                    <span className="text-[13px] italic text-faint">Ninguém escalado ainda</span>
+                    <span className="text-[13px] italic text-faint">
+                      {ehMinisterio ? "Nenhum ministério escalado" : "Ninguém escalado ainda"}
+                    </span>
                   )}
                 </div>
                 <div className="flex flex-none items-center gap-1.5">
                   {atribuido ? (
                     <>
-                      {/* Botões do coord/admin: Trocar e Remover */}
+                      {/* Coord/admin: Trocar e Remover */}
                       {currentAccountId && !isOwn && (
                         <>
                           <button
@@ -261,10 +287,10 @@ export default function AtribuicoesManager({
                           </button>
                         </>
                       )}
-                      {/* Botão do próprio membro: Solicitar troca */}
-                      {isOwn && !eventoPassado && (
+                      {/* Solicitar troca: só para funções do tipo pessoa */}
+                      {!ehMinisterio && isOwn && !eventoPassado && (
                         hasPendingSwap && isMySwap ? (
-                          <span className="text-[12px] text-muted italic">Aguardando</span>
+                          <span className="text-[12px] italic text-muted">Aguardando</span>
                         ) : !hasPendingSwap ? (
                           <button
                             onClick={() => { setSwapRoleId(f.id); setSwapMotivo(""); setSwapErro(""); }}
@@ -290,7 +316,7 @@ export default function AtribuicoesManager({
         </div>
       )}
 
-      {/* Concluir a escala: com ou sem notificar os escalados */}
+      {/* Concluir */}
       <div className="mt-1.5 flex flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
         {notifyErro && (
           <p className="text-[12.5px] text-danger md:mr-auto md:self-center">{notifyErro}</p>
@@ -304,14 +330,14 @@ export default function AtribuicoesManager({
         <button
           onClick={concluirENotificar}
           disabled={notificando || atribuidas === 0}
-          title={atribuidas === 0 ? "Nenhum membro escalado ainda" : undefined}
+          title={atribuidas === 0 ? "Nenhuma função atribuída ainda" : undefined}
           className="w-full rounded-2xl bg-primary py-3.5 text-[14.5px] font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 md:w-auto md:rounded-[14px] md:px-6 md:py-3"
         >
           {notificando ? "Enviando..." : "Concluir e notificar"}
         </button>
       </div>
 
-      {/* Sheet: seletor de membro (coord/admin) */}
+      {/* Sheet: seletor de membro OU ministério */}
       {sheetRoleId && (
         <>
           <div onClick={() => setSheetRoleId(null)} className="ef-backdrop fixed inset-0 z-40 bg-black/30" />
@@ -332,24 +358,50 @@ export default function AtribuicoesManager({
                 {grupoNome} · {funcaoSheet?.nome}
               </div>
               <div className="ef-scroll flex flex-col gap-2 overflow-y-auto overscroll-contain">
-                {membros.length === 0 && (
-                  <p className="py-2 text-[13px] text-muted">Nenhum membro elegível neste grupo.</p>
-                )}
-                {membros.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => atribuir(m.id)}
-                    disabled={ocupado}
-                    className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-3.5 py-2.5 text-left disabled:opacity-50"
-                  >
-                    <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-avatar text-[13px] font-semibold text-avatar-ink">
-                      {m.iniciais}
-                    </div>
-                    <div className="text-[14px] font-semibold text-ink">{m.nome}</div>
-                  </button>
-                ))}
+                {funcaoSheet?.assignmentType === "ministerio" ? (
+                  ministerios.length === 0 ? (
+                    <p className="py-2 text-[13px] text-muted">Nenhum ministério cadastrado neste grupo.</p>
+                  ) : (
+                    ministerios.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => atribuirMinisterio(m.id)}
+                        disabled={ocupado}
+                        className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-3.5 py-2.5 text-left disabled:opacity-50"
+                      >
+                        <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-surface text-[16px]">
+                          ♪
+                        </div>
+                        <div className="text-[14px] font-semibold text-ink">{m.name}</div>
+                      </button>
+                    ))
+                  )
+                ) : (() => {
+                  const membrosSheet = sheetRoleId && membrosElegiveisPorFuncao[sheetRoleId]
+                    ? membros.filter((m) => membrosElegiveisPorFuncao[sheetRoleId].includes(m.id))
+                    : membros;
+                  return membrosSheet.length === 0 ? (
+                    <p className="py-2 text-[13px] text-muted">
+                      {sheetRoleId && membrosElegiveisPorFuncao[sheetRoleId]
+                        ? "Nenhum membro com a qualificação exigida."
+                        : "Nenhum membro elegível neste grupo."}
+                    </p>
+                  ) : membrosSheet.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => atribuir(m.id)}
+                      disabled={ocupado}
+                      className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-3.5 py-2.5 text-left disabled:opacity-50"
+                    >
+                      <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-avatar text-[13px] font-semibold text-avatar-ink">
+                        {m.iniciais}
+                      </div>
+                      <div className="text-[14px] font-semibold text-ink">{m.nome}</div>
+                    </button>
+                  ));
+                })()}
               </div>
-              {atribuicaoSheet?.accountId && (
+              {(atribuicaoSheet?.accountId || atribuicaoSheet?.ministerioId) && (
                 <button
                   onClick={remover}
                   disabled={ocupado}
@@ -363,7 +415,7 @@ export default function AtribuicoesManager({
         </>
       )}
 
-      {/* Modal: solicitar troca (membro) */}
+      {/* Modal: solicitar troca (membro — só tipo pessoa) */}
       {swapRoleId && (
         <>
           <div onClick={() => setSwapRoleId(null)} className="ef-backdrop fixed inset-0 z-40 bg-black/30" />

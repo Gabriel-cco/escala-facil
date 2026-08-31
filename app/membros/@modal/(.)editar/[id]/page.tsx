@@ -9,13 +9,13 @@ export default async function EditarMembroModal({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params; // id = account id
+  const { id } = await params;
   const supabase = await createClient();
   const conta = await getCurrentAccount();
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, group_id, user:users(id, name, email, cpf, birth_date)")
+    .select("id, profile, group_id, user:users(id, name, email, cpf, birth_date)")
     .eq("id", id)
     .single();
 
@@ -24,14 +24,24 @@ export default async function EditarMembroModal({
   const user = Array.isArray(account.user) ? account.user[0] : account.user;
   if (!user) notFound();
 
-  const { data: grupos } = await supabase
-    .from("groups")
-    .select("id, name")
-    .eq("active", true)
-    .order("name", { ascending: true });
+  const isAdmin = conta?.profile === "admin";
+  const groupId = account.group_id;
+
+  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult] =
+    await Promise.all([
+      isAdmin
+        ? supabase.from("groups").select("id, name").eq("active", true).order("name")
+        : Promise.resolve({ data: [] }),
+      groupId
+        ? supabase.from("qualifications").select("id, name").eq("group_id", groupId).order("name")
+        : Promise.resolve({ data: [] }),
+      groupId
+        ? supabase.from("account_qualifications").select("qualification_id").eq("account_id", id)
+        : Promise.resolve({ data: [] }),
+    ]);
 
   return (
-    <Modal title="Editar membro">
+    <Modal title="Editar pessoa">
       <EditarMembroForm
         accountId={account.id}
         userId={user.id}
@@ -40,8 +50,12 @@ export default async function EditarMembroModal({
         cpfInicial={user.cpf ?? ""}
         birthDateInicial={user.birth_date ?? ""}
         grupoIdInicial={account.group_id ?? ""}
-        grupos={grupos ?? []}
+        perfilInicial={account.profile ?? "member"}
+        grupos={gruposResult.data ?? []}
+        isAdmin={isAdmin}
         currentAccountId={conta?.account_id}
+        qualificacoes={qualificacoesResult.data ?? []}
+        qualificacoesAtuais={(qualificacoesAtuaisResult.data ?? []).map((r) => (r as { qualification_id: string }).qualification_id)}
       />
     </Modal>
   );

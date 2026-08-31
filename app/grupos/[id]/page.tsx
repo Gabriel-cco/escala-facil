@@ -4,6 +4,8 @@ import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
 import CompartilharEscala from "./CompartilharEscala";
+import QualificacoesSection from "./QualificacoesSection";
+import MinisteriosSection from "./MinisteriosSection";
 
 const iconeLapis = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -52,6 +54,18 @@ export default async function GrupoDetalhePage({
 
   const { data: funcoes } = await supabase
     .from("roles")
+    .select("id, name")
+    .eq("group_id", id)
+    .order("name", { ascending: true });
+
+  const { data: qualificacoes } = await supabase
+    .from("qualifications")
+    .select("id, name")
+    .eq("group_id", id)
+    .order("name", { ascending: true });
+
+  const { data: ministerios } = await supabase
+    .from("ministerios")
     .select("id, name")
     .eq("group_id", id)
     .order("name", { ascending: true });
@@ -142,6 +156,22 @@ export default async function GrupoDetalhePage({
             )}
           </div>
         </section>
+
+        <div className="col-span-2">
+          <QualificacoesSection
+            groupId={grupo.id}
+            qualificacoes={qualificacoes ?? []}
+            podeGerenciar={podeEditarMembro}
+          />
+        </div>
+
+        <div className="col-span-2">
+          <MinisteriosSection
+            groupId={grupo.id}
+            ministerios={ministerios ?? []}
+            podeGerenciar={podeEditarMembro}
+          />
+        </div>
       </main>
     </>
   );

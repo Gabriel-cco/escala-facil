@@ -50,12 +50,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Já existe uma solicitação pendente para esta atribuição" }, { status: 409 });
   }
 
-  // Busca nome da função e do solicitante
+  // Busca nome da função (+ qualificação exigida) e do solicitante
   const [{ data: role }, { data: requesterUser }] = await Promise.all([
-    admin.from("roles").select("name").eq("id", roleId).single(),
+    admin.from("roles").select("name, required_qualification_id").eq("id", roleId).single(),
     admin.from("accounts").select("user:users(name)").eq("id", me.account_id).single(),
   ]);
-  const roleName = role?.name ?? "função";
+  const roleName = (role as { name?: string } | null)?.name ?? "função";
   const requesterName = (() => {
     const u = requesterUser?.user;
     return (Array.isArray(u) ? u[0] : u)?.name ?? "Membro";
@@ -87,7 +87,18 @@ export async function POST(request: NextRequest) {
     .neq("id", me.account_id)
     .or(`suspended_until.is.null,suspended_until.lt.${evento.date}`);
 
-  const eligibleIds = (eligible ?? []).map((a) => a.id);
+  let eligibleIds = (eligible ?? []).map((a) => a.id);
+
+  // Filtrar por qualificação exigida pela função
+  const requiredQualId = (role as { required_qualification_id?: string | null } | null)?.required_qualification_id;
+  if (requiredQualId) {
+    const { data: qualified } = await admin
+      .from("account_qualifications")
+      .select("account_id")
+      .eq("qualification_id", requiredQualId);
+    const qualifiedSet = new Set((qualified ?? []).map((q) => q.account_id));
+    eligibleIds = eligibleIds.filter((id) => qualifiedSet.has(id));
+  }
   const dataLabel = rotuloData(evento.date);
 
   if (eligibleIds.length > 0) {

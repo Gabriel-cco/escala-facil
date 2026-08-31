@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,25 +7,40 @@ import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 
+const PERFIS = [
+  { value: "member", label: "Membro" },
+  { value: "coordinator", label: "Coordenador" },
+  { value: "admin", label: "Administrador" },
+];
+
 export default function CadastrarMembroForm({
   grupos,
   accountId,
+  isAdmin,
+  grupoIdFixo,
 }: {
   grupos: Grupo[];
   accountId?: string;
+  isAdmin: boolean;
+  grupoIdFixo?: string;
 }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  // Cada membro pertence a um único grupo (accounts.group_id).
-  const [grupoId, setGrupoId] = useState("");
+  const [profile, setProfile] = useState("member");
+  const [grupoId, setGrupoId] = useState(isAdmin ? "" : (grupoIdFixo ?? ""));
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const router = useRouter();
 
   const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const podeSalvar = nome.trim().length > 0 && emailValido && grupoId !== "";
+  const grupoEfetivo = isAdmin ? grupoId : (grupoIdFixo ?? "");
+  const precisaGrupo = isAdmin ? profile !== "admin" : true;
+  const podeSalvar =
+    nome.trim().length > 0 &&
+    emailValido &&
+    (!precisaGrupo || grupoEfetivo !== "");
 
   async function salvar() {
     if (!podeSalvar || salvando) return;
@@ -34,7 +49,6 @@ export default function CadastrarMembroForm({
 
     const supabase = createClient();
 
-    // 1) Cria o usuário (auth_id fica nulo até o primeiro login vincular).
     const { data: usuario, error: erroUser } = await supabase
       .from("users")
       .insert({
@@ -52,11 +66,12 @@ export default function CadastrarMembroForm({
       return;
     }
 
-    // 2) Cria o account (papel na aplicação) vinculado ao grupo.
+    const groupId = precisaGrupo ? (grupoEfetivo || null) : null;
+
     const { error: erroAccount } = await supabase.from("accounts").insert({
-      user_id: usuario.id,
-      profile: "member",
-      group_id: grupoId,
+      user_id: (usuario as { id: string }).id,
+      profile: isAdmin ? profile : "member",
+      group_id: groupId,
     });
 
     if (erroAccount) {
@@ -66,8 +81,6 @@ export default function CadastrarMembroForm({
     }
 
     if (accountId) logAccess(accountId, "criar_membro");
-    // Fecha o modal interceptor (router.back) e revalida a lista. Usar
-    // replace("/membros") não desmonta o slot @modal de forma confiável.
     router.back();
     router.refresh();
   }
@@ -75,9 +88,7 @@ export default function CadastrarMembroForm({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <div className="mb-2 text-[12px] font-semibold text-muted">
-          NOME COMPLETO
-        </div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">NOME COMPLETO</div>
         <input
           value={nome}
           onChange={(e) => setNome(e.target.value)}
@@ -101,9 +112,7 @@ export default function CadastrarMembroForm({
       </div>
 
       <div>
-        <div className="mb-2 text-[12px] font-semibold text-muted">
-          CPF (OPCIONAL)
-        </div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">CPF (OPCIONAL)</div>
         <input
           value={cpf}
           onChange={(e) => setCpf(e.target.value)}
@@ -113,9 +122,7 @@ export default function CadastrarMembroForm({
       </div>
 
       <div>
-        <div className="mb-2 text-[12px] font-semibold text-muted">
-          DATA DE NASCIMENTO (OPCIONAL)
-        </div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">DATA DE NASCIMENTO (OPCIONAL)</div>
         <input
           type="date"
           value={birthDate}
@@ -124,36 +131,50 @@ export default function CadastrarMembroForm({
         />
       </div>
 
-      <div>
-        <div className="mb-2.5 text-[12px] font-semibold text-muted">GRUPO</div>
-        {grupos.length === 0 ? (
-          <p className="text-[13px] text-muted">
-            Cadastre um grupo antes de cadastrar membros.
-          </p>
-        ) : (
+      {isAdmin && (
+        <div>
+          <div className="mb-2 text-[12px] font-semibold text-muted">PERFIL</div>
           <div className="relative">
             <select
-              value={grupoId}
-              onChange={(e) => setGrupoId(e.target.value)}
-              className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${
-                grupoId ? "text-ink" : "text-muted"
-              }`}
+              value={profile}
+              onChange={(e) => { setProfile(e.target.value); if (e.target.value === "admin") setGrupoId(""); }}
+              className="w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] text-ink outline-none"
             >
-              <option value="" disabled>
-                Selecione um grupo
-              </option>
-              {grupos.map((grupo) => (
-                <option key={grupo.id} value={grupo.id}>
-                  {grupo.name}
-                </option>
+              {PERFIS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
               ))}
             </select>
-            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">
-              ▾
-            </span>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {isAdmin && precisaGrupo && (
+        <div>
+          <div className="mb-2.5 text-[12px] font-semibold text-muted">GRUPO</div>
+          {grupos.length === 0 ? (
+            <p className="text-[13px] text-muted">Cadastre um grupo antes de cadastrar membros.</p>
+          ) : (
+            <div className="relative">
+              <select
+                value={grupoId}
+                onChange={(e) => setGrupoId(e.target.value)}
+                className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${grupoId ? "text-ink" : "text-muted"}`}
+              >
+                <option value="" disabled>Selecione um grupo</option>
+                {grupos.map((grupo) => (
+                  <option key={grupo.id} value={grupo.id}>{grupo.name}</option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!isAdmin && grupos.length === 0 && (
+        <p className="text-[13px] text-muted">Cadastre um grupo antes de cadastrar membros.</p>
+      )}
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}
 
@@ -170,7 +191,7 @@ export default function CadastrarMembroForm({
           disabled={!podeSalvar || salvando}
           className="w-full rounded-2xl bg-primary py-4 text-[15px] font-semibold text-paper transition-opacity disabled:pointer-events-none disabled:opacity-40 md:w-auto md:rounded-[11px] md:px-6 md:py-3 md:text-[14px]"
         >
-          {salvando ? "Salvando..." : "Salvar membro"}
+          {salvando ? "Salvando..." : "Salvar"}
         </button>
       </div>
     </div>

@@ -10,6 +10,8 @@ type Membro = {
   id: string; // account id
   userId: string;
   nome: string;
+  email: string;
+  perfil: "admin" | "coordinator" | "member";
   grupoNome: string;
   active: boolean;
   suspensoAte: string | null;
@@ -31,25 +33,38 @@ const iconeArquivar = (
   </svg>
 );
 
+function badgePerfil(perfil: "admin" | "coordinator" | "member") {
+  if (perfil === "admin")
+    return <span className="rounded-full bg-[#F2E7D4] px-2 py-0.5 text-[10.5px] font-semibold text-[#6B3521]">Admin</span>;
+  if (perfil === "coordinator")
+    return <span className="rounded-full bg-[#E3D2B6] px-2 py-0.5 text-[10.5px] font-semibold text-[#4A3A31]">Coordenador</span>;
+  return null;
+}
+
 export default function MembroItem({
   membro,
   podeGerenciar,
+  podeVerPerfil,
+  currentAccountId,
 }: {
   membro: Membro;
   podeGerenciar: boolean;
+  podeVerPerfil: boolean;
+  currentAccountId: string;
 }) {
   const [mostrarSuspensao, setMostrarSuspensao] = useState(false);
   const [editandoSuspensao, setEditandoSuspensao] = useState(false);
   const [dataSuspensao, setDataSuspensao] = useState("");
   const [motivoSuspensao, setMotivoSuspensao] = useState("");
   const [confirmandoSuspensao, setConfirmandoSuspensao] = useState(false);
-  const [confirmandoArquivar, setConfirmandoArquivar] = useState(false);
+  const [confirmandoInativar, setConfirmandoInativar] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erroData, setErroData] = useState("");
   const router = useRouter();
 
   const hoje = new Date().toISOString().split("T")[0];
   const estaSuspenso = membro.suspensoAte != null && membro.suspensoAte >= hoje;
+  const ehContaPropria = membro.id === currentAccountId;
 
   function abrirEdicaoSuspensao() {
     setDataSuspensao(membro.suspensoAte ?? "");
@@ -95,7 +110,7 @@ export default function MembroItem({
     router.refresh();
   }
 
-  async function arquivar() {
+  async function inativar() {
     setProcessando(true);
     const supabase = createClient();
     await supabase
@@ -103,7 +118,7 @@ export default function MembroItem({
       .update({ active: false })
       .eq("id", membro.id);
     setProcessando(false);
-    setConfirmandoArquivar(false);
+    setConfirmandoInativar(false);
     router.refresh();
   }
 
@@ -134,8 +149,10 @@ export default function MembroItem({
             <div className="text-[14.5px] font-semibold text-ink">
               {membro.nome}
             </div>
-            <div className="text-[12px] text-muted">{membro.grupoNome}</div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="text-[12px] text-muted">{membro.email}</div>
+            <div className="text-[11.5px] text-faint">{membro.grupoNome}</div>
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {podeVerPerfil && badgePerfil(membro.perfil)}
               {!membro.active && (
                 <span className="rounded-full bg-[#E3D2B6] px-2 py-0.5 text-[10.5px] font-semibold text-[#6E5A4E]">
                   Inativo
@@ -158,46 +175,51 @@ export default function MembroItem({
               <Link
                 href={`/membros/editar/${membro.id}`}
                 className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink"
-                title="Editar membro"
+                title="Editar"
               >
                 {iconeLapis}
               </Link>
 
               {membro.active ? (
                 <>
-                  {estaSuspenso ? (
+                  {membro.perfil === "member" && (
                     <>
-                      <button
-                        onClick={abrirEdicaoSuspensao}
-                        className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink"
-                      >
-                        Editar suspensão
-                      </button>
-                      <button
-                        onClick={removerSuspensao}
-                        disabled={processando}
-                        className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50"
-                      >
-                        Remover
-                      </button>
+                      {estaSuspenso ? (
+                        <>
+                          <button
+                            onClick={abrirEdicaoSuspensao}
+                            className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink"
+                          >
+                            Editar suspensão
+                          </button>
+                          <button
+                            onClick={removerSuspensao}
+                            disabled={processando}
+                            className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50"
+                          >
+                            Remover
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setMostrarSuspensao((v) => !v);
+                            setErroData("");
+                            setDataSuspensao("");
+                            setMotivoSuspensao("");
+                          }}
+                          className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink"
+                        >
+                          Suspender
+                        </button>
+                      )}
                     </>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setMostrarSuspensao((v) => !v);
-                        setErroData("");
-                        setDataSuspensao("");
-                        setMotivoSuspensao("");
-                      }}
-                      className="whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink"
-                    >
-                      Suspender
-                    </button>
                   )}
                   <button
-                    onClick={() => setConfirmandoArquivar(true)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-[#8a6200]"
-                    title="Arquivar membro"
+                    onClick={() => !ehContaPropria && setConfirmandoInativar(true)}
+                    disabled={ehContaPropria}
+                    title={ehContaPropria ? "Não é possível inativar a própria conta" : undefined}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-[#8a6200] disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     {iconeArquivar}
                   </button>
@@ -276,8 +298,8 @@ export default function MembroItem({
               </div>
               <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
                 {editandoSuspensao
-                  ? `Você está prestes a alterar a suspensão de “${membro.nome}”. Deseja continuar e notificá-lo?`
-                  : `Você está prestes a suspender “${membro.nome}”. Deseja continuar a operação e notificá-lo?`}
+                  ? `Você está prestes a alterar a suspensão de "${membro.nome}". Deseja continuar e notificá-lo?`
+                  : `Você está prestes a suspender "${membro.nome}". Deseja continuar a operação e notificá-lo?`}
               </p>
               <div className="flex flex-col gap-2.5 md:flex-row md:justify-end">
                 <button
@@ -300,39 +322,39 @@ export default function MembroItem({
         </>
       )}
 
-      {confirmandoArquivar && (
+      {confirmandoInativar && (
         <>
           <div
-            onClick={() => !processando && setConfirmandoArquivar(false)}
+            onClick={() => !processando && setConfirmandoInativar(false)}
             className="ef-backdrop fixed inset-0 z-40 bg-black/30"
           />
           <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
             <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
-                ARQUIVAR
+                INATIVAR
               </div>
               <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
-                Arquivar membro?
+                Inativar pessoa?
               </div>
               <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
-                &ldquo;{membro.nome}&rdquo; ficará inativo e não será elegível
+                &ldquo;{membro.nome}&rdquo; perderá o acesso e não será elegível
                 para escalas, mas poderá ser reativado depois.
               </p>
               <div className="flex flex-col gap-2.5 md:flex-row md:justify-end">
                 <button
-                  onClick={() => setConfirmandoArquivar(false)}
+                  onClick={() => setConfirmandoInativar(false)}
                   disabled={processando}
                   className="rounded-[14px] border border-black/10 py-3.5 text-[14px] font-semibold text-ink disabled:opacity-50 md:rounded-[11px] md:px-5 md:py-3"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={arquivar}
+                  onClick={inativar}
                   disabled={processando}
                   className="rounded-[14px] bg-[#8a6200] py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
                 >
-                  {processando ? "Arquivando..." : "Arquivar membro"}
+                  {processando ? "Inativando..." : "Inativar"}
                 </button>
               </div>
             </div>

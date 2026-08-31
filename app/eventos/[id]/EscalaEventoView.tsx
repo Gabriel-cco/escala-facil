@@ -18,13 +18,16 @@ export type AtribuicaoLeitura = {
   memberName: string | null;
 };
 
-type Funcao = { id: string; nome: string };
+type Funcao = { id: string; nome: string; assignmentType: "pessoa" | "ministerio" };
 type Membro = { id: string; nome: string; iniciais: string };
+type Ministerio = { id: string; name: string };
 type AtribuicaoEdicao = {
   roleId: string;
   assignmentId: string | null;
   accountId: string | null;
   accountName: string | null;
+  ministerioId: string | null;
+  ministerioName: string | null;
   suspendedNaData: boolean;
   pendingSwapId: string | null;
   pendingSwapRequesterId: string | null;
@@ -45,6 +48,8 @@ export default function EscalaEventoView({
   atribuicoesLeitura,
   funcoes,
   membros,
+  ministerios = [],
+  membrosElegiveisPorFuncao = {},
   atribuicoesEdicao,
 }: {
   eventId: string;
@@ -61,6 +66,8 @@ export default function EscalaEventoView({
   atribuicoesLeitura: AtribuicaoLeitura[];
   funcoes: Funcao[];
   membros: Membro[];
+  ministerios?: Ministerio[];
+  membrosElegiveisPorFuncao?: Record<string, string[]>;
   atribuicoesEdicao: AtribuicaoEdicao[];
 }) {
   const [editando, setEditando] = useState(false);
@@ -86,6 +93,8 @@ export default function EscalaEventoView({
           currentAccountId={currentAccountId}
           funcoes={funcoes}
           membros={membros}
+          ministerios={ministerios}
+          membrosElegiveisPorFuncao={membrosElegiveisPorFuncao}
           atribuicoes={atribuicoesEdicao}
         />
       </div>

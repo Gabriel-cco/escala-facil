@@ -3,15 +3,6 @@
 import { Joyride, STATUS, type EventData, type Step } from "react-joyride";
 import { markTourCompleted } from "@/lib/tour";
 
-function firstVisible(name: string): HTMLElement {
-  const all = document.querySelectorAll(`[data-tour="${name}"]`);
-  for (const el of Array.from(all)) {
-    const r = el.getBoundingClientRect();
-    if (r.width > 0 && r.height > 0) return el as HTMLElement;
-  }
-  return document.body;
-}
-
 export const coordinatorSteps: Step[] = [
   {
     target: "body",
@@ -29,14 +20,9 @@ export const coordinatorSteps: Step[] = [
       "E aqui, tudo que precisa da sua atenção: funções vagas, trocas pendentes, suspensões terminando.",
   },
   {
-    target: () => firstVisible("nav-eventos"),
+    target: '[data-tour="hamburger"]',
     content:
-      "É aqui que você monta a escala: cria eventos e atribui cada função a um membro.",
-  },
-  {
-    target: () => firstVisible("nav-trocas"),
-    content:
-      "Se alguém não puder servir, a troca acontece por aqui, sem depender de mensagem no WhatsApp.",
+      "Toda a navegação fica aqui: eventos, trocas, funções, membros e muito mais — tudo em um único menu.",
   },
   {
     target: '[data-tour="sino-notificacoes"]',

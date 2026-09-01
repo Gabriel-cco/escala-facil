@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { ShellContext, type PageChrome } from "./menu-context";
 import { useAccessLogPageView } from "@/hooks/useAccessLogPageView";
 import { GroupProvider } from "@/contexts/GroupContext";
-import TabBar from "./TabBar";
 import SideMenu from "./SideMenu";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -35,8 +34,8 @@ const CHROME_INICIAL: PageChrome = { title: "", showBack: false };
 
 /**
  * Casca responsiva (handoff: mesmo dado, duas apresentações):
- * - Mobile (<md): coluna central, header por página + barra de abas inferior
- *   + menu lateral em bottom-sheet.
+ * - Mobile (<md): coluna central, header por página + menu lateral em bottom-sheet
+ *   (acessado pelo ☰ no cabeçalho — toda a navegação fica aí).
  * - Web (>=md): sidebar fixa (248px) + topbar (72px) com ação contextual +
  *   conteúdo centralizado (max 980px). Modais centralizados no lugar dos sheets.
  * O /login é full-bleed (a própria página se centraliza).
@@ -99,7 +98,6 @@ export default function AppShell({
               <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col md:max-w-[980px] md:px-10 md:py-8">
                 {children}
               </div>
-              <TabBar perfil={user?.perfil ?? null} />
             </div>
           </div>
         </div>

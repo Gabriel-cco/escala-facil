@@ -57,6 +57,7 @@ export default function Header(props: HeaderProps) {
         <button
           onClick={openMenu}
           aria-label="Abrir menu"
+          data-tour="hamburger"
           className="flex h-[38px] w-[38px] items-center justify-center text-[22px] leading-none text-ink"
         >
           ☰
@@ -102,9 +103,18 @@ export default function Header(props: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex flex-none items-center justify-between bg-screen px-5 pb-3.5 pt-4 md:hidden">
-      <div className="text-[28px] font-semibold text-ink">
-        {props.title}
+    <header className="sticky top-0 z-30 flex flex-none items-center justify-between bg-screen px-4 pb-3.5 pt-4 md:hidden">
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={openMenu}
+          aria-label="Abrir menu"
+          className="flex h-[38px] w-[38px] flex-none items-center justify-center text-[22px] leading-none text-ink"
+        >
+          ☰
+        </button>
+        <div className="text-[24px] font-semibold text-ink">
+          {props.title}
+        </div>
       </div>
       <div className="flex items-center gap-1">
         <NotificationBell />

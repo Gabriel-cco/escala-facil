@@ -4,7 +4,7 @@ import { getActiveGroupId } from "@/lib/active-group-server";
 import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import Header from "./components/shell/Header";
 import { LiturgicalDot } from "./components/LiturgicalDot";
-import Avatar from "./components/Avatar";
+import AvatarWithPreview from "./components/AvatarWithPreview";
 
 export const dynamic = "force-dynamic";
 
@@ -256,7 +256,7 @@ export default async function Home() {
 
         {/* ── Saudação ────────────────────────────────────────────────── */}
         <div className="flex items-center gap-4">
-          <Avatar url={avatarUrl} iniciais={iniciais} size={52} />
+          <AvatarWithPreview url={avatarUrl} iniciais={iniciais} size={52} />
           <div>
             <h1 className="text-[26px] font-semibold leading-tight text-ink md:text-[30px]">
               {primeiroNome ? `Olá, ${primeiroNome}` : "Olá"}

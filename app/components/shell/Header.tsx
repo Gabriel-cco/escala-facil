@@ -15,6 +15,7 @@ type HeaderProps =
       title: string;
       actionLabel?: string;
       actionHref?: string;
+      onAction?: () => void;
     }
   | { variant: "back"; title: string };
 
@@ -35,20 +36,23 @@ export default function Header(props: HeaderProps) {
   let showBack = false;
   let actionLabel: string | undefined;
   let actionHref: string | undefined;
+  let onActionClick: (() => void) | undefined;
   if (props.variant === "home") {
-    // A saudação "Olá, {nome}" vive no conteúdo do dashboard — topbar limpa.
     chromeTitle = "";
   } else if (props.variant === "root") {
     chromeTitle = props.title;
     actionLabel = props.actionLabel;
     actionHref = props.actionHref;
+    onActionClick = props.onAction;
   } else {
     chromeTitle = props.title;
     showBack = true;
   }
 
   useEffect(() => {
-    setChrome({ title: chromeTitle, showBack, actionLabel, actionHref });
+    setChrome({ title: chromeTitle, showBack, actionLabel, actionHref, onActionClick });
+    // onActionClick é excluído das deps para evitar loop quando o pai re-renderiza
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chromeTitle, showBack, actionLabel, actionHref, setChrome]);
 
   if (props.variant === "home") {

@@ -7,7 +7,10 @@ export type PageChrome = {
   title: string;
   showBack: boolean;
   actionLabel?: string;
+  /** Navega para uma rota. Mutuamente exclusivo com onActionClick. */
   actionHref?: string;
+  /** Chama um callback em vez de navegar. Prevalece sobre actionHref. */
+  onActionClick?: () => void;
 };
 
 type ShellContextValue = {

@@ -1,7 +1,6 @@
 ﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
-import Header from "../components/shell/Header";
 import { rotuloData, rotuloHora, rotuloMes, chaveMes } from "@/lib/datas";
 import DeleteEventoButton from "./DeleteEventoButton";
 import CalendarioEventos, { type EventoCal } from "./CalendarioEventos";
@@ -9,6 +8,7 @@ import { LiturgicalDot } from "../components/LiturgicalDot";
 import { getCurrentAccount, getAuthUser } from "@/lib/current-user";
 import ScrollToEvento from "./ScrollToEvento";
 import MembroSelect from "./MembroSelect";
+import EventosHeader from "./EventosHeader";
 
 const iconeLapis = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -373,62 +373,30 @@ export default async function EventosPage({
 
   return (
     <>
-      <Header
-        variant="root"
-        title="Eventos"
-        actionLabel="+ Criar evento"
-        actionHref="/eventos/novo"
-      />
+      <EventosHeader podeGerenciar={podeGerenciar} />
       <main className="flex flex-1 flex-col gap-3 px-[18px] pb-6 pt-0.5 md:gap-4 md:p-0">
-        <Link
-          href="/eventos/novo"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
-        >
-          + Criar evento
-        </Link>
-        {podeGerenciar && (
-          <Link
-            href="/eventos/gerar"
-            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-blue-400 p-3.5 text-[13.5px] font-semibold text-blue-600 md:hidden"
-          >
-            Gerar Escala Mensal
-          </Link>
-        )}
         {/* TEMPORÁRIO: visível só para gabrielbatista1551@gmail.com */}
         {podeGerenciarMinisterios && (
-          <Link
-            href="/ministerios"
-            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink-soft md:hidden"
-          >
-            Gerenciar ministérios
-          </Link>
+          <>
+            <Link
+              href="/ministerios"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink-soft md:hidden"
+            >
+              Gerenciar ministérios
+            </Link>
+            <div className="hidden md:flex md:justify-end">
+              <Link
+                href="/ministerios"
+                className="rounded-[11px] border border-black/10 px-4 py-2.5 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-black/[0.03]"
+              >
+                Gerenciar ministérios
+              </Link>
+            </div>
+          </>
         )}
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
-        )}
-
-        {/* Botão "Gerar mês" no desktop */}
-        {podeGerenciar && (
-          <div className="hidden md:flex md:justify-end">
-            <Link
-              href="/eventos/gerar"
-              className="rounded-[11px] border border-blue-300 bg-blue-50 px-4 py-2.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-100"
-            >
-              Gerar Escala Mensal
-            </Link>
-          </div>
-        )}
-        {/* TEMPORÁRIO: visível só para gabrielbatista1551@gmail.com */}
-        {podeGerenciarMinisterios && (
-          <div className="hidden md:flex md:justify-end">
-            <Link
-              href="/ministerios"
-              className="rounded-[11px] border border-black/10 px-4 py-2.5 text-[13px] font-semibold text-ink-soft hover:bg-black/[0.03]"
-            >
-              Gerenciar ministérios
-            </Link>
-          </div>
         )}
 
         {/* Filtro por grupo (chips, dirigido por ?grupo=<id>). Escondido quando

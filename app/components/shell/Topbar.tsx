@@ -53,7 +53,15 @@ export default function Topbar({ className = "" }: { className?: string }) {
       <div className="flex items-center gap-3">
         <HelpTourButton />
         <NotificationBell />
-        {chrome.actionLabel && chrome.actionHref && (
+        {chrome.actionLabel && chrome.onActionClick && (
+          <button
+            onClick={chrome.onActionClick}
+            className="rounded-lg bg-primary px-5 py-[11px] text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover"
+          >
+            {chrome.actionLabel}
+          </button>
+        )}
+        {chrome.actionLabel && chrome.actionHref && !chrome.onActionClick && (
           <Link
             href={chrome.actionHref}
             className="rounded-lg bg-primary px-5 py-[11px] text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover"

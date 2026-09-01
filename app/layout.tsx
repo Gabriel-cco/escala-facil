@@ -1,14 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Inter, Newsreader } from "next/font/google";
+import localFont from "next/font/local";
+import { Newsreader } from "next/font/google";
 import AuthShell from "./components/shell/AuthShell";
 import LoadingScreen from "./components/LoadingScreen";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Satoshi variable — fonte principal do design system (não está no Google Fonts).
+const satoshi = localFont({
+  src: "./fonts/Satoshi-Variable.woff2",
+  variable: "--font-satoshi",
+  display: "swap",
+  weight: "300 900",
 });
 
 // Newsreader para títulos de página (evoca a serifa do brasão paroquial).
@@ -42,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${newsreader.variable} h-full`}>
+    <html lang="pt-BR" className={`${satoshi.variable} ${newsreader.variable} h-full`}>
       <body className="min-h-full font-sans">
         <Suspense fallback={<LoadingScreen />}>
           <AuthShell>{children}</AuthShell>

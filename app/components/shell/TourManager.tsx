@@ -4,31 +4,37 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Joyride, STATUS, type EventData } from "react-joyride";
 import { hasCompletedTour, markTourCompleted, resetTour } from "@/lib/tour";
+import { markTourCompletedAction } from "@/app/actions/tour";
 import { coordinatorSteps, memberSteps } from "@/app/components/OnboardingTour";
 import { TourContext } from "@/contexts/TourContext";
 
 export default function TourManager({
   profile,
+  tourCompleted,
   children,
 }: {
   profile: string | null;
+  tourCompleted: boolean;
   children: React.ReactNode;
 }) {
   const [runTour, setRunTour] = useState(false);
   const pathname = usePathname();
 
-  // Auto-trigger on first visit to the main page for each profile
   useEffect(() => {
-    if (!profile || hasCompletedTour(profile)) return;
+    // DB é a fonte de verdade; localStorage é cache rápido para evitar re-trigger
+    if (!profile || tourCompleted || hasCompletedTour(profile)) return;
     const mainPage = profile === "member" ? "/minha-escala" : "/";
     if (pathname !== mainPage) return;
     const t = setTimeout(() => setRunTour(true), 500);
     return () => clearTimeout(t);
-  }, [profile, pathname]);
+  }, [profile, pathname, tourCompleted]);
 
   function handleEvent(data: EventData) {
     if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-      if (profile) markTourCompleted(profile);
+      if (profile) {
+        markTourCompleted(profile); // cache local imediato
+        markTourCompletedAction();  // persiste no banco (fire-and-forget)
+      }
       setRunTour(false);
     }
   }

@@ -23,16 +23,20 @@ export default async function AuthShell({
       getCurrentAccount(),
       supabase
         .from("users")
-        .select("avatar_url")
+        .select("avatar_url, tour_completed")
         .eq("auth_id", user.id)
         .single(),
     ]);
+
+    type UserRow = { avatar_url?: string | null; tour_completed?: boolean | null } | null;
+    const row = userRow as UserRow;
 
     shellUser = {
       nome,
       email: user.email ?? "",
       iniciais: iniciais(nome),
-      avatarUrl: (userRow as { avatar_url?: string | null } | null)?.avatar_url ?? null,
+      avatarUrl: row?.avatar_url ?? null,
+      tourCompleted: row?.tour_completed ?? false,
       perfil: (account?.profile as ShellUser["perfil"]) ?? null,
       accountId: account?.account_id ?? null,
       groupId: account?.group_id ?? null,

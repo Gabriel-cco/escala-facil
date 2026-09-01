@@ -4,6 +4,7 @@ import { getActiveGroupId } from "@/lib/active-group-server";
 import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import Header from "./components/shell/Header";
 import { LiturgicalDot } from "./components/LiturgicalDot";
+import Avatar from "./components/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -103,9 +104,13 @@ export default async function Home() {
     ? supabase.rpc("get_last_attendance_summary", { p_group_id: activeGroupId })
     : Promise.resolve({ data: null, error: null });
 
+  const [authUser, conta] = await Promise.all([getAuthUser(), getCurrentAccount()]);
+
+  const userRowQuery = authUser?.id
+    ? supabase.from("users").select("avatar_url").eq("auth_id", authUser.id).maybeSingle()
+    : Promise.resolve({ data: null, error: null });
+
   const [
-    authUser,
-    conta,
     { data: eventos },
     { count: totalMembros },
     { data: funcoes },
@@ -116,9 +121,8 @@ export default async function Home() {
     { data: swaps },
     { count: suspensoesCount },
     { data: ultimaChamadaData },
+    { data: userRow },
   ] = await Promise.all([
-    getAuthUser(),
-    getCurrentAccount(),
     eventosQuery,
     membrosQuery,
     funcoesQuery,
@@ -129,6 +133,7 @@ export default async function Home() {
     swapsQuery,
     suspensoesQuery,
     ultimaChamadaQuery,
+    userRowQuery,
   ]);
 
   // ── Dados derivados ───────────────────────────────────────────────────────
@@ -140,6 +145,7 @@ export default async function Home() {
     "";
   const primeiroNome = nomeCompleto.trim().split(/\s+/)[0] || "";
   const grupoAtivoNome = (grupoAtivoData as { name?: string } | null)?.name ?? "";
+  const avatarUrl = (userRow as { avatar_url?: string | null } | null)?.avatar_url ?? null;
 
   // Roles ativas por grupo_id (para X/Y stat e barra do próximo evento)
   const totalPorGrupo = new Map<string, number>();
@@ -250,9 +256,7 @@ export default async function Home() {
 
         {/* ── Saudação ────────────────────────────────────────────────── */}
         <div className="flex items-center gap-4">
-          <div className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-full border-2 border-border bg-paper text-[18px] font-bold text-primary md:h-[60px] md:w-[60px]">
-            {iniciais}
-          </div>
+          <Avatar url={avatarUrl} iniciais={iniciais} size={52} />
           <div>
             <h1 className="font-serif text-[26px] font-semibold leading-tight text-ink md:text-[30px]">
               {primeiroNome ? `Olá, ${primeiroNome}` : "Olá"}

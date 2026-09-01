@@ -23,7 +23,7 @@ type Schedule = {
 function LinkInvalido() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-8 text-center">
-      <div className="font-serif text-[22px] font-semibold text-ink">
+      <div className="text-[22px] font-semibold text-ink">
         Link inválido ou expirado
       </div>
       <p className="mt-2 max-w-[320px] text-[14px] leading-relaxed text-muted">

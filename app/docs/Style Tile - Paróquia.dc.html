@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  a { color:#6B3521; text-decoration:none; }
+  a:hover { color:#4A2415; text-decoration:underline; }
+  ::selection { background:#E0A73C; color:#3D1F12; }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:#FAF6EC; font-family:'Inter',sans-serif; color:#2E1A11; padding:56px 40px 100px;">
+  <div style="max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:56px;">
+
+    <div>
+      <div style="font-size:12px; font-weight:600; letter-spacing:1px; color:#6B3521; text-transform:uppercase; margin-bottom:10px;">Escala Fácil — Fundação visual (variante paroquial)</div>
+      <div style="font-family:'Newsreader',serif; font-size:34px; font-weight:600; letter-spacing:-0.01em;">Style tile — Paróquia Santa Teresinha</div>
+      <div style="font-size:16px; color:#6E5A4E; margin-top:10px; max-width:600px; line-height:1.55;">Mesma estrutura da fundação original — mesma escala tipográfica, mesmo espaçamento de 4px, mesmo raio de 8px. Só a paleta muda: extraída da heráldica, das fitas douradas e das rosas do cartão.</div>
+      <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;">
+        <span style="font-size:12.5px; font-weight:600; color:#6B3521; background:#F2E7D4; border:1px solid #E3D2B6; padding:5px 12px; border-radius:999px;">Não substitui a versão índigo</span>
+        <span style="font-size:12.5px; font-weight:600; color:#6E5A4E; background:#fff; border:1px solid #E3D2B6; padding:5px 12px; border-radius:999px;">Convive como tema alternativo</span>
+      </div>
+    </div>
+
+    <!-- COR -->
+    <div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:4px;">Cor</div>
+      <div style="font-size:14px; color:#8A7466; margin-bottom:20px;">Marrom é a ação principal. Dourado é o realce escasso — nunca ação. Vermelho continua reservado à destruição.</div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;">
+        <sc-for list="{{ primarias }}" as="c" hint-placeholder-count="4">
+          <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; overflow:hidden;">
+            <div style="height:72px; background:{{ c.hex }}; border-bottom:1px solid #E3D2B6;"></div>
+            <div style="padding:12px 14px;">
+              <div style="font-size:14px; font-weight:600;">{{ c.label }}</div>
+              <div style="font-size:12px; color:#8A7466; margin-top:2px;">{{ c.hex }}</div>
+              <div style="font-size:11.5px; color:#A08D7F; margin-top:5px; line-height:1.35;">{{ c.uso }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:13px; font-weight:600; color:#6E5A4E; margin-bottom:10px;">Escala neutra quente</div>
+      <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:10px; margin-bottom:28px;">
+        <sc-for list="{{ neutros }}" as="g" hint-placeholder-count="7">
+          <div>
+            <div style="height:56px; border-radius:8px; background:{{ g.hex }}; border:1px solid #E3D2B6;"></div>
+            <div style="font-size:11px; color:#8A7466; margin-top:6px; text-align:center;">{{ g.label }}</div>
+            <div style="font-size:10.5px; color:#B3A296; text-align:center;">{{ g.hex }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:13px; font-weight:600; color:#6E5A4E; margin-bottom:10px;">Estados semânticos</div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:16px;">
+        <sc-for list="{{ semanticos }}" as="s" hint-placeholder-count="4">
+          <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:16px;">
+            <div style="width:100%; height:8px; border-radius:4px; background:{{ s.hex }}; margin-bottom:12px;"></div>
+            <div style="font-size:13.5px; font-weight:600;">{{ s.label }}</div>
+            <div style="font-size:12px; color:#8A7466; margin-top:2px;">{{ s.uso }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:16px 18px; display:flex; gap:12px; align-items:flex-start;">
+        <div style="width:8px; height:8px; border-radius:50%; background:#B07A1E; flex:none; margin-top:6px;"></div>
+        <div style="font-size:13.5px; color:#4A3A31; line-height:1.55;"><strong>Cuidado com o dourado:</strong> na identidade da paróquia ele é ornamento (fitas, cruz), não chamada. Usá-lo em botões o transformaria num segundo primário e diluiria a hierarquia — fica em bordas, ícones e realces. A regra do vermelho não muda: só exclusão definitiva; arquivar e suspender continuam em âmbar suave.</div>
+      </div>
+    </div>
+
+    <!-- TIPOGRAFIA -->
+    <div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:4px;">Tipografia</div>
+      <div style="font-size:14px; color:#8A7466; margin-bottom:20px;">Inter permanece para todo o corpo e a interface. Newsreader entra só em títulos de página — ecoa a serifa do brasão sem custar legibilidade.</div>
+      <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:32px;">
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <sc-for list="{{ escalaTipo }}" as="t" hint-placeholder-count="5">
+            <div style="display:flex; align-items:baseline; gap:24px; border-bottom:1px solid #F2E7D4; padding-bottom:24px;">
+              <div style="width:180px; flex:none;">
+                <div style="font-size:13px; font-weight:600;">{{ t.nome }}</div>
+                <div style="font-size:11.5px; color:#B3A296; margin-top:2px;">{{ t.meta }}</div>
+              </div>
+              <div style="font-family:{{ t.family }}; font-size:{{ t.size }}; font-weight:{{ t.weight }}; letter-spacing:{{ t.tracking }}; color:#2E1A11;">{{ t.sample }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORMA -->
+    <div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:4px;">Forma & elevação</div>
+      <div style="font-size:14px; color:#8A7466; margin-bottom:20px;">Idêntico à fundação original — raio 8px, sombras discretas. Só as bordas ganham o tom quente (#E3D2B6) no lugar do cinza frio.</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+        <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:20px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div style="width:100%; height:64px; background:#FAF6EC; border:1px solid #E3D2B6; border-radius:8px;"></div>
+          <div style="font-size:13px; font-weight:600;">Nível 0 — inline</div>
+          <div style="font-size:12px; color:#8A7466; text-align:center;">Separado só por borda de 1px.</div>
+        </div>
+        <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:20px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div style="width:100%; height:64px; background:#fff; border-radius:8px; box-shadow:0 1px 2px rgba(74,36,21,0.06), 0 1px 3px rgba(74,36,21,0.08);"></div>
+          <div style="font-size:13px; font-weight:600;">Nível 1 — card</div>
+          <div style="font-size:12px; color:#8A7466; text-align:center;">Sombra quente, quase imperceptível.</div>
+        </div>
+        <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:20px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div style="width:100%; height:64px; background:#fff; border-radius:8px; box-shadow:0 8px 24px rgba(74,36,21,0.14), 0 2px 6px rgba(74,36,21,0.08);"></div>
+          <div style="font-size:13px; font-weight:600;">Nível 2 — modal</div>
+          <div style="font-size:12px; color:#8A7466; text-align:center;">Flutua sobre o overlay.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APLICADO -->
+    <div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:4px;">Tokens aplicados</div>
+      <div style="font-size:14px; color:#8A7466; margin-bottom:20px;">Os mesmos componentes do component sheet, repintados.</div>
+      <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:32px; display:flex; flex-direction:column; gap:28px;">
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <button style="padding:10px 20px; border-radius:8px; border:none; background:#6B3521; color:#FDFBF6; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Ação primária</button>
+          <button style="padding:10px 20px; border-radius:8px; border:1px solid #D6C3A5; background:#fff; color:#2E1A11; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Ação secundária</button>
+          <button style="padding:10px 20px; border-radius:8px; border:none; background:transparent; color:#6E5A4E; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Terciária</button>
+          <button style="padding:10px 20px; border-radius:8px; border:1px solid #EBD9AE; background:#FDF6E3; color:#8A5A12; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Arquivar (reversível)</button>
+          <button style="padding:10px 20px; border-radius:8px; border:1px solid #E9C4C2; background:#FBF0EF; color:#8E1F24; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Excluir (destrutivo)</button>
+        </div>
+
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <span style="padding:5px 12px; border-radius:999px; background:#EAF3EC; color:#2F6B44; font-size:12.5px; font-weight:600;">● Confirmado</span>
+          <span style="padding:5px 12px; border-radius:999px; background:#FDF6E3; color:#8A5A12; font-size:12.5px; font-weight:600;">● Pendente</span>
+          <span style="padding:5px 12px; border-radius:999px; background:#FBF0EF; color:#8E1F24; font-size:12.5px; font-weight:600;">● Erro</span>
+          <span style="padding:5px 12px; border-radius:999px; background:#F2E7D4; color:#6B3521; font-size:12.5px; font-weight:600;">● Coroinhas</span>
+        </div>
+
+        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+          <div style="width:300px;">
+            <div style="font-size:13px; font-weight:600; color:#4A3A31; margin-bottom:8px;">Campo de texto</div>
+            <input placeholder="Nome do evento" style="width:100%; padding:11px 14px; border-radius:8px; border:1px solid #D6C3A5; font-family:inherit; font-size:14px; background:#fff; color:#2E1A11; outline:none;" />
+          </div>
+          <div style="width:300px;">
+            <div style="font-size:13px; font-weight:600; color:#4A3A31; margin-bottom:8px;">Progresso da escala</div>
+            <div style="height:8px; background:#F2E7D4; border-radius:4px; overflow:hidden;"><div style="height:100%; width:60%; background:#6B3521; border-radius:4px;"></div></div>
+            <div style="font-size:12px; color:#8A7466; margin-top:7px;">3 de 5 funções preenchidas</div>
+          </div>
+          <div style="width:240px;">
+            <div style="font-size:13px; font-weight:600; color:#4A3A31; margin-bottom:8px;">Avatar e realce dourado</div>
+            <div style="display:flex; align-items:center; gap:12px; background:#FDFBF6; border:1px solid #E3D2B6; border-left:3px solid #E0A73C; border-radius:8px; padding:11px 14px;">
+              <div style="width:34px; height:34px; border-radius:50%; background:#F2E7D4; color:#6B3521; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center;">HD</div>
+              <div style="font-size:14px; font-weight:500;">Helena Dias</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- LADO A LADO -->
+    <div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:4px;">Comparação com a fundação atual</div>
+      <div style="font-size:14px; color:#8A7466; margin-bottom:20px;">Mesmo card, duas paletas. A estrutura não mudou em nada.</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div style="background:#FAFAFA; border:1px solid #E5E5E5; border-radius:8px; padding:22px;">
+          <div style="font-size:11px; font-weight:600; color:#A3A3A3; letter-spacing:.06em; margin-bottom:14px;">ÍNDIGO (ATUAL)</div>
+          <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:18px; font-family:'Inter',sans-serif; color:#171717;">
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+              <div style="font-size:16px; font-weight:600;">Missa Dominical</div>
+              <div style="font-size:12.5px; color:#737373;">23 ago · 08:00</div>
+            </div>
+            <div style="font-size:13px; color:#737373; margin-top:4px;">Coroinhas</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+              <div style="flex:1; height:6px; background:#F0F0F0; border-radius:3px; overflow:hidden;"><div style="height:100%; width:60%; background:#4F46E5;"></div></div>
+              <div style="font-size:12px; font-weight:600; color:#525252;">3/5</div>
+            </div>
+            <button style="margin-top:16px; padding:9px 16px; border-radius:8px; border:none; background:#4F46E5; color:#fff; font-family:inherit; font-size:13px; font-weight:600;">Ver escala</button>
+          </div>
+        </div>
+        <div style="background:#FAF6EC; border:1px solid #E3D2B6; border-radius:8px; padding:22px;">
+          <div style="font-size:11px; font-weight:600; color:#B3A296; letter-spacing:.06em; margin-bottom:14px;">PARÓQUIA (NOVA)</div>
+          <div style="background:#fff; border:1px solid #E3D2B6; border-radius:8px; padding:18px; font-family:'Inter',sans-serif; color:#2E1A11;">
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+              <div style="font-size:16px; font-weight:600;">Missa Dominical</div>
+              <div style="font-size:12.5px; color:#8A7466;">23 ago · 08:00</div>
+            </div>
+            <div style="font-size:13px; color:#8A7466; margin-top:4px;">Coroinhas</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+              <div style="flex:1; height:6px; background:#F2E7D4; border-radius:3px; overflow:hidden;"><div style="height:100%; width:60%; background:#6B3521;"></div></div>
+              <div style="font-size:12px; font-weight:600; color:#6E5A4E;">3/5</div>
+            </div>
+            <button style="margin-top:16px; padding:9px 16px; border-radius:8px; border:none; background:#6B3521; color:#FDFBF6; font-family:inherit; font-size:13px; font-weight:600;">Ver escala</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1120, &quot;height&quot;: 900}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      primarias: [
+        { hex: '#6B3521', label: 'Marrom (primária)', uso: 'Ações principais, barras de progresso, estado ativo' },
+        { hex: '#E0A73C', label: 'Dourado (realce)', uso: 'Bordas de destaque, ícones, ornamento — nunca botão' },
+        { hex: '#A8232B', label: 'Vinho (rosas)', uso: 'Só exclusão definitiva' },
+        { hex: '#FAF6EC', label: 'Creme (fundo)', uso: 'Fundo da aplicação; cards em #FFFFFF' },
+      ],
+      neutros: [
+        { hex: '#2E1A11', label: '900 · texto' },
+        { hex: '#4A3A31', label: '700' },
+        { hex: '#6E5A4E', label: '600 · texto sec.' },
+        { hex: '#8A7466', label: '500 · apoio' },
+        { hex: '#B3A296', label: '400 · micro' },
+        { hex: '#D6C3A5', label: '300 · borda' },
+        { hex: '#E3D2B6', label: '200 · divisor' },
+      ],
+      semanticos: [
+        { hex: '#2F6B44', label: 'Sucesso', uso: 'Escala completa, confirmações' },
+        { hex: '#B07A1E', label: 'Alerta', uso: 'Pendências, arquivar, suspender' },
+        { hex: '#A8232B', label: 'Erro', uso: 'Falhas e exclusão definitiva' },
+        { hex: '#3B5C7A', label: 'Info', uso: 'Avisos neutros, mês já gerado' },
+      ],
+      escalaTipo: [
+        { nome: 'Título de página', meta: "Newsreader · 28–32px · 600", family: "'Newsreader',serif", size: '30px', weight: '600', tracking: '-0.01em', sample: 'Escala de Agosto' },
+        { nome: 'Título de seção', meta: 'Inter · 20px · 600', family: "'Inter',sans-serif", size: '20px', weight: '600', tracking: '-0.01em', sample: 'Próximos eventos' },
+        { nome: 'Corpo', meta: 'Inter · 16px · 400', family: "'Inter',sans-serif", size: '16px', weight: '400', tracking: 'normal', sample: 'Missa Dominical · 08:00' },
+        { nome: 'Apoio', meta: 'Inter · 14px · 500', family: "'Inter',sans-serif", size: '14px', weight: '500', tracking: 'normal', sample: 'Coroinhas · 4 membros' },
+        { nome: 'Micro', meta: 'Inter · 12px · 600', family: "'Inter',sans-serif", size: '12px', weight: '600', tracking: '.02em', sample: 'FUNÇÕES ATRIBUÍDAS' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

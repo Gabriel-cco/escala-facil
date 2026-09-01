@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -45,14 +45,14 @@ export default function Modal({
           >
             ‹
           </button>
-          <div className="font-serif text-[20px] font-semibold text-ink">
+          <div className="text-[20px] font-semibold text-ink">
             {title}
           </div>
         </header>
 
         <div className="ef-scroll flex-1 overflow-y-auto px-[22px] pb-6 md:flex-none md:overflow-visible md:p-0">
           <div className="md:w-[460px] md:max-w-full md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:bg-[#ffffff] md:p-7 md:shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
-            <div className="mb-5 hidden font-serif text-[22px] font-semibold text-ink md:block">
+            <div className="mb-5 hidden text-[22px] font-semibold text-ink md:block">
               {title}
             </div>
             {children}

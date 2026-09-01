@@ -56,6 +56,7 @@ export default function PerfilForm({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(avatarUrlInicial);
   const [uploadando, setUploadando] = useState(false);
   const [erroAvatar, setErroAvatar] = useState("");
+  const [preview, setPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
@@ -150,20 +151,51 @@ export default function PerfilForm({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Lightbox de pré-visualização */}
+      {preview && avatarUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setPreview(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={avatarUrl}
+            alt="Foto de perfil"
+            className="max-h-[80dvh] max-w-[80vw] rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-[22px] leading-none text-white backdrop-blur-sm"
+            onClick={() => setPreview(false)}
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Avatar */}
       <div className="flex flex-col items-center gap-2 pb-1 pt-2">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploadando}
-          aria-label="Alterar foto de perfil"
-          className="relative"
-        >
-          <Avatar url={avatarUrl} iniciais={iniciais(nome || nomeInicial)} size={80} />
-          <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[13px] text-white shadow">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => avatarUrl && setPreview(true)}
+            disabled={uploadando || !avatarUrl}
+            aria-label="Ver foto de perfil"
+            className="block"
+          >
+            <Avatar url={avatarUrl} iniciais={iniciais(nome || nomeInicial)} size={80} />
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadando}
+            aria-label="Alterar foto de perfil"
+            className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[13px] text-white shadow"
+          >
             {uploadando ? "…" : "✎"}
-          </span>
-        </button>
+          </button>
+        </div>
         <input
           ref={fileInputRef}
           type="file"

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -370,7 +370,7 @@ export default function UsuariosManager({
             <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[480px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-7">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">NOVO USUÁRIO</div>
-              <h2 className="mb-5 font-serif text-[20px] font-semibold text-ink">
+              <h2 className="mb-5 text-[20px] font-semibold text-ink">
                 Adicionar usuário
               </h2>
 
@@ -461,7 +461,7 @@ export default function UsuariosManager({
             <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[480px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-7">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">EDITAR USUÁRIO</div>
-              <h2 className="mb-5 font-serif text-[20px] font-semibold text-ink">
+              <h2 className="mb-5 text-[20px] font-semibold text-ink">
                 {contaEditando.userName}
               </h2>
 
@@ -540,7 +540,7 @@ export default function UsuariosManager({
             <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">REMOVER ACESSO</div>
-              <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
+              <div className="mb-2 text-[19px] font-semibold text-ink">
                 Remover acesso?
               </div>
               <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "../components/shell/Header";
@@ -268,7 +268,7 @@ export default async function EventosPage({
           >
             <div className="flex items-start justify-between gap-2.5">
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 font-serif text-[18px] font-semibold leading-tight text-ink">
+                <div className="flex items-center gap-1.5 text-[18px] font-semibold leading-tight text-ink">
                   <LiturgicalDot color={evento.liturgical_color} />
                   {evento.name}
                 </div>
@@ -323,7 +323,7 @@ export default async function EventosPage({
             className="flex min-w-0 flex-1 items-center gap-6"
           >
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 font-serif text-[18px] font-semibold text-ink">
+              <div className="flex items-center gap-1.5 text-[18px] font-semibold text-ink">
                 <LiturgicalDot color={evento.liturgical_color} />
                 {evento.name}
               </div>

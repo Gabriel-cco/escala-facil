@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -220,7 +220,7 @@ export default async function MinhaEscalaPage({
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <div className="flex items-center gap-1.5 font-serif text-[17px] font-semibold leading-tight text-ink">
+                      <div className="flex items-center gap-1.5 text-[17px] font-semibold leading-tight text-ink">
                         <LiturgicalDot color={evento.liturgical_color} />
                         {evento.name}
                       </div>

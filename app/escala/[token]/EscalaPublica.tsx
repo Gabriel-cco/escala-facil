@@ -82,7 +82,7 @@ export default function EscalaPublica({
         <div className="text-[12px] font-semibold uppercase tracking-[1.4px] text-faint">
           Escala Fácil
         </div>
-        <h1 className="mt-1.5 font-serif text-[27px] font-semibold leading-tight text-ink">
+        <h1 className="mt-1.5 text-[27px] font-semibold leading-tight text-ink">
           Escala — {groupName}
         </h1>
 
@@ -143,7 +143,7 @@ export default function EscalaPublica({
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-serif text-[17px] font-semibold leading-tight text-ink">
+                      <div className="text-[17px] font-semibold leading-tight text-ink">
                         {evento.event_name}
                       </div>
                       <div className="mt-0.5 text-[12.5px] text-muted">

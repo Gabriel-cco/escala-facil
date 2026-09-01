@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -108,7 +108,7 @@ export default function CalendarioEventos({
         >
           ‹
         </button>
-        <div className="font-serif text-[19px] font-semibold text-ink md:text-[21px]">
+        <div className="text-[19px] font-semibold text-ink md:text-[21px]">
           {MESES_LONGOS[mes]} {ano}
         </div>
         <button
@@ -198,7 +198,7 @@ export default function CalendarioEventos({
                 {rotuloHora(e.time)}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-serif text-[16px] font-semibold text-ink">
+                <div className="truncate text-[16px] font-semibold text-ink">
                   {e.nome}
                 </div>
                 <div className="text-[12px] text-muted">

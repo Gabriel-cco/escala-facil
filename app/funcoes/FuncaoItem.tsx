@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -78,7 +78,7 @@ export default function FuncaoItem({
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
                 EXCLUIR
               </div>
-              <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
+              <div className="mb-2 text-[19px] font-semibold text-ink">
                 Excluir função?
               </div>
               <p className="mb-5 text-[13.5px] leading-relaxed text-muted">

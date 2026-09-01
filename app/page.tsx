@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
 import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
@@ -258,7 +258,7 @@ export default async function Home() {
         <div className="flex items-center gap-4">
           <Avatar url={avatarUrl} iniciais={iniciais} size={52} />
           <div>
-            <h1 className="font-serif text-[26px] font-semibold leading-tight text-ink md:text-[30px]">
+            <h1 className="text-[26px] font-semibold leading-tight text-ink md:text-[30px]">
               {primeiroNome ? `Olá, ${primeiroNome}` : "Olá"}
             </h1>
             <p className="mt-0.5 text-[13px] text-muted">
@@ -341,7 +341,7 @@ export default async function Home() {
                   {proximoEvento.liturgical_name}
                 </div>
               )}
-              <div className="font-serif text-[20px] font-bold leading-tight text-ink">
+              <div className="text-[20px] font-bold leading-tight text-ink">
                 {proximoEvento.name}
               </div>
               <div className="mt-1 text-[13px] text-muted">

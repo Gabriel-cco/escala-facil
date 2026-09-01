@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -76,7 +76,7 @@ export default function DeleteEventoButton({
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">
                 REMOVER
               </div>
-              <div className="mb-2 font-serif text-[19px] font-semibold text-ink">
+              <div className="mb-2 text-[19px] font-semibold text-ink">
                 Apagar evento?
               </div>
               <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">

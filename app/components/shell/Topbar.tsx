@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -40,7 +40,7 @@ export default function Topbar({ className = "" }: { className?: string }) {
             ‹
           </button>
         )}
-        <div className="font-serif text-[25px] font-semibold text-ink">
+        <div className="text-[25px] font-semibold text-ink">
           {chrome.title}
         </div>
         {grupoLabel && (

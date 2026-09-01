@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  a { color:#4F46E5; text-decoration:none; }
+  a:hover { color:#3730A3; text-decoration:underline; }
+  .fq-row:hover { background:#FAFAFA; }
+</style>
+</helmet>
+
+<div style="min-height:100vh; background:#F5F5F4; font-family:'Inter',sans-serif; color:#171717; padding:48px 32px 100px;">
+  <div style="max-width:1400px; margin:0 auto; display:flex; flex-direction:column; gap:48px;">
+
+    <div>
+      <div style="font-size:12px; font-weight:600; letter-spacing:1px; color:#4F46E5; text-transform:uppercase; margin-bottom:10px;">Escala Fácil — Feature nova</div>
+      <div style="font-size:28px; font-weight:700; letter-spacing:-0.02em;">Frequência (chamada de presença)</div>
+      <div style="font-size:14px; color:#525252; margin-top:8px; max-width:700px; line-height:1.55;">Sem item de navegação: a única porta de entrada é o widget da Home. Quatro telas — widget, marcação, histórico/detalhe e relatório. Visível só para admin e coordenador.</div>
+    </div>
+
+    <!-- 1. WIDGET NA HOME -->
+    <section>
+      <div style="font-size:19px; font-weight:600; margin-bottom:4px;">1 · Widget na Home</div>
+      <div style="font-size:13.5px; color:#737373; margin-bottom:18px;">Terceiro card ao lado de "Próximo evento" e "Ações pendentes". Mostra a última chamada como referência, ou o estado vazio.</div>
+      <div style="display:grid; grid-template-columns:1fr 390px; gap:20px; align-items:start;">
+
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:10px; padding:28px;">
+          <div style="font-size:11px; font-weight:600; color:#A3A3A3; letter-spacing:.06em; margin-bottom:18px;">DESKTOP — dois estados do card</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+            <div>
+              <div style="font-size:13px; font-weight:600; color:#A3A3A3; letter-spacing:.04em; text-transform:uppercase; margin-bottom:10px;">Frequência</div>
+              <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:22px; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                <div style="display:flex; align-items:flex-start; gap:14px; margin-bottom:18px;">
+                  <div style="width:38px; height:38px; border-radius:10px; background:#EEF2FF; color:#4F46E5; font-size:17px; display:flex; align-items:center; justify-content:center; flex:none;">✓</div>
+                  <div>
+                    <div style="font-size:12px; font-weight:600; color:#A3A3A3; letter-spacing:.04em; text-transform:uppercase;">Última chamada</div>
+                    <div style="font-size:15px; font-weight:600; margin-top:4px;">Missa de domingo — 16/08</div>
+                    <div style="font-size:13.5px; color:#525252; margin-top:3px;"><strong style="color:#171717;">9 de 11</strong> presentes</div>
+                  </div>
+                </div>
+                <button onClick="{{ noop }}" style="width:100%; padding:11px; border-radius:8px; border:none; background:#4F46E5; color:#fff; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Fazer chamada</button>
+                <div style="text-align:center; margin-top:12px;"><a href="#historico" style="font-size:13px; font-weight:600;">Ver histórico e relatório</a></div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:13px; font-weight:600; color:#A3A3A3; letter-spacing:.04em; text-transform:uppercase; margin-bottom:10px;">Frequência · vazio</div>
+              <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:22px; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                <div style="display:flex; align-items:flex-start; gap:14px; margin-bottom:18px;">
+                  <div style="width:38px; height:38px; border-radius:10px; background:#F5F5F5; color:#A3A3A3; font-size:17px; display:flex; align-items:center; justify-content:center; flex:none;">✓</div>
+                  <div>
+                    <div style="font-size:15px; font-weight:600;">Nenhuma chamada registrada</div>
+                    <div style="font-size:13px; color:#737373; margin-top:4px; line-height:1.45;">Registre a presença de um encontro, missa ou reunião.</div>
+                  </div>
+                </div>
+                <button style="width:100%; padding:11px; border-radius:8px; border:none; background:#4F46E5; color:#fff; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Fazer chamada</button>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:12.5px; color:#A3A3A3; margin-top:18px;">No estado vazio o link de histórico não aparece — não há nada para ver.</div>
+        </div>
+
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:28px; overflow:hidden; width:390px; box-shadow:0 20px 50px rgba(0,0,0,0.10);">
+          <div style="padding:14px 16px; font-size:11px; font-weight:600; color:#A3A3A3; letter-spacing:.06em; border-bottom:1px solid #E5E5E5;">MOBILE — na Home</div>
+          <div style="padding:18px; background:#FAFAFA;">
+            <div style="font-size:11.5px; font-weight:600; color:#A3A3A3; letter-spacing:.05em; text-transform:uppercase; margin-bottom:9px;">Frequência</div>
+            <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:18px;">
+              <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:16px;">
+                <div style="width:34px; height:34px; border-radius:9px; background:#EEF2FF; color:#4F46E5; font-size:15px; display:flex; align-items:center; justify-content:center; flex:none;">✓</div>
+                <div>
+                  <div style="font-size:11px; font-weight:600; color:#A3A3A3; letter-spacing:.04em; text-transform:uppercase;">Última chamada</div>
+                  <div style="font-size:14px; font-weight:600; margin-top:3px;">Missa de domingo — 16/08</div>
+                  <div style="font-size:12.5px; color:#525252; margin-top:2px;"><strong style="color:#171717;">9 de 11</strong> presentes</div>
+                </div>
+              </div>
+              <button style="width:100%; padding:12px; border-radius:8px; border:none; background:#4F46E5; color:#fff; font-family:inherit; font-size:14px; font-weight:600; min-height:44px;">Fazer chamada</button>
+              <div style="text-align:center; margin-top:12px;"><a href="#historico" style="font-size:13px; font-weight:600;">Ver histórico e relatório</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. MARCAÇÃO -->
+    <section>
+      <div style="font-size:19px; font-weight:600; margin-bottom:4px;">2 · Fazer chamada</div>
+      <div style="font-size:13.5px; color:#737373; margin-bottom:18px;">Todos entram como <strong>Presente</strong>; o operador toca só em quem faltou. Contagem ao vivo no topo. O seletor de grupo aparece apenas para admin em visão geral.</div>
+      <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+        <button onClick="{{ onScopeCoord }}" style="padding:8px 16px; border-radius:8px; border:1px solid #D4D4D4; background:{{ coordBg }}; color:{{ coordColor }}; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;">Coordenador (grupo fixo)</button>
+        <button onClick="{{ onScopeAdmin }}" style="padding:8px 16px; border-radius:8px; border:1px solid #D4D4D4; background:{{ adminBg }}; color:{{ adminColor }}; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;">Admin em visão geral</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 390px; gap:20px; align-items:start;">
+
+        <!-- desktop marcação -->
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:10px; overflow:hidden; height:820px; display:flex; flex-direction:column;">
+          <div style="height:56px; flex:none; border-bottom:1px solid #E5E5E5; display:flex; align-items:center; gap:14px; padding:0 24px;">
+            <button style="border:1px solid #D4D4D4; background:#fff; border-radius:8px; width:32px; height:32px; font-size:18px; cursor:pointer;">‹</button>
+            <div style="font-size:15px; font-weight:700;">Fazer chamada</div>
+            <div style="margin-left:auto; font-size:11px; font-weight:600; color:#A3A3A3; letter-spacing:.06em;">DESKTOP</div>
+          </div>
+          <div style="flex:1; padding:28px 32px; overflow:auto;">
+            <div style="max-width:620px; margin:0 auto;">
+
+              <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:26px;">
+                <sc-if value="{{ needsGroupPick }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px; padding:16px 18px;">
+                    <div style="font-size:13px; font-weight:600; color:#1E3A8A; margin-bottom:8px;">Escolha o grupo</div>
+                    <div style="font-size:12.5px; color:#1E40AF; line-height:1.45; margin-bottom:12px;">Você está em visão geral — selecione de qual grupo é esta chamada.</div>
+                    <select style="width:100%; padding:11px 14px; border-radius:8px; border:1px solid #BFDBFE; font-family:inherit; font-size:14px; background:#fff; color:#171717;">
+                      <option>Coroinhas</option><option>Música</option><option>Ministros</option><option>Leitores</option>
+                    </select>
+                  </div>
+                </sc-if>
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:#404040; margin-bottom:7px;">Nome da chamada</div>
+                  <input value="{{ listName }}" onChange="{{ onListName }}" style="width:100%; padding:11px 14px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:14px;" />
+                  <div style="font-size:12px; color:#A3A3A3; margin-top:6px;">Sugerido automaticamente — pode editar.</div>
+                </div>
+                <div style="display:flex; gap:12px;">
+                  <div style="flex:1;">
+                    <div style="font-size:13px; font-weight:600; color:#404040; margin-bottom:7px;">Data</div>
+                    <input type="date" value="2026-08-21" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:13.5px;" />
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:13px; font-weight:600; color:#404040; margin-bottom:7px;">Hora <span style="color:#A3A3A3; font-weight:400;">(opcional)</span></div>
+                    <input type="time" value="19:00" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:13.5px;" />
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:#404040; margin-bottom:7px;">Vincular a um evento <span style="color:#A3A3A3; font-weight:400;">(opcional)</span></div>
+                  <select style="width:100%; padding:11px 14px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:14px; background:#fff; color:#171717;">
+                    <option>Nenhum evento</option>
+                    <option>Missa Dominical — 23/08, 08:00</option>
+                    <option>Missa Vespertina — 23/08, 19:00</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#ECFDF5; border:1px solid #A7F3D0; border-radius:8px; margin-bottom:14px;">
+                <div style="font-size:14.5px; font-weight:600; color:#065F46;">{{ presentCount }} presentes de {{ totalCount }}</div>
+                <button onClick="{{ onAllPresent }}" style="font-size:12.5px; font-weight:600; color:#047857; background:transparent; border:none; cursor:pointer;">Marcar todos presentes</button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ roster }}" as="m" hint-placeholder-count="8">
+                  <div class="fq-row" style="display:flex; align-items:center; gap:14px; padding:12px 16px; border:1px solid {{ m.border }}; border-radius:8px; background:{{ m.bg }};">
+                    <div style="width:36px; height:36px; border-radius:50%; background:{{ m.avatarBg }}; color:{{ m.avatarColor }}; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none;">{{ m.iniciais }}</div>
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:14.5px; font-weight:600; color:{{ m.nameColor }};">{{ m.nome }}</div>
+                      <div style="font-size:12px; color:#A3A3A3; margin-top:1px;">{{ m.perfil }}</div>
+                    </div>
+                    <button onClick="{{ m.onToggle }}" style="flex:none; padding:7px 15px; border-radius:999px; border:1px solid {{ m.chipBorder }}; background:{{ m.chipBg }}; color:{{ m.chipColor }}; font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer; min-width:104px;">{{ m.chipLabel }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none; border-top:1px solid #E5E5E5; padding:16px 32px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:13px; color:#737373;">{{ absentSummary }}</div>
+            <button style="padding:11px 22px; border-radius:8px; border:none; background:#4F46E5; color:#fff; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Salvar chamada</button>
+          </div>
+        </div>
+
+        <!-- mobile marcação -->
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:28px; overflow:hidden; width:390px; height:820px; box-shadow:0 20px 50px rgba(0,0,0,0.10); display:flex; flex-direction:column;">
+          <div style="height:56px; flex:none; display:flex; align-items:center; gap:10px; padding:0 16px; border-bottom:1px solid #E5E5E5;">
+            <button style="border:none; background:transparent; font-size:26px; color:#171717; width:34px; height:34px;">‹</button>
+            <div style="font-size:15px; font-weight:700;">Fazer chamada</div>
+          </div>
+          <div style="flex:none; padding:12px 16px; background:#ECFDF5; border-bottom:1px solid #A7F3D0; display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:14px; font-weight:600; color:#065F46;">{{ presentCount }} de {{ totalCount }} presentes</div>
+            <button onClick="{{ onAllPresent }}" style="font-size:12px; font-weight:600; color:#047857; background:transparent; border:none;">Todos</button>
+          </div>
+          <div style="flex:1; padding:16px; overflow:auto;">
+            <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px;">
+              <div>
+                <div style="font-size:12.5px; font-weight:600; color:#404040; margin-bottom:6px;">Nome da chamada</div>
+                <input value="{{ listName }}" onChange="{{ onListName }}" style="width:100%; padding:11px 13px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:14px;" />
+              </div>
+              <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                  <div style="font-size:12.5px; font-weight:600; color:#404040; margin-bottom:6px;">Data</div>
+                  <input type="date" value="2026-08-21" style="width:100%; padding:10px 11px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:13px;" />
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:12.5px; font-weight:600; color:#404040; margin-bottom:6px;">Hora</div>
+                  <input type="time" value="19:00" style="width:100%; padding:10px 11px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:13px;" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:12.5px; font-weight:600; color:#404040; margin-bottom:6px;">Evento vinculado <span style="color:#A3A3A3; font-weight:400;">(opcional)</span></div>
+                <select style="width:100%; padding:11px 13px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:14px; background:#fff;">
+                  <option>Nenhum evento</option><option>Missa Dominical — 23/08</option>
+                </select>
+              </div>
+            </div>
+            <div style="font-size:11.5px; font-weight:600; color:#A3A3A3; letter-spacing:.05em; text-transform:uppercase; margin-bottom:9px;">Toque em quem faltou</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <sc-for list="{{ roster }}" as="m" hint-placeholder-count="8">
+                <button onClick="{{ m.onToggle }}" style="width:100%; text-align:left; display:flex; align-items:center; gap:12px; padding:11px 14px; border:1px solid {{ m.border }}; border-radius:8px; background:{{ m.bg }}; min-height:44px;">
+                  <div style="width:34px; height:34px; border-radius:50%; background:{{ m.avatarBg }}; color:{{ m.avatarColor }}; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none;">{{ m.iniciais }}</div>
+                  <div style="flex:1; min-width:0; font-size:14px; font-weight:600; color:{{ m.nameColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.nome }}</div>
+                  <span style="flex:none; padding:5px 11px; border-radius:999px; border:1px solid {{ m.chipBorder }}; background:{{ m.chipBg }}; color:{{ m.chipColor }}; font-size:11.5px; font-weight:600;">{{ m.chipLabel }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex:none; border-top:1px solid #E5E5E5; padding:12px 16px 20px;">
+            <button style="width:100%; padding:13px; border-radius:8px; border:none; background:#4F46E5; color:#fff; font-family:inherit; font-size:14.5px; font-weight:600; min-height:44px;">Salvar chamada</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. HISTÓRICO + DETALHE -->
+    <section id="historico">
+      <div style="font-size:19px; font-weight:600; margin-bottom:4px;">3 · Histórico e detalhe da chamada</div>
+      <div style="font-size:13.5px; color:#737373; margin-bottom:18px;">Rota <code style="font-size:12.5px; background:#EFEFEF; padding:2px 6px; border-radius:4px;">/frequencia</code>, alcançada só pelo widget. Duas abas: Histórico e Relatório. No detalhe, presentes e faltantes ficam em seções separadas.</div>
+      <div style="display:grid; grid-template-columns:1fr 390px; gap:20px; align-items:start;">
+
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:10px; overflow:hidden; height:760px; display:flex; flex-direction:column;">
+          <div style="height:56px; flex:none; border-bottom:1px solid #E5E5E5; display:flex; align-items:center; gap:14px; padding:0 24px;">
+            <button style="border:1px solid #D4D4D4; background:#fff; border-radius:8px; width:32px; height:32px; font-size:18px; cursor:pointer;">‹</button>
+            <div style="font-size:15px; font-weight:700;">Frequência</div>
+            <div style="margin-left:auto; font-size:11px; font-weight:600; color:#A3A3A3; letter-spacing:.06em;">DESKTOP</div>
+          </div>
+          <div style="flex:none; padding:0 24px; border-bottom:1px solid #E5E5E5; display:flex; gap:4px;">
+            <button onClick="{{ onTabHist }}" style="padding:14px 4px; margin-right:20px; border:none; background:transparent; font-family:inherit; font-size:14px; font-weight:600; color:{{ histTabColor }}; border-bottom:2px solid {{ histTabBorder }}; cursor:pointer;">Histórico</button>
+            <button onClick="{{ onTabRel }}" style="padding:14px 4px; border:none; background:transparent; font-family:inherit; font-size:14px; font-weight:600; color:{{ relTabColor }}; border-bottom:2px solid {{ relTabBorder }}; cursor:pointer;">Relatório</button>
+          </div>
+
+          <div style="flex:1; padding:26px 32px; overflow:auto;">
+            <!-- histórico -->
+            <sc-if value="{{ showHist }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px;">
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:#A3A3A3; letter-spacing:.04em; text-transform:uppercase; margin-bottom:12px;">Chamadas registradas</div>
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <sc-for list="{{ historico }}" as="h" hint-placeholder-count="5">
+                      <button onClick="{{ h.onSelect }}" style="width:100%; text-align:left; background:{{ h.bg }}; border:1px solid {{ h.border }}; border-radius:8px; padding:14px 16px; cursor:pointer;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                          <div style="font-size:14px; font-weight:600;">{{ h.nome }}</div>
+                          <div style="font-size:12px; color:#737373; white-space:nowrap;">{{ h.data }}</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                          <div style="flex:1; height:5px; background:#F0F0F0; border-radius:3px; overflow:hidden;"><div style="height:100%; width:{{ h.pct }}%; background:{{ h.barColor }};"></div></div>
+                          <div style="font-size:12px; font-weight:600; color:#525252; white-space:nowrap;">{{ h.resumo }}</div>
+                        </div>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:#A3A3A3; letter-spacing:.04em; text-transform:uppercase; margin-bottom:12px;">Detalhe</div>
+                  <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:20px; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+                      <div>
+                        <div style="font-size:16px; font-weight:700;">{{ detalhe.nome }}</div>
+                        <div style="font-size:12.5px; color:#737373; margin-top:3px;">{{ detalhe.dataLong }} · {{ detalhe.grupo }}</div>
+                      </div>
+                      <div style="display:flex; gap:6px; flex:none;">
+                        <button style="padding:6px 12px; border-radius:8px; border:1px solid #D4D4D4; background:#fff; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer;">Editar</button>
+                        <button style="padding:6px 12px; border-radius:8px; border:1px solid #FECACA; background:#FEF2F2; color:#B91C1C; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer;">Excluir</button>
+                      </div>
+                    </div>
+
+                    <div style="margin-top:22px;">
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                        <span style="width:8px; height:8px; border-radius:50%; background:#059669;"></span>
+                        <div style="font-size:12.5px; font-weight:600; color:#065F46; letter-spacing:.03em; text-transform:uppercase;">Presentes · {{ detalhe.presentes.length }}</div>
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        <sc-for list="{{ detalhe.presentes }}" as="p" hint-placeholder-count="6">
+                          <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#ECFDF5; border-radius:8px;">
+                            <div style="width:28px; height:28px; border-radius:50%; background:#fff; color:#047857; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ p.iniciais }}</div>
+                            <div style="font-size:13.5px; font-weight:500; color:#065F46;">{{ p.nome }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+
+                    <div style="margin-top:22px;">
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                        <span style="width:8px; height:8px; border-radius:50%; background:#D97706;"></span>
+                        <div style="font-size:12.5px; font-weight:600; color:#92400E; letter-spacing:.03em; text-transform:uppercase;">Faltantes · {{ detalhe.faltantes.length }}</div>
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:6px;">
+                        <sc-for list="{{ detalhe.faltantes }}" as="f" hint-placeholder-count="2">
+                          <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#FFFBEB; border-radius:8px;">
+                            <div style="width:28px; height:28px; border-radius:50%; background:#fff; color:#92400E; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ f.iniciais }}</div>
+                            <div style="font-size:13.5px; font-weight:500; color:#92400E;">{{ f.nome }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- relatório -->
+            <sc-if value="{{ showRel }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; gap:14px; flex-wrap:wrap;">
+                <div style="font-size:13.5px; color:#737373;">Ordenado por frequência crescente — quem precisa de atenção primeiro.</div>
+                <div style="display:flex; background:#F0F0F0; border-radius:8px; padding:3px;">
+                  <sc-for list="{{ periodos }}" as="p" hint-placeholder-count="3">
+                    <button onClick="{{ p.onPick }}" style="padding:7px 14px; border-radius:6px; border:none; cursor:pointer; font-size:12.5px; font-weight:600; background:{{ p.bg }}; color:{{ p.color }};">{{ p.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="border:1px solid #E5E5E5; border-radius:8px; overflow:hidden;">
+                <div style="display:grid; grid-template-columns:1fr 110px 130px 150px; padding:12px 18px; background:#FAFAFA; border-bottom:1px solid #E5E5E5;">
+                  <div style="font-size:11.5px; font-weight:600; color:#A3A3A3; letter-spacing:.05em; text-transform:uppercase;">Membro</div>
+                  <div style="font-size:11.5px; font-weight:600; color:#A3A3A3; letter-spacing:.05em; text-transform:uppercase;">Presenças</div>
+                  <div style="font-size:11.5px; font-weight:600; color:#A3A3A3; letter-spacing:.05em; text-transform:uppercase;">Chamadas</div>
+                  <div style="font-size:11.5px; font-weight:600; color:#A3A3A3; letter-spacing:.05em; text-transform:uppercase;">Frequência</div>
+                </div>
+                <sc-for list="{{ relatorio }}" as="r" hint-placeholder-count="8">
+                  <div class="fq-row" style="display:grid; grid-template-columns:1fr 110px 130px 150px; align-items:center; padding:13px 18px; border-bottom:1px solid #F5F5F5;">
+                    <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+                      <div style="width:32px; height:32px; border-radius:50%; background:#EEF2FF; color:#4338CA; font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none;">{{ r.iniciais }}</div>
+                      <div style="font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.nome }}</div>
+                    </div>
+                    <div style="font-size:14px; color:#404040;">{{ r.presencas }}</div>
+                    <div style="font-size:14px; color:#737373;">{{ r.total }}</div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div style="flex:1; height:6px; background:#F0F0F0; border-radius:3px; overflow:hidden;"><div style="height:100%; width:{{ r.barWidth }}%; background:{{ r.barColor }};"></div></div>
+                      <div style="font-size:13px; font-weight:600; color:{{ r.pctColor }}; width:52px; text-align:right;">{{ r.pctLabel }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px; color:#A3A3A3; margin-top:14px;">Membros sem chamadas no período aparecem como "—", nunca 0%.</div>
+            </sc-if>
+          </div>
+        </div>
+
+        <!-- mobile histórico/detalhe -->
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:28px; overflow:hidden; width:390px; height:760px; box-shadow:0 20px 50px rgba(0,0,0,0.10); display:flex; flex-direction:column;">
+          <div style="height:56px; flex:none; display:flex; align-items:center; gap:10px; padding:0 16px; border-bottom:1px solid #E5E5E5;">
+            <button style="border:none; background:transparent; font-size:26px; color:#171717; width:34px; height:34px;">‹</button>
+            <div style="font-size:15px; font-weight:700;">Frequência</div>
+          </div>
+          <div style="flex:none; display:flex; border-bottom:1px solid #E5E5E5;">
+            <button onClick="{{ onTabHist }}" style="flex:1; padding:13px 0; border:none; background:transparent; font-family:inherit; font-size:13.5px; font-weight:600; color:{{ histTabColor }}; border-bottom:2px solid {{ histTabBorder }};">Histórico</button>
+            <button onClick="{{ onTabRel }}" style="flex:1; padding:13px 0; border:none; background:transparent; font-family:inherit; font-size:13.5px; font-weight:600; color:{{ relTabColor }}; border-bottom:2px solid {{ relTabBorder }};">Relatório</button>
+          </div>
+          <div style="flex:1; padding:16px; overflow:auto;">
+            <sc-if value="{{ showHist }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+                <sc-for list="{{ historico }}" as="h" hint-placeholder-count="5">
+                  <button onClick="{{ h.onSelect }}" style="width:100%; text-align:left; background:{{ h.bg }}; border:1px solid {{ h.border }}; border-radius:8px; padding:13px 15px; min-height:44px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                      <div style="font-size:13.5px; font-weight:600;">{{ h.nome }}</div>
+                      <div style="font-size:11.5px; color:#737373; white-space:nowrap;">{{ h.data }}</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:9px; margin-top:7px;">
+                      <div style="flex:1; height:5px; background:#F0F0F0; border-radius:3px; overflow:hidden;"><div style="height:100%; width:{{ h.pct }}%; background:{{ h.barColor }};"></div></div>
+                      <div style="font-size:11.5px; font-weight:600; color:#525252;">{{ h.resumo }}</div>
+                    </div>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="font-size:11.5px; font-weight:600; color:#A3A3A3; letter-spacing:.05em; text-transform:uppercase; margin-bottom:10px;">Detalhe · {{ detalhe.nome }}</div>
+              <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                <span style="width:7px; height:7px; border-radius:50%; background:#059669;"></span>
+                <div style="font-size:12px; font-weight:600; color:#065F46; text-transform:uppercase; letter-spacing:.03em;">Presentes · {{ detalhe.presentes.length }}</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:18px;">
+                <sc-for list="{{ detalhe.presentes }}" as="p" hint-placeholder-count="6">
+                  <div style="display:flex; align-items:center; gap:10px; padding:8px 11px; background:#ECFDF5; border-radius:8px;">
+                    <div style="width:26px; height:26px; border-radius:50%; background:#fff; color:#047857; font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ p.iniciais }}</div>
+                    <div style="font-size:13px; font-weight:500; color:#065F46;">{{ p.nome }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                <span style="width:7px; height:7px; border-radius:50%; background:#D97706;"></span>
+                <div style="font-size:12px; font-weight:600; color:#92400E; text-transform:uppercase; letter-spacing:.03em;">Faltantes · {{ detalhe.faltantes.length }}</div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <sc-for list="{{ detalhe.faltantes }}" as="f" hint-placeholder-count="2">
+                  <div style="display:flex; align-items:center; gap:10px; padding:8px 11px; background:#FFFBEB; border-radius:8px;">
+                    <div style="width:26px; height:26px; border-radius:50%; background:#fff; color:#92400E; font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ f.iniciais }}</div>
+                    <div style="font-size:13px; font-weight:500; color:#92400E;">{{ f.nome }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showRel }}" hint-placeholder-val="{{ false }}">
+              <select style="width:100%; padding:11px 13px; border-radius:8px; border:1px solid #D4D4D4; font-family:inherit; font-size:13.5px; background:#fff; margin-bottom:16px;">
+                <option>Todo o período</option><option>Últimos 30 dias</option><option>Últimos 90 dias</option>
+              </select>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <sc-for list="{{ relatorio }}" as="r" hint-placeholder-count="8">
+                  <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:12px 14px;">
+                    <div style="display:flex; align-items:center; gap:11px;">
+                      <div style="width:32px; height:32px; border-radius:50%; background:#EEF2FF; color:#4338CA; font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none;">{{ r.iniciais }}</div>
+                      <div style="flex:1; min-width:0;">
+                        <div style="font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ r.nome }}</div>
+                        <div style="font-size:11.5px; color:#737373; margin-top:1px;">{{ r.presencas }} de {{ r.total }} chamadas</div>
+                      </div>
+                      <div style="font-size:14px; font-weight:700; color:{{ r.pctColor }}; flex:none;">{{ r.pctLabel }}</div>
+                    </div>
+                    <div style="height:5px; background:#F0F0F0; border-radius:3px; overflow:hidden; margin-top:10px;"><div style="height:100%; width:{{ r.barWidth }}%; background:{{ r.barColor }};"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. NOTAS -->
+    <section>
+      <div style="font-size:19px; font-weight:600; margin-bottom:14px;">4 · Decisões de design</div>
+      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:14px; max-width:1100px;">
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:18px 20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:6px;">Presente é o padrão, falta é o toque</div>
+          <div style="font-size:13px; color:#525252; line-height:1.5;">O chip verde "Presente" já vem aplicado a todos. Marcar falta vira uma ação âmbar, deliberada — e a maioria dos casos exige zero toques.</div>
+        </div>
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:18px 20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:6px;">Âmbar para falta, nunca vermelho</div>
+          <div style="font-size:13px; color:#525252; line-height:1.5;">Faltar não é erro nem exclusão. Vermelho fica só em "Excluir chamada", a única ação destrutiva desta feature.</div>
+        </div>
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:18px 20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:6px;">Duas seções, não tags</div>
+          <div style="font-size:13px; color:#525252; line-height:1.5;">No detalhe fechado, presentes e faltantes ficam separados — a pergunta real é "quem faltou", e a resposta precisa ser lida de relance.</div>
+        </div>
+        <div style="background:#fff; border:1px solid #E5E5E5; border-radius:8px; padding:18px 20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:6px;">Relatório ordenado ao contrário</div>
+          <div style="font-size:13px; color:#525252; line-height:1.5;">Menor frequência primeiro. A tela existe para encontrar quem está se afastando, não para premiar quem sempre vem.</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1400, &quot;height&quot;: 900}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.ROSTER = [
+      { id: 'a1', nome: 'Gabriel Barbosa', perfil: 'Coordenador' },
+      { id: 'a2', nome: 'Pedro Alves', perfil: 'Membro' },
+      { id: 'a3', nome: 'Lucas Pereira', perfil: 'Membro' },
+      { id: 'a4', nome: 'Sônia Ramos', perfil: 'Membro' },
+      { id: 'a5', nome: 'Beatriz Rocha', perfil: 'Membro' },
+      { id: 'a6', nome: 'Marcos Vieira', perfil: 'Membro' },
+      { id: 'a7', nome: 'Júlia Antunes', perfil: 'Membro' },
+      { id: 'a8', nome: 'Helena Dias', perfil: 'Membro' },
+    ];
+    const status = {};
+    this.ROSTER.forEach(m => { status[m.id] = 'presente'; });
+    status.a4 = 'faltante';
+    this.state = {
+      scope: 'coord', tab: 'hist', periodo: 'todo', selectedList: 'l1',
+      listName: 'Chamada – Coroinhas – 21/08/2026',
+      status,
+    };
+  }
+  ini(nome) { return nome.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase(); }
+  renderVals() {
+    const s = this.state;
+    const roster = this.ROSTER.map(m => {
+      const presente = s.status[m.id] === 'presente';
+      return {
+        ...m, iniciais: this.ini(m.nome),
+        bg: presente ? '#F7FDFA' : '#FFFDF5',
+        border: presente ? '#A7F3D0' : '#FDE68A',
+        avatarBg: presente ? '#ECFDF5' : '#FFFBEB',
+        avatarColor: presente ? '#047857' : '#92400E',
+        nameColor: presente ? '#171717' : '#404040',
+        chipLabel: presente ? '✓ Presente' : 'Faltou',
+        chipBg: presente ? '#ECFDF5' : '#FFFBEB',
+        chipColor: presente ? '#047857' : '#92400E',
+        chipBorder: presente ? '#A7F3D0' : '#FDE68A',
+        onToggle: () => this.setState(st => ({ status: { ...st.status, [m.id]: st.status[m.id] === 'presente' ? 'faltante' : 'presente' } })),
+      };
+    });
+    const presentCount = roster.filter(m => s.status[m.id] === 'presente').length;
+    const absent = roster.filter(m => s.status[m.id] !== 'presente');
+
+    const histRaw = [
+      { id: 'l1', nome: 'Missa de domingo — 16/08', data: '16 ago', dataLong: 'Domingo, 16 de agosto · 08:00', grupo: 'Coroinhas', p: 9, t: 11 },
+      { id: 'l2', nome: 'Reunião mensal do grupo', data: '09 ago', dataLong: 'Domingo, 9 de agosto · 15:00', grupo: 'Coroinhas', p: 7, t: 11 },
+      { id: 'l3', nome: 'Missa de domingo — 09/08', data: '09 ago', dataLong: 'Domingo, 9 de agosto · 08:00', grupo: 'Coroinhas', p: 10, t: 11 },
+      { id: 'l4', nome: 'Ensaio de Corpus Christi', data: '02 ago', dataLong: 'Domingo, 2 de agosto · 16:00', grupo: 'Coroinhas', p: 6, t: 11 },
+      { id: 'l5', nome: 'Missa de domingo — 02/08', data: '02 ago', dataLong: 'Domingo, 2 de agosto · 08:00', grupo: 'Coroinhas', p: 11, t: 11 },
+    ];
+    const historico = histRaw.map(h => {
+      const pct = Math.round(h.p / h.t * 100);
+      const sel = h.id === s.selectedList;
+      return { ...h, pct, resumo: h.p + '/' + h.t, barColor: pct === 100 ? '#059669' : '#4F46E5', bg: sel ? '#EEF2FF' : '#fff', border: sel ? '#C7D2FE' : '#E5E5E5', onSelect: () => this.setState({ selectedList: h.id }) };
+    });
+    const sel = histRaw.find(h => h.id === s.selectedList) || histRaw[0];
+    const presentes = ['Gabriel Barbosa', 'Pedro Alves', 'Lucas Pereira', 'Beatriz Rocha', 'Marcos Vieira', 'Júlia Antunes', 'Helena Dias', 'Ana Rios', 'Tiago Melo'].slice(0, sel.p).map(n => ({ nome: n, iniciais: this.ini(n) }));
+    const faltantes = ['Sônia Ramos', 'Rafael Prado', 'Clara Nogueira', 'Ivo Salles', 'Nina Costa'].slice(0, sel.t - sel.p).map(n => ({ nome: n, iniciais: this.ini(n) }));
+
+    const relRaw = [
+      { nome: 'Sônia Ramos', presencas: 2, total: 8 },
+      { nome: 'Marcos Vieira', presencas: 4, total: 8 },
+      { nome: 'Beatriz Rocha', presencas: 5, total: 8 },
+      { nome: 'Helena Dias', presencas: 6, total: 8 },
+      { nome: 'Júlia Antunes', presencas: 7, total: 8 },
+      { nome: 'Pedro Alves', presencas: 7, total: 8 },
+      { nome: 'Gabriel Barbosa', presencas: 8, total: 8 },
+      { nome: 'Lucas Pereira', presencas: 0, total: 0 },
+    ];
+    const relatorio = relRaw.map(r => {
+      const semDados = r.total === 0;
+      const pct = semDados ? null : Math.round(r.presencas / r.total * 1000) / 10;
+      const color = semDados ? '#A3A3A3' : pct < 50 ? '#B45309' : pct < 80 ? '#525252' : '#047857';
+      return {
+        ...r, iniciais: this.ini(r.nome),
+        total: semDados ? '—' : r.total, presencas: semDados ? '—' : r.presencas,
+        pctLabel: semDados ? '—' : pct + '%', pctColor: color,
+        barWidth: semDados ? 0 : pct, barColor: semDados ? '#E5E5E5' : pct < 50 ? '#D97706' : pct < 80 ? '#4F46E5' : '#059669',
+      };
+    });
+
+    const periodos = [
+      { id: 'todo', label: 'Todo o período' },
+      { id: '30', label: 'Últimos 30 dias' },
+      { id: '90', label: 'Últimos 90 dias' },
+    ].map(p => ({ ...p, bg: s.periodo === p.id ? '#fff' : 'transparent', color: s.periodo === p.id ? '#171717' : '#737373', onPick: () => this.setState({ periodo: p.id }) }));
+
+    return {
+      roster, presentCount, totalCount: roster.length,
+      absentSummary: absent.length === 0 ? 'Todos presentes' : absent.length === 1 ? '1 falta registrada' : absent.length + ' faltas registradas',
+      listName: s.listName, onListName: e => this.setState({ listName: e.target.value }),
+      onAllPresent: () => { const st = {}; this.ROSTER.forEach(m => { st[m.id] = 'presente'; }); this.setState({ status: st }); },
+      needsGroupPick: s.scope === 'admin',
+      coordBg: s.scope === 'coord' ? '#4F46E5' : '#fff', coordColor: s.scope === 'coord' ? '#fff' : '#171717',
+      adminBg: s.scope === 'admin' ? '#4F46E5' : '#fff', adminColor: s.scope === 'admin' ? '#fff' : '#171717',
+      onScopeCoord: () => this.setState({ scope: 'coord' }), onScopeAdmin: () => this.setState({ scope: 'admin' }),
+      showHist: s.tab === 'hist', showRel: s.tab === 'rel',
+      histTabColor: s.tab === 'hist' ? '#171717' : '#A3A3A3', histTabBorder: s.tab === 'hist' ? '#4F46E5' : 'transparent',
+      relTabColor: s.tab === 'rel' ? '#171717' : '#A3A3A3', relTabBorder: s.tab === 'rel' ? '#4F46E5' : 'transparent',
+      onTabHist: () => this.setState({ tab: 'hist' }), onTabRel: () => this.setState({ tab: 'rel' }),
+      historico, detalhe: { ...sel, presentes, faltantes }, relatorio, periodos,
+      noop: () => {},
+    };
+  }
+}
+</script>
+</body>
+</html>

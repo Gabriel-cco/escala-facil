@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,7 @@ export default function AcessoPendentePage() {
           ⏳
         </div>
 
-        <h1 className="font-serif text-[24px] font-semibold text-ink">
+        <h1 className="text-[24px] font-semibold text-ink">
           Acesso ainda não configurado
         </h1>
 

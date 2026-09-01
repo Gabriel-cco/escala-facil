@@ -354,7 +354,7 @@ export default function AtribuicoesManager({
                   ✕
                 </button>
               </div>
-              <div className="mb-3.5 font-serif text-[19px] font-semibold text-ink">
+              <div className="mb-3.5 text-[19px] font-semibold text-ink">
                 {grupoNome} · {funcaoSheet?.nome}
               </div>
               <div className="ef-scroll flex flex-col gap-2 overflow-y-auto overscroll-contain">
@@ -423,7 +423,7 @@ export default function AtribuicoesManager({
             <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
               <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
               <div className="mb-1 text-[12px] tracking-[0.4px] text-muted">SOLICITAR TROCA</div>
-              <div className="mb-1 font-serif text-[19px] font-semibold text-ink">
+              <div className="mb-1 text-[19px] font-semibold text-ink">
                 {funcaoSwap?.nome}
               </div>
               <div className="mb-4 text-[13px] text-muted">

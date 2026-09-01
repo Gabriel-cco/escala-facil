@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import Link from "next/link";
@@ -86,7 +86,7 @@ export default function Header(props: HeaderProps) {
           >
             ‹
           </button>
-          <div className="font-serif text-[20px] font-semibold text-ink">
+          <div className="text-[20px] font-semibold text-ink">
             {props.title}
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function Header(props: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex flex-none items-center justify-between bg-screen px-5 pb-3.5 pt-4 md:hidden">
-      <div className="font-serif text-[28px] font-semibold text-ink">
+      <div className="text-[28px] font-semibold text-ink">
         {props.title}
       </div>
       <div className="flex items-center gap-1">

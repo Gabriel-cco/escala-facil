@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/current-user";
@@ -24,7 +24,7 @@ function cartao(titulo: string, valor: string | number, sub?: string) {
       <div className="text-[11.5px] font-semibold uppercase tracking-[1px] text-muted">
         {titulo}
       </div>
-      <div className="font-serif text-[20px] font-semibold leading-snug text-ink md:text-[26px]">
+      <div className="text-[20px] font-semibold leading-snug text-ink md:text-[26px]">
         {valor}
       </div>
       {sub && <div className="text-[11.5px] text-faint">{sub}</div>}

@@ -107,7 +107,7 @@ export default function EscalaEventoView({
     <div className="flex flex-col gap-4">
       <div className="rounded-[18px] border border-[#c9b98a] bg-paper px-[18px] py-4">
         <div className="mb-3">
-          <div className="font-serif text-[18px] font-semibold leading-tight text-ink">
+          <div className="text-[18px] font-semibold leading-tight text-ink">
             {eventName}
           </div>
           <div className="mt-0.5 text-[12.5px] text-muted">

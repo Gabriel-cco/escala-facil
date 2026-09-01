@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import localFont from "next/font/local";
-import { Newsreader } from "next/font/google";
 import AuthShell from "./components/shell/AuthShell";
 import LoadingScreen from "./components/LoadingScreen";
 import "./globals.css";
@@ -14,13 +13,6 @@ const satoshi = localFont({
   weight: "300 900",
 });
 
-// Newsreader para títulos de página (evoca a serifa do brasão paroquial).
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal"],
-});
 
 export const metadata: Metadata = {
   title: "Escala Fácil — Paróquia Santa Terezinha",
@@ -45,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${satoshi.variable} ${newsreader.variable} h-full`}>
+    <html lang="pt-BR" className={`${satoshi.variable} h-full`}>
       <body className="min-h-full font-sans">
         <Suspense fallback={<LoadingScreen />}>
           <AuthShell>{children}</AuthShell>

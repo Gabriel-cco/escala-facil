@@ -18,6 +18,7 @@ export type ShellUser = {
   nome: string;
   email: string;
   iniciais: string;
+  avatarUrl: string | null;
   perfil: "admin" | "coordinator" | "member" | null;
   accountId: string | null;
   groupId: string | null;
@@ -67,6 +68,7 @@ export default function AppShell({
     openMenu,
     closeMenu,
     userIniciais: user?.iniciais ?? "",
+    userAvatarUrl: user?.avatarUrl ?? null,
     userNome: user?.nome ?? "",
     accountId: user?.accountId ?? null,
     chrome,

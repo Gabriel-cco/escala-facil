@@ -12,7 +12,7 @@ export default async function PerfilPage() {
   const [{ data: userRow }, conta] = await Promise.all([
     supabase
       .from("users")
-      .select("id, name, email, birth_date")
+      .select("id, name, email, birth_date, avatar_url")
       .eq("auth_id", user.id)
       .single(),
     getCurrentAccount(),
@@ -29,6 +29,7 @@ export default async function PerfilPage() {
           nomeInicial={userRow.name ?? ""}
           email={userRow.email ?? ""}
           birthDateInicial={(userRow as { birth_date?: string | null }).birth_date ?? ""}
+          avatarUrlInicial={(userRow as { avatar_url?: string | null }).avatar_url ?? null}
           profile={conta?.profile ?? "member"}
         />
       </main>

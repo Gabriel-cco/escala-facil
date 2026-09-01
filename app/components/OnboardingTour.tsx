@@ -99,11 +99,12 @@ export function OnboardingTour({
       steps={steps}
       run={run}
       continuous
-      callback={handleEvent}
+      onEvent={handleEvent}
       options={{
         primaryColor: "#4F46E5",
         showProgress: true,
         skipBeacon: true,
+        closeButtonAction: "skip",
         buttons: ["back", "close", "primary", "skip"],
         zIndex: 10000,
       }}

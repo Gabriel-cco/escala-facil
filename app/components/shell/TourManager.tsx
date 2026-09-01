@@ -49,11 +49,12 @@ export default function TourManager({
           steps={steps}
           run={runTour}
           continuous
-          callback={handleEvent}
+          onEvent={handleEvent}
           options={{
             primaryColor: "#4F46E5",
             showProgress: true,
             skipBeacon: true,
+            closeButtonAction: "skip",
             buttons: ["back", "close", "primary", "skip"],
             zIndex: 10000,
           }}

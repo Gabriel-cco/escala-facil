@@ -1,21 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { resetTour } from "@/lib/tour";
+import Avatar from "@/app/components/Avatar";
+import { iniciais } from "@/lib/iniciais";
+
+async function resizeToJpeg(file: File, maxPx: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(maxPx / img.width, maxPx / img.height, 1);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("canvas vazio"))),
+        "image/jpeg",
+        0.85,
+      );
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
 
 export default function PerfilForm({
   userId,
   nomeInicial,
   email,
   birthDateInicial,
+  avatarUrlInicial,
   profile,
 }: {
   userId: string;
   nomeInicial: string;
   email: string;
   birthDateInicial: string;
+  avatarUrlInicial: string | null;
   profile: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
@@ -24,6 +52,12 @@ export default function PerfilForm({
   const [saindo, setSaindo] = useState(false);
   const [erro, setErro] = useState("");
   const [salvo, setSalvo] = useState(false);
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(avatarUrlInicial);
+  const [uploadando, setUploadando] = useState(false);
+  const [erroAvatar, setErroAvatar] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const router = useRouter();
 
   const alterado =
@@ -57,8 +91,94 @@ export default function PerfilForm({
     }
   }
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = "";
+    if (!file) return;
+
+    setErroAvatar("");
+
+    if (!file.type.startsWith("image/")) {
+      setErroAvatar("Selecione uma imagem (JPEG, PNG ou WebP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErroAvatar("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+
+    setUploadando(true);
+    try {
+      const blob = await resizeToJpeg(file, 300);
+      const supabase = createClient();
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(userId, blob, { contentType: "image/jpeg", upsert: true });
+
+      if (uploadError) {
+        setErroAvatar("Erro ao enviar foto: " + uploadError.message);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(userId);
+
+      // Adiciona timestamp para forçar re-fetch no browser após upsert
+      const urlFinal = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ avatar_url: urlFinal })
+        .eq("id", userId);
+
+      if (updateError) {
+        setErroAvatar("Erro ao salvar foto: " + updateError.message);
+        return;
+      }
+
+      setAvatarUrl(urlFinal);
+      router.refresh();
+    } catch {
+      setErroAvatar("Erro inesperado ao processar a imagem.");
+    } finally {
+      setUploadando(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5">
+      {/* Avatar */}
+      <div className="flex flex-col items-center gap-2 pb-1 pt-2">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadando}
+          aria-label="Alterar foto de perfil"
+          className="relative"
+        >
+          <Avatar url={avatarUrl} iniciais={iniciais(nome || nomeInicial)} size={80} />
+          <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[13px] text-white shadow">
+            {uploadando ? "…" : "✎"}
+          </span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        {erroAvatar && (
+          <p className="text-center text-[12.5px] text-danger">{erroAvatar}</p>
+        )}
+        {uploadando && (
+          <p className="text-center text-[12.5px] text-muted">Enviando foto…</p>
+        )}
+      </div>
+
       <div>
         <div className="mb-2 text-[12px] font-semibold text-muted">NOME</div>
         <input
@@ -110,7 +230,7 @@ export default function PerfilForm({
         </button>
       </div>
 
-      <div className="mt-4 border-t border-black/[0.07] pt-4 flex flex-col gap-3">
+      <div className="mt-4 flex flex-col gap-3 border-t border-black/[0.07] pt-4">
         <button
           onClick={() => {
             resetTour(profile);

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { ShellUser } from "./AppShell";
 import { ROTULO_PERFIL } from "./AppShell";
 import SeletorGrupo from "./SeletorGrupo";
+import Avatar from "@/app/components/Avatar";
 
 const ITENS_ADMIN = [
   { href: "/", label: "Início" },
@@ -225,9 +226,7 @@ export default function Sidebar({
 
       {/* Usuário + Sair */}
       <div className="flex items-center gap-[11px] border-t border-black/[0.07] pt-3.5">
-        <div className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary">
-          {user.iniciais || "··"}
-        </div>
+        <Avatar url={user.avatarUrl} iniciais={user.iniciais} size={38} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[13.5px] font-semibold text-ink">
             {user.nome}

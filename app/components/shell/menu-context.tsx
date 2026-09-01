@@ -15,6 +15,8 @@ type ShellContextValue = {
   closeMenu: () => void;
   /** Iniciais do usuário logado, para o avatar do header. */
   userIniciais: string;
+  /** URL da foto de perfil do usuário logado (null = sem foto). */
+  userAvatarUrl: string | null;
   /** Nome do usuário logado (para a saudação "Olá, ..."). */
   userNome: string;
   /** account.id do usuário logado (já buscado server-side no layout). */

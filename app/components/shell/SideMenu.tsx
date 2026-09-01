@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { ShellUser } from "./AppShell";
 import { ROTULO_PERFIL } from "./AppShell";
 import SeletorGrupo from "./SeletorGrupo";
+import Avatar from "@/app/components/Avatar";
 
 const OWNER_EMAIL = "gabrielbatista1551@gmail.com";
 
@@ -45,9 +46,7 @@ export default function SideMenu({
           <div className="mx-auto mb-4 h-1 w-[38px] rounded-full bg-black/20" />
 
           <div className="mb-2 flex items-center gap-3 border-b border-black/10 px-1 pb-4 pt-1.5">
-            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-primary-light text-[15px] font-semibold text-primary">
-              {user.iniciais || "··"}
-            </div>
+            <Avatar url={user.avatarUrl} iniciais={user.iniciais} size={46} />
             <div>
               <div className="text-[15px] font-semibold text-ink">
                 {user.nome}

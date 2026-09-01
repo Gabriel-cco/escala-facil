@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useShell } from "./menu-context";
 import NotificationBell from "./NotificationBell";
 import HelpTourButton from "./HelpTourButton";
+import Avatar from "@/app/components/Avatar";
 
 type HeaderProps =
   | { variant: "home" }
@@ -27,7 +28,7 @@ type HeaderProps =
  */
 export default function Header(props: HeaderProps) {
   const router = useRouter();
-  const { openMenu, userIniciais, setChrome } = useShell();
+  const { openMenu, userIniciais, userAvatarUrl, setChrome } = useShell();
 
   // Título exibido na topbar web conforme a variante.
   let chromeTitle = "";
@@ -66,12 +67,8 @@ export default function Header(props: HeaderProps) {
         <div className="flex items-center gap-1">
           <HelpTourButton />
           <NotificationBell />
-          <Link
-            href="/perfil"
-            aria-label="Meu Perfil"
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
-          >
-            {userIniciais || "··"}
+          <Link href="/perfil" aria-label="Meu Perfil">
+            <Avatar url={userAvatarUrl} iniciais={userIniciais} size={38} />
           </Link>
         </div>
       </header>
@@ -96,12 +93,8 @@ export default function Header(props: HeaderProps) {
         <div className="flex items-center gap-1">
           <HelpTourButton />
           <NotificationBell />
-          <Link
-            href="/perfil"
-            aria-label="Meu Perfil"
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
-          >
-            {userIniciais || "··"}
+          <Link href="/perfil" aria-label="Meu Perfil">
+            <Avatar url={userAvatarUrl} iniciais={userIniciais} size={38} />
           </Link>
         </div>
       </header>
@@ -115,12 +108,8 @@ export default function Header(props: HeaderProps) {
       </div>
       <div className="flex items-center gap-1">
         <NotificationBell />
-        <Link
-          href="/perfil"
-          aria-label="Meu Perfil"
-          className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary-light text-[13px] font-semibold text-primary"
-        >
-          {userIniciais || "··"}
+        <Link href="/perfil" aria-label="Meu Perfil">
+          <Avatar url={userAvatarUrl} iniciais={userIniciais} size={38} />
         </Link>
       </div>
     </header>

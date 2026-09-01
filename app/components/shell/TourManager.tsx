@@ -49,7 +49,7 @@ export default function TourManager({
           steps={steps}
           run={runTour}
           continuous
-          onEvent={handleEvent}
+          callback={handleEvent}
           options={{
             primaryColor: "#4F46E5",
             showProgress: true,

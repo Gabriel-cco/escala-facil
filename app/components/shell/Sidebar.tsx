@@ -92,13 +92,6 @@ function IconeNav({ href }: { href: string }) {
           <path d="M3.5 9.5h17M8 3.2v3.6M16 3.2v3.6" />
         </svg>
       );
-    case "/usuarios":
-      return (
-        <svg {...p}>
-          <circle cx="12" cy="8" r="3.4" />
-          <path d="M5.5 20c.5-3.6 3.2-5.6 6.5-5.6s6 2 6.5 5.6" />
-        </svg>
-      );
     case "/trocas":
       return (
         <svg {...p}>

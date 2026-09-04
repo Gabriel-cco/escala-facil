@@ -105,21 +105,12 @@ export default function EditarMembroForm({
       }
     }
 
-    // Sincronizar qualificações (delete-all + insert)
+    // Sincronizar qualificações via RPC (delete + insert em transação única)
     if (qualificacoes.length > 0) {
-      await supabase
-        .from("account_qualifications")
-        .delete()
-        .eq("account_id", accountId);
-
-      if (qualificacoesSel.length > 0) {
-        await supabase.from("account_qualifications").insert(
-          qualificacoesSel.map((qId) => ({
-            account_id: accountId,
-            qualification_id: qId,
-          }))
-        );
-      }
+      await supabase.rpc("sync_account_qualifications", {
+        p_account_id: accountId,
+        p_qualification_ids: qualificacoesSel,
+      });
     }
 
     if (currentAccountId)

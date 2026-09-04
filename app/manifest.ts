@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Organize as escalas de serviço da sua paróquia",
     start_url: "/",
     display: "standalone",
-    background_color: "#FAFAFA",
+    background_color: "#FAF6EC",
     theme_color: "#6B3521",
     orientation: "portrait-primary",
     icons: [

@@ -30,30 +30,146 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json() as {
-    assignmentId: string;
+    assignmentId?: string;
     eventId: string;
-    roleId: string;
+    roleId?: string;
+    ministerioId?: string;
     reason?: string;
   };
-  const { assignmentId, eventId, roleId, reason } = body;
-  if (!assignmentId || !eventId || !roleId) {
+  const { eventId, reason } = body;
+  if (!eventId) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
   }
 
-  // Valida que o evento não é passado
+  const hoje = new Date().toISOString().slice(0, 10);
+
   const { data: evento } = await admin
     .from("events")
     .select("id, name, date, group_id")
     .eq("id", eventId)
     .single();
   if (!evento) return NextResponse.json({ error: "Evento não encontrado" }, { status: 404 });
-
-  const hoje = new Date().toISOString().slice(0, 10);
   if (evento.date < hoje) {
     return NextResponse.json({ error: "Não é possível solicitar troca de evento já realizado" }, { status: 422 });
   }
 
-  // Valida que não existe solicitação pendente para esta atribuição
+  // ── TROCA MINISTERIAL ──────────────────────────────────────────────────────
+  if (body.ministerioId) {
+    const { ministerioId } = body;
+
+    if (me.profile === "admin") {
+      // Admin pode solicitar por qualquer ministério
+    } else if (me.profile === "coordinator") {
+      // Coordinator deve pertencer ao mesmo grupo do ministério
+      const [{ data: minRow }, { data: myAcc }] = await Promise.all([
+        admin.from("ministerios").select("group_id").eq("id", ministerioId).single(),
+        admin.from("accounts").select("group_id").eq("id", me.account_id).single(),
+      ]);
+      if (!minRow || minRow.group_id !== myAcc?.group_id) {
+        return NextResponse.json(
+          { error: "Este ministério não pertence ao seu grupo" },
+          { status: 403 }
+        );
+      }
+    } else {
+      // Membro: deve ser coordenador desse ministério específico
+      const { data: minCoord } = await admin
+        .from("ministerio_members")
+        .select("account_id")
+        .eq("account_id", me.account_id)
+        .eq("ministerio_id", ministerioId)
+        .eq("is_coordinator", true)
+        .maybeSingle();
+      if (!minCoord) {
+        return NextResponse.json(
+          { error: "Você não é coordenador deste ministério" },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Sem swap pendente para o mesmo evento + ministério
+    const { data: existente } = await admin
+      .from("swap_requests")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("ministerio_id", ministerioId)
+      .eq("status", "pending")
+      .maybeSingle();
+    if (existente) {
+      return NextResponse.json(
+        { error: "Já existe uma solicitação pendente para este evento e ministério" },
+        { status: 409 }
+      );
+    }
+
+    const { data: swap, error: swapErr } = await admin
+      .from("swap_requests")
+      .insert({
+        event_id: eventId,
+        ministerio_id: ministerioId,
+        requester_account_id: me.account_id,
+        reason: reason?.trim() || null,
+      })
+      .select("id")
+      .single();
+    if (swapErr || !swap) {
+      return NextResponse.json({ error: swapErr?.message ?? "Erro ao criar solicitação" }, { status: 500 });
+    }
+
+    // Notifica coordenadores de outros ministérios do grupo
+    const { data: outrosCoords } = await admin
+      .from("ministerio_members")
+      .select("account_id, ministerio:ministerios(group_id)")
+      .eq("is_coordinator", true)
+      .neq("ministerio_id", ministerioId)
+      .neq("account_id", me.account_id);
+
+    const outrosCoordsIds = (outrosCoords ?? [])
+      .filter((r) => {
+        const m = Array.isArray(r.ministerio) ? r.ministerio[0] : r.ministerio;
+        return (m as { group_id?: string } | null)?.group_id === evento.group_id;
+      })
+      .map((r) => r.account_id);
+
+    const { data: ministerioRow } = await admin
+      .from("ministerios")
+      .select("name")
+      .eq("id", ministerioId)
+      .single();
+    const ministerioNome = (ministerioRow as { name?: string } | null)?.name ?? "Ministério";
+    const dataLabel = rotuloData(evento.date);
+    const { data: requesterUser } = await admin.from("accounts").select("user:users(name)").eq("id", me.account_id).single();
+    const requesterName = (() => { const u = requesterUser?.user; return (Array.isArray(u) ? u[0] : u)?.name ?? "Coordenador"; })();
+
+    if (outrosCoordsIds.length > 0) {
+      await admin.from("notifications").insert(
+        outrosCoordsIds.map((accountId) => ({
+          account_id: accountId,
+          title: "Troca de ministério solicitada",
+          body: `${ministerioNome} precisa de cobertura em ${evento.name} — ${dataLabel}`,
+          type: "swap_request",
+          reference_type: "swap_request",
+          reference_id: swap.id,
+          sender_account_id: me.account_id,
+        }))
+      );
+      await sendPushToAccounts(outrosCoordsIds, {
+        title: "Troca de ministério",
+        body: `${requesterName} (${ministerioNome}) precisa de cobertura em ${dataLabel}`,
+        url: `/trocas`,
+      });
+    }
+
+    return NextResponse.json({ id: swap.id });
+  }
+
+  // ── TROCA INDIVIDUAL (role-based) ──────────────────────────────────────────
+  const { assignmentId, roleId } = body;
+  if (!assignmentId || !roleId) {
+    return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
+  }
+
   const { data: existente } = await admin
     .from("swap_requests")
     .select("id")
@@ -64,7 +180,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Já existe uma solicitação pendente para esta atribuição" }, { status: 409 });
   }
 
-  // Busca nome da função (+ qualificação exigida) e do solicitante
   const [{ data: role }, { data: requesterUser }] = await Promise.all([
     admin.from("roles").select("name, required_qualification_id").eq("id", roleId).single(),
     admin.from("accounts").select("user:users(name)").eq("id", me.account_id).single(),
@@ -75,7 +190,6 @@ export async function POST(request: NextRequest) {
     return (Array.isArray(u) ? u[0] : u)?.name ?? "Membro";
   })();
 
-  // Cria a solicitação
   const { data: swap, error: swapErr } = await admin
     .from("swap_requests")
     .insert({
@@ -87,12 +201,10 @@ export async function POST(request: NextRequest) {
     })
     .select("id")
     .single();
-
   if (swapErr || !swap) {
     return NextResponse.json({ error: swapErr?.message ?? "Erro ao criar solicitação" }, { status: 500 });
   }
 
-  // Membros elegíveis para receber a notificação (exceto o próprio solicitante)
   const { data: eligible } = await admin
     .from("accounts")
     .select("id")
@@ -103,7 +215,6 @@ export async function POST(request: NextRequest) {
 
   let eligibleIds = (eligible ?? []).map((a) => a.id);
 
-  // Filtrar por qualificação exigida pela função
   const requiredQualId = (role as { required_qualification_id?: string | null } | null)?.required_qualification_id;
   if (requiredQualId) {
     const { data: qualified } = await admin
@@ -116,17 +227,17 @@ export async function POST(request: NextRequest) {
   const dataLabel = rotuloData(evento.date);
 
   if (eligibleIds.length > 0) {
-    const notificationRows = eligibleIds.map((accountId) => ({
-      account_id: accountId,
-      title: "Solicitação de troca",
-      body: `${requesterName} precisa de alguém para ${roleName} em ${dataLabel}`,
-      type: "swap_request",
-      reference_type: "swap_request",
-      reference_id: swap.id,
-      sender_account_id: me.account_id,
-    }));
-    await admin.from("notifications").insert(notificationRows);
-
+    await admin.from("notifications").insert(
+      eligibleIds.map((accountId) => ({
+        account_id: accountId,
+        title: "Solicitação de troca",
+        body: `${requesterName} precisa de alguém para ${roleName} em ${dataLabel}`,
+        type: "swap_request",
+        reference_type: "swap_request",
+        reference_id: swap.id,
+        sender_account_id: me.account_id,
+      }))
+    );
     await sendPushToAccounts(eligibleIds, {
       title: "Solicitação de troca",
       body: `${requesterName} precisa de alguém para ${roleName} em ${dataLabel}`,

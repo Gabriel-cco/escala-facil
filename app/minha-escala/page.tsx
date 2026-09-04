@@ -8,6 +8,7 @@ import { LiturgicalDot } from "../components/LiturgicalDot";
 import { rotuloData } from "@/lib/datas";
 import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import SolicitarTrocaButton from "./SolicitarTrocaButton";
+import SolicitarTrocaMinisterioButton from "./SolicitarTrocaMinisterioButton";
 import ScrollToProximoEvento from "./ScrollToProximoEvento";
 
 const MESES = [
@@ -100,7 +101,8 @@ export default async function MinhaEscalaPage({
   const { data: rawEventos } = await supabase
     .from("events")
     .select(`
-      id, name, date, time, liturgical_name, liturgical_color,
+      id, name, date, time, liturgical_name, liturgical_color, ministerio_id,
+      ministerio:ministerios(id, name),
       assignments(
         id,
         account_id,
@@ -123,6 +125,8 @@ export default async function MinhaEscalaPage({
   type Evento = {
     id: string; name: string; date: string; time: string;
     liturgical_name: string | null; liturgical_color: string | null;
+    ministerio_id: string | null;
+    ministerio: { id: string; name: string } | { id: string; name: string }[] | null;
     assignments: Assignment[] | null;
   };
 
@@ -151,6 +155,35 @@ export default async function MinhaEscalaPage({
   const ehCoordMinisterio = !!coordRow;
   const atribuicoesComTrocaPendente = new Set(
     (trocasPendentes ?? []).map((t) => t.assignment_id)
+  );
+
+  // Ministérios que este membro coordena
+  const { data: meusMinisteriosRows } = ehCoordMinisterio
+    ? await admin
+        .from("ministerio_members")
+        .select("ministerio_id, ministerio:ministerios(id, name)")
+        .eq("account_id", accountId)
+        .eq("is_coordinator", true)
+    : { data: [] };
+
+  type MinisterioCoord = { id: string; name: string };
+  const meusMinisterios: MinisterioCoord[] = (meusMinisteriosRows ?? []).map((r) => {
+    const m = Array.isArray(r.ministerio) ? r.ministerio[0] : r.ministerio;
+    return m as MinisterioCoord;
+  }).filter(Boolean);
+  const meusMinisteriosIds = new Set(meusMinisterios.map((m) => m.id));
+
+  // Trocas ministeriais pendentes nos meus ministérios
+  const meusMinisteriosIdsArr = [...meusMinisteriosIds];
+  const { data: trocasMinPendentes } = meusMinisteriosIdsArr.length > 0
+    ? await admin
+        .from("swap_requests")
+        .select("event_id")
+        .in("ministerio_id", meusMinisteriosIdsArr)
+        .eq("status", "pending")
+    : { data: [] };
+  const eventosComTrocaMinPendente = new Set(
+    (trocasMinPendentes ?? []).map((t) => t.event_id)
   );
 
   const membroNome = userRow?.name ?? "Membro";
@@ -306,6 +339,24 @@ export default async function MinhaEscalaPage({
                           roleName={myRole?.name ?? "Função"}
                           dataLabel={rotuloData(evento.date)}
                           jaPendente={atribuicoesComTrocaPendente.has(minhaAtribuicao.id)}
+                        />
+                      </div>
+                    );
+                  })()}
+
+                  {(() => {
+                    const minObj = Array.isArray(evento.ministerio) ? evento.ministerio[0] : evento.ministerio;
+                    const minId = minObj?.id ?? evento.ministerio_id;
+                    if (!minId || !meusMinisteriosIds.has(minId) || evento.date < hoje) return null;
+                    const minNome = minObj?.name ?? meusMinisterios.find((m) => m.id === minId)?.name ?? "Ministério";
+                    return (
+                      <div className="mt-3 flex justify-end border-t border-black/[0.06] pt-3">
+                        <SolicitarTrocaMinisterioButton
+                          eventId={evento.id}
+                          ministerioId={minId}
+                          ministerioNome={minNome}
+                          dataLabel={rotuloData(evento.date)}
+                          jaPendente={eventosComTrocaMinPendente.has(evento.id)}
                         />
                       </div>
                     );

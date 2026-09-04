@@ -7,9 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 
 type SwapItem = {
   id: string;
-  assignmentId: string;
+  assignmentId: string | null;
   eventId: string;
-  roleId: string;
+  roleId: string | null;
+  ministerioId: string | null;
+  ministerioNome: string | null;
   requesterAccountId: string;
   accepterAccountId: string | null;
   status: "pending" | "accepted" | "cancelled";
@@ -20,6 +22,7 @@ type SwapItem = {
   eventDate: string;
   dataLabel: string;
   roleName: string;
+  isMinisterioSwap: boolean;
   requesterName: string;
   accepterName: string | null;
   isOwn: boolean;
@@ -43,11 +46,13 @@ function SwapCard({
   onAccept,
   onCancel,
   busy,
+  canCancel,
 }: {
   swap: SwapItem;
   onAccept: (id: string) => void;
   onCancel: (id: string) => void;
-  busy: string | null; // id do swap em operação
+  busy: string | null;
+  canCancel: boolean;
 }) {
   const isBusy = busy === swap.id;
 
@@ -60,7 +65,14 @@ function SwapCard({
             <span className="text-[12px] text-muted">·</span>
             <span className="text-[13px] text-muted">{swap.dataLabel}</span>
           </div>
-          <div className="mt-0.5 text-[13px] text-muted">{swap.roleName}</div>
+          <div className="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted">
+        {swap.isMinisterioSwap && (
+          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+            ministério
+          </span>
+        )}
+        {swap.roleName}
+      </div>
         </div>
         <span className="flex-none text-[11.5px] text-faint">{tempoRelativo(swap.createdAt)}</span>
       </div>
@@ -92,7 +104,7 @@ function SwapCard({
               {isBusy ? "Aceitando..." : "Aceitar"}
             </button>
           )}
-          {swap.isOwn && (
+          {canCancel && (
             <button
               onClick={() => onCancel(swap.id)}
               disabled={isBusy}
@@ -103,7 +115,9 @@ function SwapCard({
           )}
           {!swap.canAccept && !swap.isOwn && (
             <span className="text-[12.5px] text-faint italic">
-              Você já está escalado neste evento
+              {swap.isMinisterioSwap
+                ? "Você não coordena nenhum ministério elegível"
+                : "Você já está escalado neste evento"}
             </span>
           )}
         </div>
@@ -274,6 +288,7 @@ export default function TrocasCliente({
               onAccept={accept}
               onCancel={cancel}
               busy={busy}
+              canCancel={s.isOwn || profile === "admin" || profile === "coordinator"}
             />
           ))}
         </div>

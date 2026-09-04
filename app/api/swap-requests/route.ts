@@ -13,21 +13,7 @@ export async function POST(request: NextRequest) {
   const me = pRows?.[0] as { account_id: string; profile: string } | undefined;
   if (!me) return NextResponse.json({ error: "Account not found" }, { status: 403 });
 
-  // Apenas coordenadores de ministério podem solicitar trocas
   const admin = createAdminClient();
-  const { data: coordCheck } = await admin
-    .from("ministerio_members")
-    .select("account_id")
-    .eq("account_id", me.account_id)
-    .eq("is_coordinator", true)
-    .limit(1)
-    .maybeSingle();
-  if (!coordCheck) {
-    return NextResponse.json(
-      { error: "Apenas coordenadores de ministério podem solicitar trocas" },
-      { status: 403 }
-    );
-  }
 
   const body = await request.json() as {
     assignmentId?: string;

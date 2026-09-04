@@ -326,7 +326,7 @@ export default async function MinhaEscalaPage({
                     </p>
                   )}
 
-                  {euEstouEscalado && minhaAtribuicao && evento.date >= hoje && ehCoordMinisterio && (() => {
+                  {euEstouEscalado && minhaAtribuicao && evento.date >= hoje && (() => {
                     const myRole = Array.isArray(minhaAtribuicao.role)
                       ? minhaAtribuicao.role[0]
                       : minhaAtribuicao.role;

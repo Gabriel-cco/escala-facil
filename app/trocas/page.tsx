@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import Header from "@/app/components/shell/Header";
 import TrocasCliente from "./TrocasCliente";
-import SolicitarTrocaMinisterioAdminButton from "./SolicitarTrocaMinisterioAdminButton";
+import SolicitarTrocaAdminButton from "./SolicitarTrocaAdminButton";
 import { rotuloData } from "@/lib/datas";
 import { getCurrentAccount } from "@/lib/current-user";
 import { getActiveGroupId } from "@/lib/active-group-server";
@@ -64,14 +64,12 @@ export default async function TrocasPage() {
     return (data ?? []) as unknown[];
   }
 
-  const [pendingRows, resolvedRows, myAssignmentResult, meusMinCoordRows] = await Promise.all([
+  const [pendingRows, resolvedRows, meusMinCoordRows] = await Promise.all([
     fetchSwaps(["pending"], false),
     fetchSwaps(["accepted", "cancelled"], false),
-    admin.from("assignments").select("event_id").eq("account_id", accountId),
     admin.from("ministerio_members").select("ministerio_id").eq("account_id", accountId).eq("is_coordinator", true),
   ]);
 
-  const myEventIds = new Set((myAssignmentResult.data ?? []).map((a) => a.event_id));
   const meusMinCoordIds = new Set((meusMinCoordRows.data ?? []).map((r) => r.ministerio_id));
   const hoje = new Date().toISOString().slice(0, 10);
 
@@ -89,7 +87,6 @@ export default async function TrocasPage() {
         [...meusMinCoordIds].some((mid) => mid !== r.ministerio_id)
       : r.status === "pending" &&
         r.requester_account_id !== accountId &&
-        !myEventIds.has(r.event_id) &&
         (evt?.date ?? "") >= hoje;
 
     return {
@@ -129,7 +126,7 @@ export default async function TrocasPage() {
       />
       {(profile === "admin" || profile === "coordinator") && groupId && (
         <div className="px-[18px] pt-3 md:p-0 md:pb-2">
-          <SolicitarTrocaMinisterioAdminButton groupId={groupId} />
+          <SolicitarTrocaAdminButton groupId={groupId} />
         </div>
       )}
       <TrocasCliente

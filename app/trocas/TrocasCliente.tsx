@@ -113,11 +113,9 @@ function SwapCard({
               {isBusy ? "..." : "Cancelar"}
             </button>
           )}
-          {!swap.canAccept && !swap.isOwn && (
+          {!swap.canAccept && !swap.isOwn && swap.isMinisterioSwap && (
             <span className="text-[12.5px] text-faint italic">
-              {swap.isMinisterioSwap
-                ? "Você não coordena nenhum ministério elegível"
-                : "Você já está escalado neste evento"}
+              Você não coordena nenhum ministério elegível
             </span>
           )}
         </div>

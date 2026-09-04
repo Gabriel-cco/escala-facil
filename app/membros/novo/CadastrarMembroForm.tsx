@@ -191,34 +191,40 @@ export default function CadastrarMembroForm({
         </p>
       )}
 
-      {ministerios.length > 0 && (
+      {!isAdmin && grupoIdFixo && (
         <div>
           <div className="mb-2.5 text-[12px] font-semibold text-muted">
             MINISTÉRIOS (OPCIONAL)
           </div>
-          <div className="flex flex-col gap-2">
-            {ministerios.map((m) => {
-              const marcado = ministeriosSel.includes(m.id);
-              return (
-                <label
-                  key={m.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-black/10 px-3.5 py-2.5 hover:bg-surface"
-                >
-                  <input
-                    type="checkbox"
-                    checked={marcado}
-                    onChange={() =>
-                      setMinisteriosSel((prev) =>
-                        marcado ? prev.filter((id) => id !== m.id) : [...prev, m.id]
-                      )
-                    }
-                    className="h-4 w-4 accent-primary"
-                  />
-                  <span className="text-[14px] text-ink">{m.name}</span>
-                </label>
-              );
-            })}
-          </div>
+          {ministerios.length === 0 ? (
+            <p className="text-[13px] text-muted">
+              Nenhum ministério cadastrado para este grupo.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {ministerios.map((m) => {
+                const marcado = ministeriosSel.includes(m.id);
+                return (
+                  <label
+                    key={m.id}
+                    className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-black/10 px-3.5 py-2.5 hover:bg-surface"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      onChange={() =>
+                        setMinisteriosSel((prev) =>
+                          marcado ? prev.filter((id) => id !== m.id) : [...prev, m.id]
+                        )
+                      }
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <span className="text-[14px] text-ink">{m.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

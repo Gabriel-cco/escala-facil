@@ -14,6 +14,7 @@ const ITENS_ADMIN = [
   { href: "/grupos", label: "Grupos" },
   { href: "/membros", label: "Membros" },
   { href: "/funcoes", label: "Funções" },
+  { href: "/ministerios", label: "Ministérios" },
   { href: "/eventos", label: "Eventos" },
   { href: "/trocas", label: "Trocas" },
   { href: "/notificacoes", label: "Notificações" },
@@ -24,6 +25,7 @@ const ITENS_COORDINATOR = [
   { href: "/", label: "Início" },
   { href: "/membros", label: "Membros" },
   { href: "/funcoes", label: "Funções" },
+  { href: "/ministerios", label: "Ministérios" },
   { href: "/eventos", label: "Eventos" },
   { href: "/trocas", label: "Trocas" },
   { href: "/notificacoes", label: "Notificações" },
@@ -111,6 +113,14 @@ function IconeNav({ href }: { href: string }) {
           <rect x="3" y="5.5" width="18" height="13" rx="2" />
           <circle cx="8.5" cy="10.5" r="2" />
           <path d="M13 10.5h4.5M13 13.5h3" />
+        </svg>
+      );
+    case "/ministerios":
+      return (
+        <svg {...p}>
+          <path d="M9 18V5l12-2v13" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="16" r="3" />
         </svg>
       );
     case "/relatorio-uso":

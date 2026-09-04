@@ -1,18 +1,13 @@
-// TEMPORÁRIO: acesso restrito a gabrielbatista1551@gmail.com.
-// Revisitar quando decidirmos como abrir gestão de ministérios para outros coordenadores.
-
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthUser } from "@/lib/current-user";
+import { getCurrentAccount } from "@/lib/current-user";
 import { getActiveGroupId } from "@/lib/active-group-server";
 import Header from "@/app/components/shell/Header";
 import MinisteriosManager from "./MinisteriosManager";
 
-const OWNER_EMAIL = "gabrielbatista1551@gmail.com";
-
 export default async function MinisteriosPage() {
-  const authUser = await getAuthUser();
-  if (!authUser || authUser.email !== OWNER_EMAIL) {
+  const conta = await getCurrentAccount();
+  if (!conta || (conta.profile !== "admin" && conta.profile !== "coordinator")) {
     redirect("/eventos");
   }
 

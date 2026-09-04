@@ -5,7 +5,7 @@ import { rotuloData, rotuloHora, rotuloMes, chaveMes } from "@/lib/datas";
 import DeleteEventoButton from "./DeleteEventoButton";
 import CalendarioEventos, { type EventoCal } from "./CalendarioEventos";
 import { LiturgicalDot } from "../components/LiturgicalDot";
-import { getCurrentAccount, getAuthUser } from "@/lib/current-user";
+import { getCurrentAccount } from "@/lib/current-user";
 import ScrollToEvento from "./ScrollToEvento";
 import MembroSelect from "./MembroSelect";
 import EventosHeader from "./EventosHeader";
@@ -37,11 +37,6 @@ export default async function EventosPage({
   const perfil = conta?.profile;
   const accountIdLogado = conta?.account_id ?? null;
   const podeGerenciar = perfil === "admin" || perfil === "coordinator";
-
-  // TEMPORÁRIO: link "Gerenciar ministérios" visível só para o dono da plataforma.
-  // Revisitar quando decidirmos como abrir essa capacidade para outros coordenadores.
-  const authUser = await getAuthUser();
-  const podeGerenciarMinisterios = authUser?.email === "gabrielbatista1551@gmail.com";
 
   let eventosQuery = supabase
     .from("events")
@@ -375,26 +370,6 @@ export default async function EventosPage({
     <>
       <EventosHeader podeGerenciar={podeGerenciar} />
       <main className="flex flex-1 flex-col gap-3 px-[18px] pb-6 pt-0.5 md:gap-4 md:p-0">
-        {/* TEMPORÁRIO: visível só para gabrielbatista1551@gmail.com */}
-        {podeGerenciarMinisterios && (
-          <>
-            <Link
-              href="/ministerios"
-              className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink-soft md:hidden"
-            >
-              Gerenciar ministérios
-            </Link>
-            <div className="hidden md:flex md:justify-end">
-              <Link
-                href="/ministerios"
-                className="rounded-[11px] border border-black/10 px-4 py-2.5 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-black/[0.03]"
-              >
-                Gerenciar ministérios
-              </Link>
-            </div>
-          </>
-        )}
-
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
         )}

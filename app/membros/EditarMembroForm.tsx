@@ -28,6 +28,7 @@ export default function EditarMembroForm({
   currentAccountId,
   qualificacoes = [],
   qualificacoesAtuais = [],
+  ministeriosDele = [],
 }: {
   accountId: string;
   userId: string;
@@ -42,6 +43,7 @@ export default function EditarMembroForm({
   currentAccountId?: string;
   qualificacoes?: Qualificacao[];
   qualificacoesAtuais?: string[];
+  ministeriosDele?: string[];
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
@@ -256,6 +258,15 @@ export default function EditarMembroForm({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {ministeriosDele.length > 0 && (
+        <div>
+          <div className="mb-2 text-[12px] font-semibold text-muted">
+            MINISTÉRIOS
+          </div>
+          <p className="text-[14px] text-ink">{ministeriosDele.join(", ")}</p>
         </div>
       )}
 

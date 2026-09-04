@@ -27,7 +27,7 @@ export default async function EditarMembroModal({
   const isAdmin = conta?.profile === "admin";
   const groupId = account.group_id;
 
-  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult] =
+  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult, ministeriosResult] =
     await Promise.all([
       isAdmin
         ? supabase.from("groups").select("id, name").eq("active", true).order("name")
@@ -38,7 +38,15 @@ export default async function EditarMembroModal({
       groupId
         ? supabase.from("account_qualifications").select("qualification_id").eq("account_id", id)
         : Promise.resolve({ data: [] }),
+      supabase
+        .from("ministerio_members")
+        .select("ministerio:ministerios(id, name)")
+        .eq("account_id", id),
     ]);
+
+  const ministeriosDele = (ministeriosResult.data ?? [])
+    .map((r) => (r.ministerio as unknown as { id: string; name: string } | null)?.name)
+    .filter((n): n is string => !!n);
 
   return (
     <Modal title="Editar pessoa">
@@ -56,6 +64,7 @@ export default async function EditarMembroModal({
         currentAccountId={conta?.account_id}
         qualificacoes={qualificacoesResult.data ?? []}
         qualificacoesAtuais={(qualificacoesAtuaisResult.data ?? []).map((r) => (r as { qualification_id: string }).qualification_id)}
+        ministeriosDele={ministeriosDele}
       />
     </Modal>
   );

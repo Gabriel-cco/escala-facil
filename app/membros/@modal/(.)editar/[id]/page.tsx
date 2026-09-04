@@ -45,7 +45,11 @@ export default async function EditarMembroModal({
     ]);
 
   const ministeriosDele = (ministeriosResult.data ?? [])
-    .map((r) => (r.ministerio as unknown as { id: string; name: string } | null)?.name)
+    .map((r) => {
+      const min = r.ministerio;
+      const obj = (Array.isArray(min) ? min[0] : min) as { name?: string } | null;
+      return obj?.name;
+    })
     .filter((n): n is string => !!n);
 
   return (

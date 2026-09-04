@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { criarMembroAction } from "./actions";
 
 type Grupo = { id: string; name: string };
@@ -33,7 +34,20 @@ export default function CadastrarMembroForm({
   const [profile, setProfile] = useState("member");
   const [grupoId, setGrupoId] = useState(isAdmin ? "" : (grupoIdFixo ?? ""));
   const [ministeriosSel, setMinisteriosSel] = useState<string[]>([]);
+  const [ministeriosDinamicos, setMinisteriosDinamicos] = useState<Ministerio[]>([]);
   const [enviarBoasVindas, setEnviarBoasVindas] = useState(true);
+
+  async function carregarMinisteriosDoGrupo(gId: string) {
+    setMinisteriosSel([]);
+    if (!gId) { setMinisteriosDinamicos([]); return; }
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("ministerios")
+      .select("id, name")
+      .eq("group_id", gId)
+      .order("name");
+    setMinisteriosDinamicos(data ?? []);
+  }
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -163,7 +177,7 @@ export default function CadastrarMembroForm({
             <div className="relative">
               <select
                 value={grupoId}
-                onChange={(e) => setGrupoId(e.target.value)}
+                onChange={(e) => { setGrupoId(e.target.value); carregarMinisteriosDoGrupo(e.target.value); }}
                 className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${
                   grupoId ? "text-ink" : "text-muted"
                 }`}
@@ -191,18 +205,18 @@ export default function CadastrarMembroForm({
         </p>
       )}
 
-      {!isAdmin && grupoIdFixo && (
+      {((!isAdmin && grupoIdFixo) || (isAdmin && grupoId && precisaGrupo)) && (
         <div>
           <div className="mb-2.5 text-[12px] font-semibold text-muted">
             MINISTÉRIOS (OPCIONAL)
           </div>
-          {ministerios.length === 0 ? (
+          {(isAdmin ? ministeriosDinamicos : ministerios).length === 0 ? (
             <p className="text-[13px] text-muted">
               Nenhum ministério cadastrado para este grupo.
             </p>
           ) : (
             <div className="flex flex-col gap-2">
-              {ministerios.map((m) => {
+              {(isAdmin ? ministeriosDinamicos : ministerios).map((m) => {
                 const marcado = ministeriosSel.includes(m.id);
                 return (
                   <label

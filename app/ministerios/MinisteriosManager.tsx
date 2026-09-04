@@ -11,6 +11,7 @@ type DadosMinisterio = {
   candidatos: MembroItem[];
   carregando: boolean;
   candidatoSel: string;
+  erroPanel: string;
 };
 
 const iconeLapis = (
@@ -68,7 +69,7 @@ export default function MinisteriosManager({
   async function carregarMembros(ministerioId: string) {
     setDados((prev) => ({
       ...prev,
-      [ministerioId]: { membros: [], candidatos: [], carregando: true, candidatoSel: "" },
+      [ministerioId]: { membros: [], candidatos: [], carregando: true, candidatoSel: "", erroPanel: "" },
     }));
 
     const supabase = createClient();
@@ -111,6 +112,7 @@ export default function MinisteriosManager({
         candidatos,
         carregando: false,
         candidatoSel: candidatos[0]?.accountId ?? "",
+        erroPanel: prev[ministerioId]?.erroPanel ?? "",
       },
     }));
   }
@@ -133,7 +135,10 @@ export default function MinisteriosManager({
       .insert({ ministerio_id: ministerioId, account_id: accountId });
     setAdicionando(null);
     if (error) {
-      setErro("Erro ao adicionar: " + error.message);
+      setDados((prev) => ({
+        ...prev,
+        [ministerioId]: { ...prev[ministerioId], erroPanel: "Erro ao adicionar: " + error.message },
+      }));
       return;
     }
     await carregarMembros(ministerioId);
@@ -144,12 +149,19 @@ export default function MinisteriosManager({
     if (removendo) return;
     setRemovendo(accountId);
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from("ministerio_members")
       .delete()
       .eq("ministerio_id", ministerioId)
       .eq("account_id", accountId);
     setRemovendo(null);
+    if (error) {
+      setDados((prev) => ({
+        ...prev,
+        [ministerioId]: { ...prev[ministerioId], erroPanel: "Erro ao remover: " + error.message },
+      }));
+      return;
+    }
     await carregarMembros(ministerioId);
     router.refresh();
   }
@@ -377,6 +389,9 @@ export default function MinisteriosManager({
                           Todos os membros já estão vinculados.
                         </p>
                       )
+                    )}
+                    {d.erroPanel && (
+                      <p className="mt-1.5 text-[11.5px] text-danger">{d.erroPanel}</p>
                     )}
                   </div>
                 )}

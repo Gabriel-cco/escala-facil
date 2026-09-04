@@ -7,6 +7,8 @@ import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 type Qualificacao = { id: string; name: string };
+type MinisterioVinculado = { ministerio_id: string; name: string };
+type MinisterioDisponivel = { id: string; name: string };
 
 const PERFIS = [
   { value: "member", label: "Membro" },
@@ -28,7 +30,8 @@ export default function EditarMembroForm({
   currentAccountId,
   qualificacoes = [],
   qualificacoesAtuais = [],
-  ministeriosDele = [],
+  ministeriosVinculados = [],
+  ministeriosDisponiveis,
 }: {
   accountId: string;
   userId: string;
@@ -43,7 +46,8 @@ export default function EditarMembroForm({
   currentAccountId?: string;
   qualificacoes?: Qualificacao[];
   qualificacoesAtuais?: string[];
-  ministeriosDele?: string[];
+  ministeriosVinculados?: MinisterioVinculado[];
+  ministeriosDisponiveis?: MinisterioDisponivel[];
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
@@ -52,6 +56,20 @@ export default function EditarMembroForm({
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
   const [profile, setProfile] = useState(perfilInicial);
   const [qualificacoesSel, setQualificacoesSel] = useState<string[]>(qualificacoesAtuais);
+
+  const [vinculados, setVinculados] = useState<MinisterioVinculado[]>(ministeriosVinculados);
+  const [candidatoSel, setCandidatoSel] = useState<string>(() => {
+    const ids = new Set(ministeriosVinculados.map((v) => v.ministerio_id));
+    return (ministeriosDisponiveis ?? []).find((d) => !ids.has(d.id))?.id ?? "";
+  });
+  const [adicionandoMin, setAdicionandoMin] = useState(false);
+  const [removendoMin, setRemovendoMin] = useState<string | null>(null);
+  const [erroMin, setErroMin] = useState("");
+
+  const candidatos = (ministeriosDisponiveis ?? []).filter(
+    (d) => !vinculados.some((v) => v.ministerio_id === d.id)
+  );
+
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const router = useRouter();
@@ -68,6 +86,47 @@ export default function EditarMembroForm({
     setQualificacoesSel((prev) =>
       prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
     );
+  }
+
+  async function adicionarMinisterio() {
+    if (!candidatoSel || adicionandoMin) return;
+    setAdicionandoMin(true);
+    setErroMin("");
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("ministerio_members")
+      .insert({ ministerio_id: candidatoSel, account_id: accountId });
+    setAdicionandoMin(false);
+    if (error) { setErroMin("Erro ao adicionar: " + error.message); return; }
+    const nome = (ministeriosDisponiveis ?? []).find((d) => d.id === candidatoSel)?.name ?? "";
+    const novosVinculados = [...vinculados, { ministerio_id: candidatoSel, name: nome }];
+    setVinculados(novosVinculados);
+    const novosCandidatos = (ministeriosDisponiveis ?? []).filter(
+      (d) => !novosVinculados.some((v) => v.ministerio_id === d.id)
+    );
+    setCandidatoSel(novosCandidatos[0]?.id ?? "");
+  }
+
+  async function removerMinisterio(ministerioId: string) {
+    if (removendoMin) return;
+    setRemovendoMin(ministerioId);
+    setErroMin("");
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("ministerio_members")
+      .delete()
+      .eq("ministerio_id", ministerioId)
+      .eq("account_id", accountId);
+    setRemovendoMin(null);
+    if (error) { setErroMin("Erro ao remover: " + error.message); return; }
+    const novosVinculados = vinculados.filter((v) => v.ministerio_id !== ministerioId);
+    setVinculados(novosVinculados);
+    if (!candidatoSel) {
+      const novosCandidatos = (ministeriosDisponiveis ?? []).filter(
+        (d) => !novosVinculados.some((v) => v.ministerio_id === d.id)
+      );
+      setCandidatoSel(novosCandidatos[0]?.id ?? "");
+    }
   }
 
   async function salvar() {
@@ -261,12 +320,58 @@ export default function EditarMembroForm({
         </div>
       )}
 
-      {ministeriosDele.length > 0 && (
+      {ministeriosDisponiveis !== undefined && (
         <div>
-          <div className="mb-2 text-[12px] font-semibold text-muted">
-            MINISTÉRIOS
+          <div className="mb-2.5 text-[12px] font-semibold text-muted">MINISTÉRIOS</div>
+          <div className="flex flex-col gap-1">
+            {vinculados.length === 0 && (
+              <p className="text-[13px] text-muted">Nenhum ministério vinculado.</p>
+            )}
+            {vinculados.map((v) => (
+              <div
+                key={v.ministerio_id}
+                className="flex items-center justify-between rounded-[12px] border border-black/10 px-3.5 py-2.5"
+              >
+                <span className="text-[14px] text-ink">{v.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removerMinisterio(v.ministerio_id)}
+                  disabled={removendoMin === v.ministerio_id}
+                  className="text-[12px] font-medium text-danger disabled:opacity-50"
+                >
+                  {removendoMin === v.ministerio_id ? "..." : "Remover"}
+                </button>
+              </div>
+            ))}
+            {candidatos.length > 0 && (
+              <div className="mt-1.5 flex gap-2">
+                <div className="relative flex-1">
+                  <select
+                    value={candidatoSel}
+                    onChange={(e) => setCandidatoSel(e.target.value)}
+                    className="w-full appearance-none rounded-[12px] border border-black/10 bg-surface px-3.5 py-2.5 pr-8 text-[14px] text-ink outline-none"
+                  >
+                    {candidatos.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted">▾</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={adicionarMinisterio}
+                  disabled={!candidatoSel || adicionandoMin}
+                  className="rounded-[12px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-40"
+                >
+                  {adicionandoMin ? "..." : "Adicionar"}
+                </button>
+              </div>
+            )}
+            {vinculados.length > 0 && candidatos.length === 0 && (
+              <p className="mt-1 text-[12px] text-muted">Todos os ministérios já vinculados.</p>
+            )}
+            {erroMin && <p className="mt-1 text-[12px] text-danger">{erroMin}</p>}
           </div>
-          <p className="text-[14px] text-ink">{ministeriosDele.join(", ")}</p>
         </div>
       )}
 

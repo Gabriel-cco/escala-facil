@@ -27,7 +27,7 @@ export default async function EditarMembroModal({
   const isAdmin = conta?.profile === "admin";
   const groupId = account.group_id;
 
-  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult, ministeriosResult] =
+  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult, ministeriosResult, ministeriosDisponiveisResult] =
     await Promise.all([
       isAdmin
         ? supabase.from("groups").select("id, name").eq("active", true).order("name")
@@ -40,17 +40,18 @@ export default async function EditarMembroModal({
         : Promise.resolve({ data: [] }),
       supabase
         .from("ministerio_members")
-        .select("ministerio:ministerios(id, name)")
+        .select("ministerio_id, ministerio:ministerios(name)")
         .eq("account_id", id),
+      groupId
+        ? supabase.from("ministerios").select("id, name").eq("group_id", groupId).order("name")
+        : Promise.resolve({ data: [] }),
     ]);
 
-  const ministeriosDele = (ministeriosResult.data ?? [])
-    .map((r) => {
-      const min = r.ministerio;
-      const obj = (Array.isArray(min) ? min[0] : min) as { name?: string } | null;
-      return obj?.name;
-    })
-    .filter((n): n is string => !!n);
+  const ministeriosVinculados = (ministeriosResult.data ?? []).map((r) => {
+    const min = r.ministerio;
+    const obj = (Array.isArray(min) ? min[0] : min) as { name?: string } | null;
+    return { ministerio_id: r.ministerio_id, name: obj?.name ?? "" };
+  }).filter((m) => m.name);
 
   return (
     <Modal title="Editar pessoa">
@@ -68,7 +69,8 @@ export default async function EditarMembroModal({
         currentAccountId={conta?.account_id}
         qualificacoes={qualificacoesResult.data ?? []}
         qualificacoesAtuais={(qualificacoesAtuaisResult.data ?? []).map((r) => (r as { qualification_id: string }).qualification_id)}
-        ministeriosDele={ministeriosDele}
+        ministeriosVinculados={ministeriosVinculados}
+        ministeriosDisponiveis={groupId ? (ministeriosDisponiveisResult.data ?? []) : undefined}
       />
     </Modal>
   );

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 type Ministerio = { id: string; name: string };
-type MembroItem = { accountId: string; nome: string };
+type MembroItem = { accountId: string; nome: string; isCoordinator: boolean };
 type DadosMinisterio = {
   membros: MembroItem[];
   candidatos: MembroItem[];
@@ -62,6 +62,7 @@ export default function MinisteriosManager({
   const [dados, setDados] = useState<Record<string, DadosMinisterio>>({});
   const [adicionando, setAdicionando] = useState<string | null>(null);
   const [removendo, setRemovendo] = useState<string | null>(null);
+  const [atualizandoCoord, setAtualizandoCoord] = useState<string | null>(null);
 
   const [erro, setErro] = useState("");
   const router = useRouter();
@@ -76,7 +77,7 @@ export default function MinisteriosManager({
     const [vinculadosRes, todosRes] = await Promise.all([
       supabase
         .from("ministerio_members")
-        .select("account_id, account:accounts(id, user:users(name))")
+        .select("account_id, is_coordinator, account:accounts(id, user:users(name))")
         .eq("ministerio_id", ministerioId),
       supabase
         .from("accounts")
@@ -94,14 +95,18 @@ export default function MinisteriosManager({
           ? ((acc as { user: unknown[] }).user)[0]
           : (acc as { user?: unknown }).user
         : null;
-      return { accountId: v.account_id, nome: (u as { name?: string } | null)?.name ?? "?" };
+      return {
+        accountId: v.account_id,
+        nome: (u as { name?: string } | null)?.name ?? "?",
+        isCoordinator: (v as { is_coordinator?: boolean }).is_coordinator ?? false,
+      };
     });
 
     const candidatos: MembroItem[] = (todosRes.data ?? [])
       .filter((m) => !vinculadosSet.has(m.id))
       .map((m) => {
         const u = Array.isArray(m.user) ? m.user[0] : m.user;
-        return { accountId: m.id, nome: (u as { name?: string } | null)?.name ?? "?" };
+        return { accountId: m.id, nome: (u as { name?: string } | null)?.name ?? "?", isCoordinator: false };
       })
       .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
@@ -164,6 +169,34 @@ export default function MinisteriosManager({
     }
     await carregarMembros(ministerioId);
     router.refresh();
+  }
+
+  async function toggleCoordinator(ministerioId: string, accountId: string, atual: boolean) {
+    if (atualizandoCoord) return;
+    setAtualizandoCoord(accountId);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("ministerio_members")
+      .update({ is_coordinator: !atual })
+      .eq("ministerio_id", ministerioId)
+      .eq("account_id", accountId);
+    setAtualizandoCoord(null);
+    if (error) {
+      setDados((prev) => ({
+        ...prev,
+        [ministerioId]: { ...prev[ministerioId], erroPanel: "Erro: " + error.message },
+      }));
+      return;
+    }
+    setDados((prev) => ({
+      ...prev,
+      [ministerioId]: {
+        ...prev[ministerioId],
+        membros: prev[ministerioId].membros.map((m) =>
+          m.accountId === accountId ? { ...m, isCoordinator: !atual } : m
+        ),
+      },
+    }));
   }
 
   async function criar() {
@@ -346,14 +379,35 @@ export default function MinisteriosManager({
                         key={mb.accountId}
                         className="flex items-center justify-between rounded-[10px] px-2 py-1.5 hover:bg-surface"
                       >
-                        <span className="text-[13.5px] text-ink">{mb.nome}</span>
-                        <button
-                          onClick={() => removerMembro(m.id, mb.accountId)}
-                          disabled={removendo === mb.accountId}
-                          className="text-[11.5px] font-medium text-danger disabled:opacity-50"
-                        >
-                          {removendo === mb.accountId ? "..." : "Remover"}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13.5px] text-ink">{mb.nome}</span>
+                          {mb.isCoordinator && (
+                            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                              coord.
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            onClick={() => toggleCoordinator(m.id, mb.accountId, mb.isCoordinator)}
+                            disabled={atualizandoCoord === mb.accountId}
+                            className="text-[11.5px] font-medium text-muted hover:text-ink disabled:opacity-40"
+                            title={mb.isCoordinator ? "Remover como coordenador" : "Promover a coordenador"}
+                          >
+                            {atualizandoCoord === mb.accountId
+                              ? "..."
+                              : mb.isCoordinator
+                              ? "Rebaixar"
+                              : "Promover"}
+                          </button>
+                          <button
+                            onClick={() => removerMembro(m.id, mb.accountId)}
+                            disabled={removendo === mb.accountId}
+                            className="text-[11.5px] font-medium text-danger disabled:opacity-50"
+                          >
+                            {removendo === mb.accountId ? "..." : "Remover"}
+                          </button>
+                        </div>
                       </div>
                     ))}
 

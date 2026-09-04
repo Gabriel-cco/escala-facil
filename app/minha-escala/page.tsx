@@ -133,14 +133,22 @@ export default async function MinhaEscalaPage({
   const suspendedUntil = accDetails?.suspended_until ?? null;
   const estaSuspenso = suspendedUntil && suspendedUntil >= hoje;
 
-  // Atribuições do membro que já têm uma solicitação de troca pendente
-  // (admin client evita depender de policy de leitura em swap_requests).
   const admin = createAdminClient();
-  const { data: trocasPendentes } = await admin
-    .from("swap_requests")
-    .select("assignment_id")
-    .eq("requester_account_id", accountId)
-    .eq("status", "pending");
+  const [{ data: trocasPendentes }, { data: coordRow }] = await Promise.all([
+    admin
+      .from("swap_requests")
+      .select("assignment_id")
+      .eq("requester_account_id", accountId)
+      .eq("status", "pending"),
+    admin
+      .from("ministerio_members")
+      .select("account_id")
+      .eq("account_id", accountId)
+      .eq("is_coordinator", true)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const ehCoordMinisterio = !!coordRow;
   const atribuicoesComTrocaPendente = new Set(
     (trocasPendentes ?? []).map((t) => t.assignment_id)
   );
@@ -285,7 +293,7 @@ export default async function MinhaEscalaPage({
                     </p>
                   )}
 
-                  {euEstouEscalado && minhaAtribuicao && evento.date >= hoje && (() => {
+                  {euEstouEscalado && minhaAtribuicao && evento.date >= hoje && ehCoordMinisterio && (() => {
                     const myRole = Array.isArray(minhaAtribuicao.role)
                       ? minhaAtribuicao.role[0]
                       : minhaAtribuicao.role;

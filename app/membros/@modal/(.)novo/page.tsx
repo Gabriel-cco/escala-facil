@@ -13,6 +13,10 @@ export default async function CadastrarMembroModal() {
   const isAdmin = conta?.profile === "admin";
   const grupoIdFixo = conta?.profile === "coordinator" ? (conta.group_id ?? "") : "";
 
+  const { data: ministerios } = grupoIdFixo
+    ? await supabase.from("ministerios").select("id, name").eq("group_id", grupoIdFixo).order("name")
+    : { data: [] };
+
   return (
     <Modal title="Cadastrar pessoa">
       <CadastrarMembroForm
@@ -20,6 +24,7 @@ export default async function CadastrarMembroModal() {
         accountId={conta?.account_id}
         isAdmin={isAdmin}
         grupoIdFixo={grupoIdFixo}
+        ministerios={ministerios ?? []}
       />
     </Modal>
   );

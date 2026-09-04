@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { criarMembroAction } from "./actions";
 
 type Grupo = { id: string; name: string };
+type Ministerio = { id: string; name: string };
 
 const PERFIS = [
   { value: "member", label: "Membro" },
@@ -17,11 +18,13 @@ export default function CadastrarMembroForm({
   accountId,
   isAdmin,
   grupoIdFixo,
+  ministerios = [],
 }: {
   grupos: Grupo[];
   accountId?: string;
   isAdmin: boolean;
   grupoIdFixo?: string;
+  ministerios?: Ministerio[];
 }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -29,6 +32,7 @@ export default function CadastrarMembroForm({
   const [birthDate, setBirthDate] = useState("");
   const [profile, setProfile] = useState("member");
   const [grupoId, setGrupoId] = useState(isAdmin ? "" : (grupoIdFixo ?? ""));
+  const [ministeriosSel, setMinisteriosSel] = useState<string[]>([]);
   const [enviarBoasVindas, setEnviarBoasVindas] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -57,6 +61,7 @@ export default function CadastrarMembroForm({
       groupId: precisaGrupo ? (grupoEfetivo || null) : null,
       enviarBoasVindas,
       accountId,
+      ministerioIds: ministeriosSel,
     });
 
     if ("error" in resultado) {
@@ -184,6 +189,37 @@ export default function CadastrarMembroForm({
         <p className="text-[13px] text-muted">
           Cadastre um grupo antes de cadastrar membros.
         </p>
+      )}
+
+      {ministerios.length > 0 && (
+        <div>
+          <div className="mb-2.5 text-[12px] font-semibold text-muted">
+            MINISTÉRIOS (OPCIONAL)
+          </div>
+          <div className="flex flex-col gap-2">
+            {ministerios.map((m) => {
+              const marcado = ministeriosSel.includes(m.id);
+              return (
+                <label
+                  key={m.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-black/10 px-3.5 py-2.5 hover:bg-surface"
+                >
+                  <input
+                    type="checkbox"
+                    checked={marcado}
+                    onChange={() =>
+                      setMinisteriosSel((prev) =>
+                        marcado ? prev.filter((id) => id !== m.id) : [...prev, m.id]
+                      )
+                    }
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-[14px] text-ink">{m.name}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       <label className="flex cursor-pointer items-center gap-3">

@@ -13,6 +13,10 @@ export default async function NovoMembroPage() {
   const isAdmin = conta?.profile === "admin";
   const grupoIdFixo = conta?.profile === "coordinator" ? (conta.group_id ?? "") : "";
 
+  const { data: ministerios } = grupoIdFixo
+    ? await supabase.from("ministerios").select("id, name").eq("group_id", grupoIdFixo).order("name")
+    : { data: [] };
+
   return (
     <>
       <Header variant="back" title="Cadastrar pessoa" />
@@ -22,6 +26,7 @@ export default async function NovoMembroPage() {
           accountId={conta?.account_id}
           isAdmin={isAdmin}
           grupoIdFixo={grupoIdFixo}
+          ministerios={ministerios ?? []}
         />
       </main>
     </>

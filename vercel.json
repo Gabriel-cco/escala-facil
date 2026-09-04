@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/aniversarios",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/swap-reminders",
+      "schedule": "0 * * * *"
     }
   ]
 }

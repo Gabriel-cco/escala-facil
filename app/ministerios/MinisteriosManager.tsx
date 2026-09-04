@@ -81,7 +81,6 @@ export default function MinisteriosManager({
         .from("accounts")
         .select("id, user:users(name)")
         .eq("group_id", groupId)
-        .eq("profile", "member")
         .eq("active", true),
     ]);
 

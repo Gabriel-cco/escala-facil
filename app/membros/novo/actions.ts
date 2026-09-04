@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentAccount } from "@/lib/current-user";
 import { sendWelcomeEmail } from "@/lib/email/send-welcome-email";
 import { logAccess } from "@/lib/access-log";
 
@@ -13,8 +14,24 @@ export async function criarMembroAction(data: {
   groupId: string | null;
   enviarBoasVindas: boolean;
   accountId?: string;
+  ministerioIds?: string[];
 }): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
+
+  // Validação server-side de perfil e grupo
+  const conta = await getCurrentAccount();
+  if (!conta) return { error: "Não autorizado" };
+
+  let profile = data.profile;
+  let groupId = data.groupId;
+
+  if (conta.profile === "coordinator") {
+    // Coordinator só pode criar membros no próprio grupo
+    profile = "member";
+    groupId = conta.group_id ?? null;
+  } else if (conta.profile !== "admin") {
+    return { error: "Não autorizado" };
+  }
 
   const { data: usuario, error: erroUser } = await supabase
     .from("users")
@@ -31,14 +48,29 @@ export async function criarMembroAction(data: {
     return { error: erroUser?.message ?? "desconhecido" };
   }
 
-  const { error: erroAccount } = await supabase.from("accounts").insert({
-    user_id: (usuario as { id: string }).id,
-    profile: data.profile,
-    group_id: data.groupId,
-  });
+  const { data: newAccount, error: erroAccount } = await supabase
+    .from("accounts")
+    .insert({
+      user_id: (usuario as { id: string }).id,
+      profile,
+      group_id: groupId,
+    })
+    .select("id")
+    .single();
 
-  if (erroAccount) {
-    return { error: erroAccount.message };
+  if (erroAccount || !newAccount) {
+    return { error: erroAccount?.message ?? "desconhecido" };
+  }
+
+  const newAccountId = (newAccount as { id: string }).id;
+
+  if (data.ministerioIds?.length) {
+    await supabase.from("ministerio_members").insert(
+      data.ministerioIds.map((mid) => ({
+        ministerio_id: mid,
+        account_id: newAccountId,
+      }))
+    );
   }
 
   if (data.accountId) {

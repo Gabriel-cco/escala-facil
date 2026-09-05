@@ -27,23 +27,26 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?erro=auth`);
   }
 
-  // Usa RPC SECURITY DEFINER para contornar o RLS e buscar o account do usuário.
+  // Usa RPC SECURITY DEFINER para contornar o RLS e buscar as contas do usuário.
   const { data: rows } = await supabase.rpc("get_account_by_auth_id", {
     p_auth_id: authUser.id,
   });
 
-  const account = rows?.[0] ?? null;
-
-  if (!account) {
+  if (!rows || rows.length === 0) {
     return NextResponse.redirect(`${origin}/acesso-pendente`);
   }
 
-  const destino =
-    account.profile === "admin"
-      ? `${origin}/selecionar-grupo`
-      : account.profile === "member"
-      ? `${origin}/minha-escala`
-      : `${origin}${next}`;
+  const account = rows[0];
+  const isAdmin = rows.some((r: { profile: string }) => r.profile === "admin");
+  const hasMultipleNonAdmin = !isAdmin && rows.length > 1;
+
+  const destino = hasMultipleNonAdmin
+    ? `${origin}/selecionar-conta`
+    : isAdmin
+    ? `${origin}/selecionar-grupo`
+    : account.profile === "member"
+    ? `${origin}/minha-escala`
+    : `${origin}${next}`;
 
   // Aquece o cache do calendário litúrgico (Romcal calcula o ano inteiro e
   // guarda em memória — ver lib/liturgical.ts) pra quando o coordenador abrir

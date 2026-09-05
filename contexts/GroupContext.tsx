@@ -25,7 +25,8 @@ interface GroupContextType {
 
   // Helpers.
   isGlobalView: boolean; // admin sem grupo selecionado
-  canSwitchGroup: boolean; // true só para admin
+  canSwitchGroup: boolean; // true só para admin (dropdown de grupos)
+  hasMultipleAccounts: boolean; // true para não-admin com 2+ contas
   isLoading: boolean;
 }
 
@@ -54,13 +55,12 @@ export function GroupProvider({
   children,
   profile,
   groupId,
+  hasMultipleAccounts,
 }: {
   children: React.ReactNode;
-  // Perfil e grupo do usuário, resolvidos no servidor (layout) — fonte
-  // confiável, sem depender de um fetch client-side com RLS que pode falhar/
-  // atrasar e derrubar o admin para o modo "sem troca de grupo".
   profile: "admin" | "coordinator" | "member" | null;
   groupId: string | null;
+  hasMultipleAccounts: boolean;
 }) {
   const router = useRouter();
 
@@ -123,9 +123,10 @@ export function GroupProvider({
       groups,
       isGlobalView: activeGroupId === null,
       canSwitchGroup,
+      hasMultipleAccounts,
       isLoading: profile === null,
     };
-  }, [activeGroupId, groups, setActiveGroup, canSwitchGroup, profile]);
+  }, [activeGroupId, groups, setActiveGroup, canSwitchGroup, hasMultipleAccounts, profile]);
 
   return (
     <GroupContext.Provider value={value}>{children}</GroupContext.Provider>

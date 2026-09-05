@@ -1,6 +1,6 @@
 import AppShell, { type ShellUser } from "./AppShell";
 import { iniciais } from "@/lib/iniciais";
-import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
+import { getAuthUser, getCurrentAccount, getAllAccounts } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AuthShell({
@@ -19,8 +19,9 @@ export default async function AuthShell({
       "Usuário";
 
     const supabase = await createClient();
-    const [account, { data: userRow }] = await Promise.all([
+    const [account, allAccounts, { data: userRow }] = await Promise.all([
       getCurrentAccount(),
+      getAllAccounts(),
       supabase
         .from("users")
         .select("avatar_url, tour_completed")
@@ -30,6 +31,8 @@ export default async function AuthShell({
 
     type UserRow = { avatar_url?: string | null; tour_completed?: boolean | null } | null;
     const row = userRow as UserRow;
+    const isAdmin = allAccounts.some((a) => a.profile === "admin");
+    const hasMultipleAccounts = !isAdmin && allAccounts.length > 1;
 
     shellUser = {
       nome,
@@ -40,6 +43,7 @@ export default async function AuthShell({
       perfil: (account?.profile as ShellUser["perfil"]) ?? null,
       accountId: account?.account_id ?? null,
       groupId: account?.group_id ?? null,
+      hasMultipleAccounts,
     };
   }
 

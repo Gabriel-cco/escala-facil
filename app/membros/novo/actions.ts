@@ -15,6 +15,7 @@ export async function criarMembroAction(data: {
   enviarBoasVindas: boolean;
   accountId?: string;
   ministerioIds?: string[];
+  existingUserId?: string; // se fornecido, reaproveita o users existente
 }): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
 
@@ -33,25 +34,33 @@ export async function criarMembroAction(data: {
     return { error: "Não autorizado" };
   }
 
-  const { data: usuario, error: erroUser } = await supabase
-    .from("users")
-    .insert({
-      name: data.nome,
-      email: data.email,
-      cpf: data.cpf || null,
-      birth_date: data.birthDate || null,
-    })
-    .select("id")
-    .single();
+  let userId: string;
 
-  if (erroUser || !usuario) {
-    return { error: erroUser?.message ?? "desconhecido" };
+  if (data.existingUserId) {
+    // Reaproveitando users existente — só cria o account
+    userId = data.existingUserId;
+  } else {
+    const { data: usuario, error: erroUser } = await supabase
+      .from("users")
+      .insert({
+        name: data.nome,
+        email: data.email,
+        cpf: data.cpf || null,
+        birth_date: data.birthDate || null,
+      })
+      .select("id")
+      .single();
+
+    if (erroUser || !usuario) {
+      return { error: erroUser?.message ?? "desconhecido" };
+    }
+    userId = (usuario as { id: string }).id;
   }
 
   const { data: newAccount, error: erroAccount } = await supabase
     .from("accounts")
     .insert({
-      user_id: (usuario as { id: string }).id,
+      user_id: userId,
       profile,
       group_id: groupId,
     })

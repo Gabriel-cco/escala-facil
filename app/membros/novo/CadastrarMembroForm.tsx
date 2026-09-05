@@ -36,6 +36,22 @@ export default function CadastrarMembroForm({
   const [ministeriosSel, setMinisteriosSel] = useState<string[]>([]);
   const [ministeriosDinamicos, setMinisteriosDinamicos] = useState<Ministerio[]>([]);
   const [enviarBoasVindas, setEnviarBoasVindas] = useState(true);
+  const [emailExistente, setEmailExistente] = useState<{ userId: string; nome: string } | null>(null);
+  const [vinculoConfirmado, setVinculoConfirmado] = useState(false);
+
+  async function checkEmailExistente() {
+    const e = email.trim();
+    if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return;
+    setEmailExistente(null);
+    setVinculoConfirmado(false);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("users")
+      .select("id, name")
+      .eq("email", e)
+      .maybeSingle();
+    if (data) setEmailExistente({ userId: (data as { id: string }).id, nome: (data as { name: string }).name });
+  }
 
   async function carregarMinisteriosDoGrupo(gId: string) {
     setMinisteriosSel([]);
@@ -76,6 +92,7 @@ export default function CadastrarMembroForm({
       enviarBoasVindas,
       accountId,
       ministerioIds: ministeriosSel,
+      existingUserId: emailExistente && vinculoConfirmado ? emailExistente.userId : undefined,
     });
 
     if ("error" in resultado) {
@@ -112,13 +129,42 @@ export default function CadastrarMembroForm({
         <input
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); setEmailExistente(null); setVinculoConfirmado(false); }}
+          onBlur={checkEmailExistente}
           placeholder="maria@exemplo.com"
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
-        <p className="mt-1.5 text-[11.5px] text-muted">
-          Usado para vincular o acesso quando a pessoa entrar com o Google.
-        </p>
+        {emailExistente && !vinculoConfirmado ? (
+          <div className="mt-2 rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-3">
+            <p className="text-[12.5px] text-amber-800">
+              Este email já está cadastrado como <span className="font-semibold">{emailExistente.nome}</span>. Deseja adicionar um novo vínculo (perfil + grupo) para essa pessoa?
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setVinculoConfirmado(true)}
+                className="rounded-[8px] bg-amber-600 px-3 py-1 text-[12px] font-semibold text-white"
+              >
+                Sim, adicionar vínculo
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEmail(""); setEmailExistente(null); }}
+                className="rounded-[8px] border border-black/10 px-3 py-1 text-[12px] font-semibold text-ink"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : vinculoConfirmado ? (
+          <p className="mt-1.5 text-[11.5px] text-amber-700">
+            Novo vínculo será criado para <span className="font-semibold">{emailExistente?.nome}</span> — o cadastro de usuário já existente será reaproveitado.
+          </p>
+        ) : (
+          <p className="mt-1.5 text-[11.5px] text-muted">
+            Usado para vincular o acesso quando a pessoa entrar com o Google.
+          </p>
+        )}
       </div>
 
       <div>

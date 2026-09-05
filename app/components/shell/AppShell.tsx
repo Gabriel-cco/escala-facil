@@ -22,6 +22,7 @@ export type ShellUser = {
   perfil: "admin" | "coordinator" | "member" | null;
   accountId: string | null;
   groupId: string | null;
+  hasMultipleAccounts: boolean;
 };
 
 export const ROTULO_PERFIL: Record<string, string> = {
@@ -61,6 +62,7 @@ export default function AppShell({
     pathname === "/login" ||
     pathname === "/acesso-pendente" ||
     pathname === "/selecionar-grupo" ||
+    pathname === "/selecionar-conta" ||
     pathname.startsWith("/escala/") ||
     pathname.startsWith("/frequencia/avulsa/");
 
@@ -86,7 +88,7 @@ export default function AppShell({
 
   return (
     <ShellContext.Provider value={contextValue}>
-      <GroupProvider profile={user?.perfil ?? null} groupId={user?.groupId ?? null}>
+      <GroupProvider profile={user?.perfil ?? null} groupId={user?.groupId ?? null} hasMultipleAccounts={user?.hasMultipleAccounts ?? false}>
       <TourManager profile={user?.perfil ?? null} tourCompleted={user?.tourCompleted ?? false}>
         <div className="min-h-dvh bg-screen md:flex md:h-dvh md:min-h-0 md:overflow-hidden md:bg-app">
           {user && <Sidebar className="hidden md:flex" user={user} />}

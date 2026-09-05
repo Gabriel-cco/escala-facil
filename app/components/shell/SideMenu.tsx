@@ -11,36 +11,36 @@ import Avatar from "@/app/components/Avatar";
 
 const OWNER_EMAIL = "gabrielbatista1551@gmail.com";
 
-type NavItem = { href: string; label: string };
+type NavItem = { href: string; label: string; menuKey?: string };
 
 const NAV_ADMIN: NavItem[] = [
   { href: "/", label: "Início" },
   { href: "/grupos", label: "Grupos" },
-  { href: "/membros", label: "Membros" },
-  { href: "/funcoes", label: "Funções" },
-  { href: "/ministerios", label: "Ministérios" },
-  { href: "/eventos", label: "Eventos" },
-  { href: "/trocas", label: "Trocas" },
-  { href: "/frequencia", label: "Frequência" },
+  { href: "/membros", label: "Membros", menuKey: "membros" },
+  { href: "/funcoes", label: "Funções", menuKey: "funcoes" },
+  { href: "/ministerios", label: "Ministérios", menuKey: "ministerios" },
+  { href: "/eventos", label: "Eventos", menuKey: "eventos" },
+  { href: "/trocas", label: "Trocas", menuKey: "trocas" },
+  { href: "/frequencia", label: "Frequência", menuKey: "frequencia" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
 
 const NAV_COORDINATOR: NavItem[] = [
   { href: "/", label: "Início" },
-  { href: "/membros", label: "Membros" },
-  { href: "/funcoes", label: "Funções" },
-  { href: "/ministerios", label: "Ministérios" },
-  { href: "/eventos", label: "Eventos" },
-  { href: "/trocas", label: "Trocas" },
-  { href: "/frequencia", label: "Frequência" },
+  { href: "/membros", label: "Membros", menuKey: "membros" },
+  { href: "/funcoes", label: "Funções", menuKey: "funcoes" },
+  { href: "/ministerios", label: "Ministérios", menuKey: "ministerios" },
+  { href: "/eventos", label: "Eventos", menuKey: "eventos" },
+  { href: "/trocas", label: "Trocas", menuKey: "trocas" },
+  { href: "/frequencia", label: "Frequência", menuKey: "frequencia" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
 
 const NAV_MEMBER: NavItem[] = [
   { href: "/minha-escala", label: "Minha Escala" },
-  { href: "/trocas", label: "Trocas" },
+  { href: "/trocas", label: "Trocas", menuKey: "trocas" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
@@ -65,16 +65,17 @@ export default function SideMenu({
 
   if (!aberto) return null;
 
-  const navItems =
+  const navItems = (
     user.perfil === "member"
       ? NAV_MEMBER
       : user.perfil === "coordinator"
       ? NAV_COORDINATOR
-      : NAV_ADMIN;
+      : NAV_ADMIN
+  ).filter((item) => !item.menuKey || !user.hiddenMenuKeys.includes(item.menuKey));
 
-  const withRelatorio =
+  const withOwner =
     user.perfil === "admin" && user.email === OWNER_EMAIL
-      ? [...navItems, { href: "/relatorio-uso", label: "Relatório de Uso" }]
+      ? [...navItems, { href: "/relatorio-uso", label: "Relatório de Uso" }, { href: "/admin/menus", label: "Menus por Grupo" }]
       : navItems;
 
   async function sair() {
@@ -115,7 +116,7 @@ export default function SideMenu({
 
           {/* Navegação — rola */}
           <nav className="flex-1 overflow-y-auto px-[18px] py-2">
-            {withRelatorio.map((item) => {
+            {withOwner.map((item) => {
               const ativa = isActive(pathname, item.href);
               return (
                 <Link

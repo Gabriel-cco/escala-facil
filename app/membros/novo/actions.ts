@@ -15,7 +15,12 @@ export async function criarMembroAction(data: {
   enviarBoasVindas: boolean;
   accountId?: string;
   ministerioIds?: string[];
-  existingUserId?: string; // se fornecido, reaproveita o users existente
+  existingUserId?: string;
+  responsavelNome?: string | null;
+  responsavelTelefone?: string | null;
+  responsavelEmail?: string | null;
+  termoAssinado?: boolean;
+  termoData?: string | null;
 }): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
 
@@ -47,6 +52,11 @@ export async function criarMembroAction(data: {
         email: data.email,
         cpf: data.cpf || null,
         birth_date: data.birthDate || null,
+        responsavel_nome: data.responsavelNome ?? null,
+        responsavel_telefone: data.responsavelTelefone ?? null,
+        responsavel_email: data.responsavelEmail ?? null,
+        termo_consentimento_assinado: data.termoAssinado ?? false,
+        termo_consentimento_data: data.termoData ?? null,
       })
       .select("id")
       .single();

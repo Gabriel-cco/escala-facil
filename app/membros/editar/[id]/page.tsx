@@ -15,14 +15,21 @@ export default async function EditarMembroPage({
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, profile, group_id, user:users(id, name, email, cpf, birth_date)")
+    .select("id, profile, group_id, user:users(id, name, email, cpf, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data)")
     .eq("id", id)
     .single();
 
   if (!account) notFound();
 
-  const user = Array.isArray(account.user) ? account.user[0] : account.user;
-  if (!user) notFound();
+  const userRaw = Array.isArray(account.user) ? account.user[0] : account.user;
+  if (!userRaw) notFound();
+  const user = userRaw as typeof userRaw & {
+    responsavel_nome?: string | null;
+    responsavel_telefone?: string | null;
+    responsavel_email?: string | null;
+    termo_consentimento_assinado?: boolean;
+    termo_consentimento_data?: string | null;
+  };
 
   const isAdmin = conta?.profile === "admin";
   const groupId = account.group_id;
@@ -73,6 +80,11 @@ export default async function EditarMembroPage({
           qualificacoesAtuais={(qualificacoesAtuaisResult.data ?? []).map((r) => (r as { qualification_id: string }).qualification_id)}
           ministeriosVinculados={ministeriosVinculados}
           ministeriosDisponiveis={groupId ? (ministeriosDisponiveisResult.data ?? []) : undefined}
+          responsavelNomeInicial={user.responsavel_nome ?? ""}
+          responsavelTelefoneInicial={user.responsavel_telefone ?? ""}
+          responsavelEmailInicial={user.responsavel_email ?? ""}
+          termoAssinadoInicial={user.termo_consentimento_assinado ?? false}
+          termoDataInicial={user.termo_consentimento_data ?? ""}
         />
       </main>
     </>

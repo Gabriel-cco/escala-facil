@@ -16,7 +16,22 @@ type Membro = {
   active: boolean;
   suspensoAte: string | null;
   motivoSuspensao: string | null;
+  birthDate: string | null;
+  responsavelNome: string | null;
+  responsavelTelefone: string | null;
+  responsavelEmail: string | null;
+  termoAssinado: boolean;
+  termoData: string | null;
 };
+
+function ehMenorDeIdade(dataNascimento: string): boolean {
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimento);
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const diffMes = hoje.getMonth() - nascimento.getMonth();
+  if (diffMes < 0 || (diffMes === 0 && hoje.getDate() < nascimento.getDate())) idade--;
+  return idade < 18;
+}
 
 const iconeLapis = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -233,6 +248,34 @@ export default function MembroItem({
         {podeGerenciar && temBotoesTexto && (
           <div className="mt-2 flex flex-wrap gap-1.5 md:hidden">
             {botoesTexto()}
+          </div>
+        )}
+
+        {/* Seção responsável — apenas para menores, só admin/coordinator */}
+        {podeGerenciar && membro.birthDate && ehMenorDeIdade(membro.birthDate) && (
+          <div className="mt-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2.5">
+            <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.6px] text-amber-700">
+              Responsável
+            </div>
+            <div className="text-[12.5px] text-ink">
+              {membro.responsavelNome ?? <span className="text-muted italic">não informado</span>}
+            </div>
+            {membro.responsavelTelefone && (
+              <div className="mt-0.5 text-[12px] text-muted">
+                {membro.responsavelTelefone}
+                {membro.responsavelEmail && ` · ${membro.responsavelEmail}`}
+              </div>
+            )}
+            <div className="mt-1.5 text-[11.5px]">
+              {membro.termoAssinado ? (
+                <span className="text-green-700">
+                  ✅ Termo assinado
+                  {membro.termoData && ` em ${new Date(membro.termoData + "T00:00").toLocaleDateString("pt-BR")}`}
+                </span>
+              ) : (
+                <span className="text-amber-700">⚠️ Termo não assinado</span>
+              )}
+            </div>
           </div>
         )}
 

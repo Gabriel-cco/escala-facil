@@ -2,6 +2,7 @@ import AppShell, { type ShellUser } from "./AppShell";
 import { iniciais } from "@/lib/iniciais";
 import { getAuthUser, getCurrentAccount, getAllAccounts } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveGroupId } from "@/lib/active-group-server";
 
 export default async function AuthShell({
   children,
@@ -19,7 +20,7 @@ export default async function AuthShell({
       "Usuário";
 
     const supabase = await createClient();
-    const [account, allAccounts, { data: userRow }] = await Promise.all([
+    const [account, allAccounts, { data: userRow }, activeGroupId] = await Promise.all([
       getCurrentAccount(),
       getAllAccounts(),
       supabase
@@ -27,7 +28,18 @@ export default async function AuthShell({
         .select("avatar_url, tour_completed")
         .eq("auth_id", user.id)
         .single(),
+      getActiveGroupId(),
     ]);
+
+    let hiddenMenuKeys: string[] = [];
+    if (activeGroupId) {
+      const { data: excecoes } = await supabase
+        .from("group_menu_permissions")
+        .select("menu_key")
+        .eq("group_id", activeGroupId)
+        .eq("visible", false);
+      hiddenMenuKeys = (excecoes ?? []).map((e) => (e as { menu_key: string }).menu_key);
+    }
 
     type UserRow = { avatar_url?: string | null; tour_completed?: boolean | null } | null;
     const row = userRow as UserRow;
@@ -44,6 +56,7 @@ export default async function AuthShell({
       accountId: account?.account_id ?? null,
       groupId: account?.group_id ?? null,
       hasMultipleAccounts,
+      hiddenMenuKeys,
     };
   }
 

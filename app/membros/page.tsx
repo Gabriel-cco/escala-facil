@@ -25,7 +25,7 @@ export default async function MembrosPage({
   let query = supabase
     .from("accounts")
     .select(
-      "id, profile, active, suspended_until, suspension_reason, user:users(id, name, email), group:groups(name)"
+      "id, profile, active, suspended_until, suspension_reason, user:users(id, name, email, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data), group:groups(name)"
     );
   if (activeGroupId) query = query.eq("group_id", activeGroupId);
   if (!mostrarInativos) query = query.eq("active", true);
@@ -35,16 +35,30 @@ export default async function MembrosPage({
     .map((a) => {
       const u = Array.isArray(a.user) ? a.user[0] : a.user;
       const g = Array.isArray(a.group) ? a.group[0] : a.group;
+      const ux = u as typeof u & {
+        birth_date?: string | null;
+        responsavel_nome?: string | null;
+        responsavel_telefone?: string | null;
+        responsavel_email?: string | null;
+        termo_consentimento_assinado?: boolean;
+        termo_consentimento_data?: string | null;
+      };
       return {
         id: a.id,
-        userId: u?.id ?? "",
-        nome: u?.name ?? "—",
-        email: u?.email ?? "",
+        userId: ux?.id ?? "",
+        nome: ux?.name ?? "—",
+        email: ux?.email ?? "",
         perfil: a.profile as "admin" | "coordinator" | "member",
         grupoNome: g?.name ?? "Sem grupo",
         active: a.active,
         suspensoAte: a.suspended_until as string | null,
         motivoSuspensao: a.suspension_reason as string | null,
+        birthDate: ux?.birth_date ?? null,
+        responsavelNome: ux?.responsavel_nome ?? null,
+        responsavelTelefone: ux?.responsavel_telefone ?? null,
+        responsavelEmail: ux?.responsavel_email ?? null,
+        termoAssinado: ux?.termo_consentimento_assinado ?? false,
+        termoData: ux?.termo_consentimento_data ?? null,
       };
     })
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));

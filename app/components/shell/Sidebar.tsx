@@ -9,32 +9,34 @@ import { ROTULO_PERFIL } from "./AppShell";
 import SeletorGrupo from "./SeletorGrupo";
 import Avatar from "@/app/components/Avatar";
 
-const ITENS_ADMIN = [
+type NavItem = { href: string; label: string; menuKey?: string };
+
+const ITENS_ADMIN: NavItem[] = [
   { href: "/", label: "Início" },
   { href: "/grupos", label: "Grupos" },
-  { href: "/membros", label: "Membros" },
-  { href: "/funcoes", label: "Funções" },
-  { href: "/ministerios", label: "Ministérios" },
-  { href: "/eventos", label: "Eventos" },
-  { href: "/trocas", label: "Trocas" },
+  { href: "/membros", label: "Membros", menuKey: "membros" },
+  { href: "/funcoes", label: "Funções", menuKey: "funcoes" },
+  { href: "/ministerios", label: "Ministérios", menuKey: "ministerios" },
+  { href: "/eventos", label: "Eventos", menuKey: "eventos" },
+  { href: "/trocas", label: "Trocas", menuKey: "trocas" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
 
-const ITENS_COORDINATOR = [
+const ITENS_COORDINATOR: NavItem[] = [
   { href: "/", label: "Início" },
-  { href: "/membros", label: "Membros" },
-  { href: "/funcoes", label: "Funções" },
-  { href: "/ministerios", label: "Ministérios" },
-  { href: "/eventos", label: "Eventos" },
-  { href: "/trocas", label: "Trocas" },
+  { href: "/membros", label: "Membros", menuKey: "membros" },
+  { href: "/funcoes", label: "Funções", menuKey: "funcoes" },
+  { href: "/ministerios", label: "Ministérios", menuKey: "ministerios" },
+  { href: "/eventos", label: "Eventos", menuKey: "eventos" },
+  { href: "/trocas", label: "Trocas", menuKey: "trocas" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
 
-const ITENS_MEMBER = [
+const ITENS_MEMBER: NavItem[] = [
   { href: "/minha-escala", label: "Minha Escala" },
-  { href: "/trocas", label: "Trocas" },
+  { href: "/trocas", label: "Trocas", menuKey: "trocas" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
 
@@ -131,6 +133,15 @@ function IconeNav({ href }: { href: string }) {
           <rect x="17" y="4" width="4" height="16" rx="1" />
         </svg>
       );
+    case "/admin/menus":
+      return (
+        <svg {...p}>
+          <rect x="3" y="3" width="7" height="7" rx="1.2" />
+          <rect x="14" y="3" width="7" height="7" rx="1.2" />
+          <rect x="3" y="14" width="7" height="7" rx="1.2" />
+          <rect x="14" y="14" width="7" height="7" rx="1.2" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -178,7 +189,7 @@ export default function Sidebar({
           : user.perfil === "coordinator"
           ? ITENS_COORDINATOR
           : ITENS_ADMIN
-        ).map((item) => {
+        ).filter((item) => !item.menuKey || !user.hiddenMenuKeys.includes(item.menuKey)).map((item) => {
           const ativo = itemAtivo(pathname, item.href);
           return (
             <Link
@@ -204,25 +215,33 @@ export default function Sidebar({
             </Link>
           );
         })}
-        {/* Relatório de uso: visível apenas para o dono da plataforma */}
-        {user.email === OWNER_EMAIL && (() => {
-          const ativo = itemAtivo(pathname, "/relatorio-uso");
-          return (
-            <Link
-              href="/relatorio-uso"
-              className={`flex items-center gap-[11px] rounded-lg px-[13px] py-[10px] text-[14px] transition-colors ${
-                ativo
-                  ? "bg-primary-light font-semibold text-primary"
-                  : "font-medium text-muted hover:bg-surface hover:text-ink"
-              }`}
-            >
-              <span className={ativo ? "text-primary" : "text-faint"}>
-                <IconeNav href="/relatorio-uso" />
-              </span>
-              Relatório
-            </Link>
-          );
-        })()}
+        {/* Links exclusivos do dono da plataforma */}
+        {user.email === OWNER_EMAIL && (
+          <>
+            {[
+              { href: "/relatorio-uso", label: "Relatório" },
+              { href: "/admin/menus", label: "Menus" },
+            ].map(({ href, label }) => {
+              const ativo = itemAtivo(pathname, href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-[11px] rounded-lg px-[13px] py-[10px] text-[14px] transition-colors ${
+                    ativo
+                      ? "bg-primary-light font-semibold text-primary"
+                      : "font-medium text-muted hover:bg-surface hover:text-ink"
+                  }`}
+                >
+                  <span className={ativo ? "text-primary" : "text-faint"}>
+                    <IconeNav href={href} />
+                  </span>
+                  {label}
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       <div className="flex-1" />

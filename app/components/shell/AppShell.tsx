@@ -23,6 +23,7 @@ export type ShellUser = {
   accountId: string | null;
   groupId: string | null;
   hasMultipleAccounts: boolean;
+  hiddenMenuKeys: string[];
 };
 
 export const ROTULO_PERFIL: Record<string, string> = {

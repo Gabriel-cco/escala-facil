@@ -38,6 +38,22 @@ export default function CadastrarMembroForm({
   const [enviarBoasVindas, setEnviarBoasVindas] = useState(true);
   const [emailExistente, setEmailExistente] = useState<{ userId: string; nome: string } | null>(null);
   const [vinculoConfirmado, setVinculoConfirmado] = useState(false);
+  const [responsavelNome, setResponsavelNome] = useState("");
+  const [responsavelTelefone, setResponsavelTelefone] = useState("");
+  const [responsavelEmail, setResponsavelEmail] = useState("");
+  const [termoAssinado, setTermoAssinado] = useState(false);
+  const [termoData, setTermoData] = useState("");
+
+  function ehMenorDeIdade(dataNascimento: string): boolean {
+    const hoje = new Date();
+    const nascimento = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const diffMes = hoje.getMonth() - nascimento.getMonth();
+    if (diffMes < 0 || (diffMes === 0 && hoje.getDate() < nascimento.getDate())) idade--;
+    return idade < 18;
+  }
+
+  const menor = birthDate ? ehMenorDeIdade(birthDate) : false;
 
   async function checkEmailExistente() {
     const e = email.trim();
@@ -75,7 +91,8 @@ export default function CadastrarMembroForm({
   const podeSalvar =
     nome.trim().length > 0 &&
     emailValido &&
-    (!precisaGrupo || grupoEfetivo !== "");
+    (!precisaGrupo || grupoEfetivo !== "") &&
+    (!menor || (responsavelNome.trim().length > 0 && responsavelTelefone.trim().length > 0));
 
   async function salvar() {
     if (!podeSalvar || salvando) return;
@@ -93,6 +110,11 @@ export default function CadastrarMembroForm({
       accountId,
       ministerioIds: ministeriosSel,
       existingUserId: emailExistente && vinculoConfirmado ? emailExistente.userId : undefined,
+      responsavelNome: menor ? responsavelNome.trim() || null : null,
+      responsavelTelefone: menor ? responsavelTelefone.trim() || null : null,
+      responsavelEmail: menor && responsavelEmail.trim() ? responsavelEmail.trim() : null,
+      termoAssinado: menor ? termoAssinado : false,
+      termoData: menor && termoAssinado && termoData ? termoData : null,
     });
 
     if ("error" in resultado) {
@@ -186,6 +208,67 @@ export default function CadastrarMembroForm({
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
       </div>
+
+      {menor && (
+        <div className="flex flex-col gap-4 rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-4">
+          <p className="text-[12.5px] font-semibold text-amber-800">
+            Menor de idade — dados do responsável obrigatórios
+          </p>
+
+          <div>
+            <div className="mb-2 text-[12px] font-semibold text-muted">NOME DO RESPONSÁVEL *</div>
+            <input
+              value={responsavelNome}
+              onChange={(e) => setResponsavelNome(e.target.value)}
+              placeholder="Ex.: José Oliveira"
+              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+            />
+          </div>
+
+          <div>
+            <div className="mb-2 text-[12px] font-semibold text-muted">TELEFONE / WHATSAPP *</div>
+            <input
+              value={responsavelTelefone}
+              onChange={(e) => setResponsavelTelefone(e.target.value)}
+              placeholder="(11) 99999-9999"
+              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+            />
+          </div>
+
+          <div>
+            <div className="mb-2 text-[12px] font-semibold text-muted">E-MAIL DO RESPONSÁVEL (OPCIONAL)</div>
+            <input
+              type="email"
+              value={responsavelEmail}
+              onChange={(e) => setResponsavelEmail(e.target.value)}
+              placeholder="responsavel@exemplo.com"
+              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+            />
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              checked={termoAssinado}
+              onChange={(e) => { setTermoAssinado(e.target.checked); if (!e.target.checked) setTermoData(""); }}
+              className="h-4 w-4 accent-primary"
+            />
+            <span className="text-[14px] text-ink">Termo de consentimento assinado</span>
+          </label>
+
+          {termoAssinado && (
+            <div>
+              <div className="mb-2 text-[12px] font-semibold text-muted">DATA DA ASSINATURA</div>
+              <input
+                type="date"
+                value={termoData}
+                onChange={(e) => setTermoData(e.target.value)}
+                className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {isAdmin && (
         <div>

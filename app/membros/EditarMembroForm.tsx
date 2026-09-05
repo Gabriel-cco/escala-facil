@@ -32,6 +32,11 @@ export default function EditarMembroForm({
   qualificacoesAtuais = [],
   ministeriosVinculados = [],
   ministeriosDisponiveis,
+  responsavelNomeInicial = "",
+  responsavelTelefoneInicial = "",
+  responsavelEmailInicial = "",
+  termoAssinadoInicial = false,
+  termoDataInicial = "",
 }: {
   accountId: string;
   userId: string;
@@ -48,6 +53,11 @@ export default function EditarMembroForm({
   qualificacoesAtuais?: string[];
   ministeriosVinculados?: MinisterioVinculado[];
   ministeriosDisponiveis?: MinisterioDisponivel[];
+  responsavelNomeInicial?: string;
+  responsavelTelefoneInicial?: string;
+  responsavelEmailInicial?: string;
+  termoAssinadoInicial?: boolean;
+  termoDataInicial?: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
@@ -56,6 +66,23 @@ export default function EditarMembroForm({
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
   const [profile, setProfile] = useState(perfilInicial);
   const [qualificacoesSel, setQualificacoesSel] = useState<string[]>(qualificacoesAtuais);
+
+  const [responsavelNome, setResponsavelNome] = useState(responsavelNomeInicial);
+  const [responsavelTelefone, setResponsavelTelefone] = useState(responsavelTelefoneInicial);
+  const [responsavelEmail, setResponsavelEmail] = useState(responsavelEmailInicial);
+  const [termoAssinado, setTermoAssinado] = useState(termoAssinadoInicial);
+  const [termoData, setTermoData] = useState(termoDataInicial);
+
+  function ehMenorDeIdade(dataNascimento: string): boolean {
+    const hoje = new Date();
+    const nascimento = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const diffMes = hoje.getMonth() - nascimento.getMonth();
+    if (diffMes < 0 || (diffMes === 0 && hoje.getDate() < nascimento.getDate())) idade--;
+    return idade < 18;
+  }
+
+  const menor = birthDate ? ehMenorDeIdade(birthDate) : false;
 
   const [vinculados, setVinculados] = useState<MinisterioVinculado[]>(ministeriosVinculados);
   const [candidatoSel, setCandidatoSel] = useState<string>(() => {
@@ -80,7 +107,8 @@ export default function EditarMembroForm({
   const podeSalvar =
     nome.trim().length > 0 &&
     emailValido &&
-    (!precisaGrupo || grupoId !== "");
+    (!precisaGrupo || grupoId !== "") &&
+    (!menor || (responsavelNome.trim().length > 0 && responsavelTelefone.trim().length > 0));
 
   function toggleQualificacao(id: string) {
     setQualificacoesSel((prev) =>
@@ -142,6 +170,13 @@ export default function EditarMembroForm({
         email: email.trim(),
         cpf: cpf.trim() || null,
         birth_date: birthDate || null,
+        ...(menor ? {
+          responsavel_nome: responsavelNome.trim() || null,
+          responsavel_telefone: responsavelTelefone.trim() || null,
+          responsavel_email: responsavelEmail.trim() || null,
+          termo_consentimento_assinado: termoAssinado,
+          termo_consentimento_data: termoAssinado && termoData ? termoData : null,
+        } : {}),
       })
       .eq("id", userId);
 
@@ -230,6 +265,67 @@ export default function EditarMembroForm({
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
       </div>
+
+      {menor && (
+        <div className="flex flex-col gap-4 rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-4">
+          <p className="text-[12.5px] font-semibold text-amber-800">
+            Menor de idade — dados do responsável obrigatórios
+          </p>
+
+          <div>
+            <div className="mb-2 text-[12px] font-semibold text-muted">NOME DO RESPONSÁVEL *</div>
+            <input
+              value={responsavelNome}
+              onChange={(e) => setResponsavelNome(e.target.value)}
+              placeholder="Ex.: José Oliveira"
+              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+            />
+          </div>
+
+          <div>
+            <div className="mb-2 text-[12px] font-semibold text-muted">TELEFONE / WHATSAPP *</div>
+            <input
+              value={responsavelTelefone}
+              onChange={(e) => setResponsavelTelefone(e.target.value)}
+              placeholder="(11) 99999-9999"
+              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+            />
+          </div>
+
+          <div>
+            <div className="mb-2 text-[12px] font-semibold text-muted">E-MAIL DO RESPONSÁVEL (OPCIONAL)</div>
+            <input
+              type="email"
+              value={responsavelEmail}
+              onChange={(e) => setResponsavelEmail(e.target.value)}
+              placeholder="responsavel@exemplo.com"
+              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+            />
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              checked={termoAssinado}
+              onChange={(e) => { setTermoAssinado(e.target.checked); if (!e.target.checked) setTermoData(""); }}
+              className="h-4 w-4 accent-primary"
+            />
+            <span className="text-[14px] text-ink">Termo de consentimento assinado</span>
+          </label>
+
+          {termoAssinado && (
+            <div>
+              <div className="mb-2 text-[12px] font-semibold text-muted">DATA DA ASSINATURA</div>
+              <input
+                type="date"
+                value={termoData}
+                onChange={(e) => setTermoData(e.target.value)}
+                className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {isAdmin && (
         <div>

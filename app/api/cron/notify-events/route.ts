@@ -3,8 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPushToAccounts } from "@/lib/send-push";
 import { rotuloHora } from "@/lib/datas";
 
-// Executa diariamente às 8h (Brasília) via Vercel Cron (schedule: "0 11 * * *" UTC).
-// Busca eventos do dia, notifica cada membro escalado com a escala completa.
+// Executa duas vezes por dia via Vercel Cron (schedule: "0 9,21 * * *" UTC):
+//   09:00 UTC = 06:00 Brasília → notifica escalados do DIA com "Hoje é dia de servir"
+//   21:00 UTC = 18:00 Brasília → notifica escalados do DIA SEGUINTE com "Amanhã é dia de servir"
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (secret) {
@@ -14,14 +15,19 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Data de hoje no fuso de Brasília (UTC-3)
   const agora = new Date();
+  const utcHour = agora.getUTCHours();
+
+  // 18:00 UTC = disparo noturno → busca eventos de amanhã; 06:00 UTC → hoje
+  const isEvening = utcHour >= 12;
   const brasilia = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
-  const hoje = brasilia.toISOString().slice(0, 10);
+  const dataAlvo = isEvening
+    ? new Date(brasilia.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    : brasilia.toISOString().slice(0, 10);
 
   const admin = createAdminClient();
 
-  // Eventos de hoje com atribuições, papéis, nomes dos membros e nome do grupo
+  // Eventos da data alvo com atribuições, papéis, nomes dos membros e nome do grupo
   const { data: eventos, error } = await admin
     .from("events")
     .select(`
@@ -33,17 +39,18 @@ export async function GET(request: NextRequest) {
         account:accounts(user:users(name))
       )
     `)
-    .eq("date", hoje);
+    .eq("date", dataAlvo);
 
   if (error) {
     console.error("[cron/notify-events] erro ao buscar eventos:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log(`[cron/notify-events] ${hoje} | ${eventos?.length ?? 0} evento(s) encontrado(s)`);
+  const run = isEvening ? "noturno (amanhã)" : "matutino (hoje)";
+  console.log(`[cron/notify-events] ${run} | alvo=${dataAlvo} | ${eventos?.length ?? 0} evento(s)`);
 
   if (!eventos?.length) {
-    return NextResponse.json({ message: "Nenhum evento hoje.", count: 0 });
+    return NextResponse.json({ message: "Nenhum evento na data alvo.", dataAlvo, count: 0 });
   }
 
   // Coordenadores ativos por grupo — buscados uma vez para todos os grupos
@@ -96,7 +103,9 @@ export async function GET(request: NextRequest) {
 
     const escalaTxt = escala.map((e) => `${e.roleName}: ${e.memberName}`).join("\n");
 
-    const title = `Ei, ${grupoNome}! Hoje é dia de servir 🕊️`;
+    const title = isEvening
+      ? `Ei, ${grupoNome}! Amanhã é dia de servir 🕊️`
+      : `Ei, ${grupoNome}! Hoje é dia de servir 🕊️`;
     const body = `${evento.name} · ${hora}\n\n${escalaTxt}`;
 
     // Membros escalados + coordenadores do grupo
@@ -125,10 +134,11 @@ export async function GET(request: NextRequest) {
     totalEnviados += destinatarios.length;
   }
 
-  console.log(`[cron/notify-events] concluído | ${eventos.length} evento(s) | ${totalEnviados} notificação(ões) enviada(s)`);
+  console.log(`[cron/notify-events] concluído | run=${run} | ${eventos.length} evento(s) | ${totalEnviados} notificação(ões) enviada(s)`);
 
   return NextResponse.json({
-    date: hoje,
+    run,
+    dataAlvo,
     eventos: eventos.length,
     notificados: totalEnviados,
   });

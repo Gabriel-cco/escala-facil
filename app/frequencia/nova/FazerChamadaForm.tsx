@@ -1,7 +1,6 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import QRCode from "react-qr-code";
 import { createClient } from "@/lib/supabase/client";
 import { iniciais } from "@/lib/iniciais";
 import { logAccess } from "@/lib/access-log";
@@ -18,7 +17,7 @@ export type EntradaRoster = {
   presente: boolean;
 };
 
-type ModoAvulso = null | "escolhendo" | "manual" | "qr";
+type ModoAvulso = null | "escolhendo" | "manual";
 
 function hojeStr() {
   const d = new Date();
@@ -92,7 +91,6 @@ export default function FazerChamadaForm({
   const [erro, setErro] = useState("");
 
   const [modoAvulso, setModoAvulso] = useState<ModoAvulso>(null);
-  const [qrToken, setQrToken] = useState<string | null>(null);
   const membrosOriginal = useRef<EntradaRoster[]>([]);
 
   const entrarModoAvulso = useCallback(() => {
@@ -108,18 +106,7 @@ export default function FazerChamadaForm({
       setRoster(membrosOriginal.current);
       membrosOriginal.current = [];
     }
-    setQrToken(null);
     setModoAvulso(null);
-  }, []);
-
-  const entrarModoQr = useCallback(() => {
-    setQrToken(crypto.randomUUID());
-    setModoAvulso("qr");
-  }, []);
-
-  const voltarParaEscolha = useCallback(() => {
-    setQrToken(null);
-    setModoAvulso("escolhendo");
   }, []);
 
   const onGrupoChange = useCallback(
@@ -283,16 +270,15 @@ export default function FazerChamadaForm({
     }
   };
 
-  const salvarQr = async () => {
+  // Salva imediatamente e redireciona para a tela de administração do QR
+  const gerarQr = async () => {
     if (!grupoId || !nome.trim() || !data) {
       setErro("Preencha grupo, nome e data da chamada.");
       return;
     }
     setSalvando(true);
     setErro("");
-
     try {
-      const token = qrToken ?? crypto.randomUUID();
       const { data: lista, error: listError } = await supabase
         .from("attendance_lists")
         .insert({
@@ -302,12 +288,11 @@ export default function FazerChamadaForm({
           date: data,
           time: hora || null,
           created_by: accountId,
-          qr_token: token,
+          qr_token: crypto.randomUUID(),
         })
         .select("id")
         .single();
       if (listError || !lista) throw listError;
-
       router.push(`/frequencia/${lista.id}/qr`);
     } catch (e: unknown) {
       setErro((e as { message?: string })?.message ?? "Erro ao criar lista.");
@@ -321,7 +306,7 @@ export default function FazerChamadaForm({
 
   const rosterVazio = roster.length === 0 && !!grupoId && !carregandoGrupo;
   // Prompt avulso substitui o roster apenas quando o grupo não tem membros
-  const mostrarAvulsoPrompt = rosterVazio && !editando && modoAvulso !== "manual" && modoAvulso !== "qr";
+  const mostrarAvulsoPrompt = rosterVazio && !editando && modoAvulso !== "manual";
   // Coordinator e admin com membros carregados podem iniciar avulsa
   const mostrarBotaoAvulso =
     !editando && !!grupoId && !carregandoGrupo &&
@@ -330,38 +315,26 @@ export default function FazerChamadaForm({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Barra de contagem — oculta em modo QR */}
-      {modoAvulso !== "qr" && (
-        <div className="flex flex-none items-center justify-between border-b border-[#A7F3D0] bg-[#ECFDF5] px-[18px] py-3 md:px-6">
-          {modoAvulso === "manual" ? (
+      {/* Barra de contagem */}
+      <div className="flex flex-none items-center justify-between border-b border-[#A7F3D0] bg-[#ECFDF5] px-[18px] py-3 md:px-6">
+        {modoAvulso === "manual" ? (
+          <div className="text-[14px] font-semibold text-[#065F46]">
+            {roster.length} {roster.length === 1 ? "pessoa adicionada" : "pessoas adicionadas"}
+          </div>
+        ) : (
+          <>
             <div className="text-[14px] font-semibold text-[#065F46]">
-              {roster.length} {roster.length === 1 ? "pessoa adicionada" : "pessoas adicionadas"}
+              {presentCount} de {totalCount} presentes
             </div>
-          ) : (
-            <>
-              <div className="text-[14px] font-semibold text-[#065F46]">
-                {presentCount} de {totalCount} presentes
-              </div>
-              <button
-                onClick={marcarTodosPresentes}
-                className="text-[12.5px] font-semibold text-[#047857]"
-              >
-                Marcar todos presentes
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Banner modo QR */}
-      {modoAvulso === "qr" && (
-        <div className="flex flex-none items-center gap-3 border-b border-[#D6C3A5] bg-[#F2E7D4] px-[18px] py-3 md:px-6">
-          <span className="text-[18px]">📱</span>
-          <p className="text-[13px] font-semibold text-[#4A2415]">
-            Modo QR — mostre o código para os participantes
-          </p>
-        </div>
-      )}
+            <button
+              onClick={marcarTodosPresentes}
+              className="text-[12.5px] font-semibold text-[#047857]"
+            >
+              Marcar todos presentes
+            </button>
+          </>
+        )}
+      </div>
 
       <div className="flex flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         {/* Campos do formulário */}
@@ -462,30 +435,6 @@ export default function FazerChamadaForm({
             <p className="text-[13px] text-muted">
               Selecione um grupo para ver os membros.
             </p>
-          ) : modoAvulso === "qr" ? (
-            /* ── Modo QR — código exibido imediatamente ── */
-            <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <p className="text-[12px] font-semibold uppercase tracking-wider text-muted">
-                Mostre este QR para os participantes
-              </p>
-              {qrToken && (
-                <div className="rounded-[12px] border border-[#D6C3A5] bg-white p-3 shadow-sm">
-                  <QRCode
-                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/frequencia/avulsa/${qrToken}`}
-                    size={200}
-                  />
-                </div>
-              )}
-              <p className="max-w-[260px] text-[12.5px] text-muted">
-                Quem escanear digita o nome e confirma a presença automaticamente.
-              </p>
-              <button
-                onClick={voltarParaEscolha}
-                className="text-[12.5px] font-semibold text-muted underline underline-offset-2"
-              >
-                Voltar à escolha
-              </button>
-            </div>
           ) : mostrarAvulsoPrompt ? (
             /* ── Sem membros: prompt avulso ── */
             <div className="flex flex-col gap-3 py-2">
@@ -499,7 +448,8 @@ export default function FazerChamadaForm({
                   </p>
                   <button
                     onClick={() => setModoAvulso("manual")}
-                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D6C3A5] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAF6EC]"
+                    disabled={salvando}
+                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D6C3A5] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAF6EC] disabled:opacity-60"
                   >
                     <span className="text-[14px] font-semibold text-ink">
                       ✏️ Adicionar manualmente
@@ -509,11 +459,12 @@ export default function FazerChamadaForm({
                     </span>
                   </button>
                   <button
-                    onClick={entrarModoQr}
-                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D6C3A5] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAF6EC]"
+                    onClick={gerarQr}
+                    disabled={salvando}
+                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D6C3A5] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAF6EC] disabled:opacity-60"
                   >
                     <span className="text-[14px] font-semibold text-ink">
-                      📱 Gerar QR Code
+                      {salvando ? "Gerando…" : "📱 Gerar QR Code"}
                     </span>
                     <span className="text-[12.5px] text-muted">
                       Participantes escaneiam e se registram sozinhos
@@ -691,6 +642,24 @@ export default function FazerChamadaForm({
                     : "Adicionar membro externo"}
                 </button>
               )}
+
+              {/* QR avulso quando o grupo tem membros */}
+              {modoAvulso === "escolhendo" && (
+                <div className="mt-2 flex flex-col gap-2">
+                  <button
+                    onClick={gerarQr}
+                    disabled={salvando}
+                    className="flex flex-col gap-0.5 rounded-[12px] border border-[#D6C3A5] px-4 py-3.5 text-left hover:border-primary hover:bg-[#FAF6EC] disabled:opacity-60"
+                  >
+                    <span className="text-[14px] font-semibold text-ink">
+                      {salvando ? "Gerando…" : "📱 Gerar QR Code"}
+                    </span>
+                    <span className="text-[12.5px] text-muted">
+                      Participantes escaneiam e se registram sozinhos
+                    </span>
+                  </button>
+                </div>
+              )}
             </>
           ) : null}
         </div>
@@ -702,11 +671,7 @@ export default function FazerChamadaForm({
           <p className="mb-2 text-[12.5px] text-danger">{erro}</p>
         )}
         <div className="flex items-center justify-between gap-4">
-          {modoAvulso === "qr" ? (
-            <p className="text-[13px] text-muted">
-              Salve para registrar a chamada
-            </p>
-          ) : modoAvulso === "manual" ? (
+          {modoAvulso === "manual" ? (
             <p className="text-[13px] text-muted">
               {roster.length === 0
                 ? "Adicione pessoas à lista"
@@ -724,15 +689,11 @@ export default function FazerChamadaForm({
             </div>
           )}
           <button
-            onClick={modoAvulso === "qr" ? salvarQr : salvar}
+            onClick={salvar}
             disabled={salvando}
             className="rounded-[10px] bg-primary px-5 py-2.5 text-[14px] font-semibold text-white disabled:opacity-60"
           >
-            {salvando
-              ? "Salvando…"
-              : modoAvulso === "qr"
-                ? "Salvar e gerar QR"
-                : "Salvar chamada"}
+            {salvando ? "Salvando…" : "Salvar chamada"}
           </button>
         </div>
       </div>

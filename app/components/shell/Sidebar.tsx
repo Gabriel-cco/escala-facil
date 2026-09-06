@@ -19,6 +19,7 @@ const ITENS_ADMIN: NavItem[] = [
   { href: "/ministerios", label: "Ministérios", menuKey: "ministerios" },
   { href: "/eventos", label: "Eventos", menuKey: "eventos" },
   { href: "/trocas", label: "Trocas", menuKey: "trocas" },
+  { href: "/frequencia", label: "Frequência", menuKey: "frequencia" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
@@ -30,6 +31,7 @@ const ITENS_COORDINATOR: NavItem[] = [
   { href: "/ministerios", label: "Ministérios", menuKey: "ministerios" },
   { href: "/eventos", label: "Eventos", menuKey: "eventos" },
   { href: "/trocas", label: "Trocas", menuKey: "trocas" },
+  { href: "/frequencia", label: "Frequência", menuKey: "frequencia" },
   { href: "/notificacoes", label: "Notificações" },
   { href: "/perfil", label: "Meu Perfil" },
 ];
@@ -123,6 +125,14 @@ function IconeNav({ href }: { href: string }) {
           <path d="M9 18V5l12-2v13" />
           <circle cx="6" cy="18" r="3" />
           <circle cx="18" cy="16" r="3" />
+        </svg>
+      );
+    case "/frequencia":
+      return (
+        <svg {...p}>
+          <path d="M9 11l3 3 5-5" />
+          <rect x="3" y="4" width="18" height="17" rx="2.2" />
+          <path d="M8 4V2M16 4V2" />
         </svg>
       );
     case "/relatorio-uso":

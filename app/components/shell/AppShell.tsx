@@ -23,6 +23,7 @@ export type ShellUser = {
   accountId: string | null;
   groupId: string | null;
   hasMultipleAccounts: boolean;
+  accounts: { account_id: string; group_id: string | null; profile: "admin" | "coordinator" | "member"; group_name: string | null }[];
   hiddenMenuKeys: string[];
 };
 
@@ -89,7 +90,7 @@ export default function AppShell({
 
   return (
     <ShellContext.Provider value={contextValue}>
-      <GroupProvider profile={user?.perfil ?? null} groupId={user?.groupId ?? null} hasMultipleAccounts={user?.hasMultipleAccounts ?? false}>
+      <GroupProvider profile={user?.perfil ?? null} groupId={user?.groupId ?? null} hasMultipleAccounts={user?.hasMultipleAccounts ?? false} accounts={user?.accounts ?? []} accountId={user?.accountId ?? null}>
       <TourManager profile={user?.perfil ?? null} tourCompleted={user?.tourCompleted ?? false}>
         <div className="min-h-dvh bg-screen md:flex md:h-dvh md:min-h-0 md:overflow-hidden md:bg-app">
           {user && <Sidebar className="hidden md:flex" user={user} />}

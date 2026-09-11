@@ -10,7 +10,14 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { ACTIVE_GROUP_COOKIE } from "@/lib/active-group";
+import { ACTIVE_GROUP_COOKIE, ACTIVE_ACCOUNT_COOKIE } from "@/lib/active-group";
+
+export type AccountOption = {
+  account_id: string;
+  group_id: string | null;
+  profile: "admin" | "coordinator" | "member";
+  group_name: string | null;
+};
 
 interface GroupContextType {
   // Grupo ativo no momento (null = visão geral do admin).
@@ -22,6 +29,11 @@ interface GroupContextType {
 
   // Grupos disponíveis para o seletor (admin vê todos; demais veem o seu).
   groups: { id: string; name: string }[];
+
+  // Contas disponíveis + conta ativa para usuários com múltiplos vínculos.
+  accounts: AccountOption[];
+  activeAccountId: string | null;
+  setActiveAccount: (accountId: string) => void;
 
   // Helpers.
   isGlobalView: boolean; // admin sem grupo selecionado
@@ -56,11 +68,15 @@ export function GroupProvider({
   profile,
   groupId,
   hasMultipleAccounts,
+  accounts,
+  accountId,
 }: {
   children: React.ReactNode;
   profile: "admin" | "coordinator" | "member" | null;
   groupId: string | null;
   hasMultipleAccounts: boolean;
+  accounts: AccountOption[];
+  accountId: string | null;
 }) {
   const router = useRouter();
 
@@ -69,6 +85,11 @@ export function GroupProvider({
   const [adminSelection, setAdminSelection] = useState<string | null>(() =>
     lerCookie(ACTIVE_GROUP_COOKIE)
   );
+  // Conta ativa para multi-conta não-admin.
+  const [activeAccountId, setActiveAccountIdState] = useState<string | null>(accountId);
+  useEffect(() => {
+    setActiveAccountIdState(accountId);
+  }, [accountId]);
 
   const canSwitchGroup = profile === "admin";
 
@@ -113,6 +134,16 @@ export function GroupProvider({
     [canSwitchGroup, router]
   );
 
+  const setActiveAccount = useCallback(
+    (novoAccountId: string) => {
+      if (canSwitchGroup || !hasMultipleAccounts) return;
+      setActiveAccountIdState(novoAccountId);
+      gravarCookie(ACTIVE_ACCOUNT_COOKIE, novoAccountId);
+      router.refresh();
+    },
+    [canSwitchGroup, hasMultipleAccounts, router]
+  );
+
   const value = useMemo<GroupContextType>(() => {
     const activeGroupName =
       groups.find((g) => g.id === activeGroupId)?.name ?? null;
@@ -121,12 +152,15 @@ export function GroupProvider({
       activeGroupName,
       setActiveGroup,
       groups,
+      accounts,
+      activeAccountId,
+      setActiveAccount,
       isGlobalView: activeGroupId === null,
       canSwitchGroup,
       hasMultipleAccounts,
       isLoading: profile === null,
     };
-  }, [activeGroupId, groups, setActiveGroup, canSwitchGroup, hasMultipleAccounts, profile]);
+  }, [activeGroupId, groups, setActiveGroup, accounts, activeAccountId, setActiveAccount, canSwitchGroup, hasMultipleAccounts, profile]);
 
   return (
     <GroupContext.Provider value={value}>{children}</GroupContext.Provider>

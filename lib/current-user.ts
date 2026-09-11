@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ACTIVE_ACCOUNT_COOKIE } from "@/lib/active-group";
 
 export const getAuthUser = cache(async () => {
@@ -30,6 +31,40 @@ export const getAllAccounts = cache(async (): Promise<NonNullable<CurrentAccount
     p_auth_id: user.id,
   });
   return (data ?? []) as NonNullable<CurrentAccount>[];
+});
+
+export type AccountWithGroup = NonNullable<CurrentAccount> & { group_name: string | null };
+
+/**
+ * Todas as contas com nome do grupo já resolvido (usa admin client para
+ * contornar RLS e ver grupos de contas não ativas no momento).
+ * Cached na mesma requisição junto com getAllAccounts.
+ */
+export const getAllAccountsWithGroups = cache(async (): Promise<AccountWithGroup[]> => {
+  const accounts = await getAllAccounts();
+  if (accounts.length === 0) return [];
+
+  const groupIds = accounts
+    .map((a) => a.group_id)
+    .filter((id): id is string => id !== null);
+
+  if (groupIds.length === 0) {
+    return accounts.map((a) => ({ ...a, group_name: null }));
+  }
+
+  const admin = createAdminClient();
+  const { data: groups } = await admin
+    .from("groups")
+    .select("id, name")
+    .in("id", groupIds);
+
+  const nameMap = new Map<string, string>(
+    (groups ?? []).map((g) => [g.id, g.name as string])
+  );
+  return accounts.map((a) => ({
+    ...a,
+    group_name: a.group_id ? (nameMap.get(a.group_id) ?? null) : null,
+  }));
 });
 
 /**

@@ -1,6 +1,6 @@
 import AppShell, { type ShellUser } from "./AppShell";
 import { iniciais } from "@/lib/iniciais";
-import { getAuthUser, getCurrentAccount, getAllAccounts } from "@/lib/current-user";
+import { getAuthUser, getCurrentAccount, getAllAccountsWithGroups } from "@/lib/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
 
@@ -20,9 +20,9 @@ export default async function AuthShell({
       "Usuário";
 
     const supabase = await createClient();
-    const [account, allAccounts, { data: userRow }, activeGroupId] = await Promise.all([
+    const [account, allAccountsWithGroups, { data: userRow }, activeGroupId] = await Promise.all([
       getCurrentAccount(),
-      getAllAccounts(),
+      getAllAccountsWithGroups(),
       supabase
         .from("users")
         .select("avatar_url, tour_completed")
@@ -43,8 +43,8 @@ export default async function AuthShell({
 
     type UserRow = { avatar_url?: string | null; tour_completed?: boolean | null } | null;
     const row = userRow as UserRow;
-    const isAdmin = allAccounts.some((a) => a.profile === "admin");
-    const hasMultipleAccounts = !isAdmin && allAccounts.length > 1;
+    const isAdmin = allAccountsWithGroups.some((a) => a.profile === "admin");
+    const hasMultipleAccounts = !isAdmin && allAccountsWithGroups.length > 1;
 
     shellUser = {
       nome,
@@ -56,6 +56,7 @@ export default async function AuthShell({
       accountId: account?.account_id ?? null,
       groupId: account?.group_id ?? null,
       hasMultipleAccounts,
+      accounts: hasMultipleAccounts ? allAccountsWithGroups : [],
       hiddenMenuKeys,
     };
   }

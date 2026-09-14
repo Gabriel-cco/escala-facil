@@ -19,11 +19,11 @@ const MESES_LONGOS = [
 ];
 
 type Grupo = { id: string; name: string };
-type Padrao = { id: string; nome: string; diaSemana: number; horario: string };
+type Padrao = { id: string; nome: string; diaSemana: number; horario: string; ocorrencia?: number | null };
 type ScheduleTemplate = {
   id: string;
   name: string;
-  patterns: Array<{ nome: string; diaSemana: number; horario: string }>;
+  patterns: Array<{ nome: string; diaSemana: number; horario: string; ocorrencia?: number | null }>;
 };
 type EventoPreview = {
   key: string;
@@ -57,6 +57,15 @@ function getDatesForWeekday(year: number, month: number, weekday: number): strin
     }
   }
   return dates;
+}
+
+function getDatesForNthWeekday(ano: number, mes: number, diaSemana: number, ocorrencia: number): Date[] {
+  const primeiroDia = new Date(ano, mes - 1, 1);
+  const offsetAteDiaSemana = (diaSemana - primeiroDia.getDay() + 7) % 7;
+  const diaDoMes = 1 + offsetAteDiaSemana + (ocorrencia - 1) * 7;
+  const data = new Date(ano, mes - 1, diaDoMes);
+  if (data.getMonth() !== mes - 1) return [];
+  return [data];
 }
 
 function rotuloMesAno(mesAno: string): string {
@@ -126,6 +135,7 @@ export default function GerarEventosForm({
         nome: p.nome,
         diaSemana: p.diaSemana,
         horario: p.horario,
+        ocorrencia: p.ocorrencia ?? null,
       }))
     );
     setTemplateSelecionadoId("");
@@ -150,6 +160,7 @@ export default function GerarEventosForm({
         nome: p.nome.trim(),
         diaSemana: p.diaSemana,
         horario: p.horario,
+        ocorrencia: p.ocorrencia ?? null,
       })),
       created_by: accountId,
     });
@@ -205,7 +216,12 @@ export default function GerarEventosForm({
       const vistos = new Set<string>();
       const gerados: Omit<EventoPreview, "jaExiste" | "selecionado">[] = [];
       for (const padrao of padroes) {
-        for (const date of getDatesForWeekday(ano, mes, padrao.diaSemana)) {
+        const datasGeradas = padrao.ocorrencia
+          ? getDatesForNthWeekday(ano, mes, padrao.diaSemana, padrao.ocorrencia).map(
+              (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+            )
+          : getDatesForWeekday(ano, mes, padrao.diaSemana);
+        for (const date of datasGeradas) {
           const nome = padrao.nome.trim();
           const assinatura = `${nome}|${date}|${padrao.horario}`;
           if (vistos.has(assinatura)) continue;
@@ -493,6 +509,29 @@ export default function GerarEventosForm({
                             {d}
                           </option>
                         ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted">
+                        ▾
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="mb-1.5 text-[11px] font-semibold text-muted">
+                      QUANDO
+                    </div>
+                    <div className="relative">
+                      <select
+                        value={padrao.ocorrencia ?? ""}
+                        onChange={(e) =>
+                          updatePadrao(padrao.id, { ocorrencia: e.target.value ? Number(e.target.value) : null })
+                        }
+                        className="w-full appearance-none rounded-[12px] border border-black/10 bg-paper px-3 py-2.5 pr-8 text-[13.5px] text-ink outline-none"
+                      >
+                        <option value="">Toda semana</option>
+                        <option value="1">1ª vez no mês</option>
+                        <option value="2">2ª vez no mês</option>
+                        <option value="3">3ª vez no mês</option>
+                        <option value="4">4ª vez no mês</option>
                       </select>
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted">
                         ▾

@@ -11,11 +11,28 @@ interface EnviadaGrupo {
   count: number;
 }
 
+interface Agendada {
+  id: string;
+  title: string;
+  body: string;
+  scheduled_for: string;
+}
+
 function formatarDataEnvio(iso: string): string {
   const d = new Date(iso);
   const data = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
   const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   return `${data} às ${hora}`;
+}
+
+function formatarDataAgendada(dateStr: string): string {
+  // dateStr is YYYY-MM-DD from the DB; parse as local date
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
 }
 
 /**
@@ -26,6 +43,9 @@ export default function NotificacoesCliente({ accountId }: { accountId: string |
   const [enviadas, setEnviadas] = useState<EnviadaGrupo[]>([]);
   const [loading, setLoading] = useState(Boolean(accountId));
   const [busca, setBusca] = useState("");
+
+  const [agendadas, setAgendadas] = useState<Agendada[]>([]);
+  const [cancelando, setCancelando] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accountId) return;
@@ -42,8 +62,6 @@ export default function NotificacoesCliente({ accountId }: { accountId: string |
 
       if (cancelado) return;
 
-      // Cada envio vira várias linhas (uma por destinatário). Agrupa por
-      // título + instante para reconstituir o "envio" e contar destinatários.
       const grupos = new Map<string, EnviadaGrupo>();
       for (const row of data ?? []) {
         const key = `${row.title}|${new Date(row.created_at).toISOString().slice(0, 19)}`;
@@ -55,10 +73,22 @@ export default function NotificacoesCliente({ accountId }: { accountId: string |
       setLoading(false);
     })();
 
-    return () => {
-      cancelado = true;
-    };
+    return () => { cancelado = true; };
   }, [accountId]);
+
+  useEffect(() => {
+    if (!accountId) return;
+    fetch("/api/scheduled-notifications")
+      .then((r) => r.json())
+      .then((data) => setAgendadas(Array.isArray(data) ? data : []));
+  }, [accountId]);
+
+  async function cancelarAgendada(id: string) {
+    setCancelando(id);
+    const res = await fetch(`/api/scheduled-notifications/${id}`, { method: "DELETE" });
+    if (res.ok) setAgendadas((prev) => prev.filter((a) => a.id !== id));
+    setCancelando(null);
+  }
 
   const filtradas = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -82,6 +112,38 @@ export default function NotificacoesCliente({ accountId }: { accountId: string |
           + Criar notificação
         </Link>
       </div>
+
+      {/* Agendadas pendentes */}
+      {agendadas.length > 0 && (
+        <div>
+          <p className="mb-2 text-[12px] font-semibold text-muted">AGENDADAS</p>
+          <div className="overflow-hidden rounded-[14px] border border-[#fde68a] bg-[#fffbeb] shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            {agendadas.map((a, i) => (
+              <div
+                key={a.id}
+                className={`flex items-center gap-3 px-4 py-3 ${
+                  i < agendadas.length - 1 ? "border-b border-[#fde68a]/60" : ""
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13.5px] font-semibold text-[#92400e]">{a.title}</p>
+                  <p className="mt-0.5 line-clamp-1 text-[12px] text-[#b45309]">{a.body}</p>
+                </div>
+                <span className="flex-none rounded-full bg-[#fef3c7] px-2.5 py-0.5 text-[11px] font-semibold text-[#92400e]">
+                  {formatarDataAgendada(a.scheduled_for)}
+                </span>
+                <button
+                  onClick={() => cancelarAgendada(a.id)}
+                  disabled={cancelando === a.id}
+                  className="flex-none text-[12px] font-semibold text-danger hover:underline disabled:opacity-40"
+                >
+                  {cancelando === a.id ? "..." : "Cancelar"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Busca */}
       <input

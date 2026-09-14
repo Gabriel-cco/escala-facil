@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPushToAccounts } from "@/lib/send-push";
+import { resolverDestinatarios } from "@/lib/resolve-destinatarios";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -25,19 +26,31 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, body: bodyText, groupId, groupIds } = body as {
+  const {
+    title,
+    body: bodyText,
+    groupId,
+    groupIds,
+    categoriaId,
+    ministerioId,
+    accountIds,
+    scheduledFor,
+  } = body as {
     title: string;
     body: string;
     groupId?: string | "all";
     groupIds?: string[];
+    categoriaId?: string;
+    ministerioId?: string;
+    accountIds?: string[];
+    scheduledFor?: string; // YYYY-MM-DD
   };
 
   if (!title?.trim() || !bodyText?.trim()) {
     return NextResponse.json({ error: "title e body são obrigatórios" }, { status: 400 });
   }
 
-  // Grupos-alvo. Coordinator fica preso ao próprio grupo. Admin pode mandar
-  // para "all", vários grupos (groupIds) ou um só (groupId, legado).
+  // Resolve grupo(s) efetivo(s)
   let targetGroupIds: string[] | "all";
   if (account.profile === "coordinator") {
     targetGroupIds = account.group_id ? [account.group_id] : [];
@@ -49,40 +62,79 @@ export async function POST(request: NextRequest) {
     targetGroupIds = [groupId];
   }
 
+  // Grupo único em escopo (para segmentação por categoria/ministério)
+  const grupoUnico =
+    !accountIds?.length &&
+    targetGroupIds !== "all" &&
+    targetGroupIds.length === 1
+      ? targetGroupIds[0]
+      : undefined;
+
   const supabaseAdmin = createAdminClient();
 
-  let recipientsQuery = supabaseAdmin
-    .from("accounts")
-    .select("id")
-    .eq("active", true);
+  // ── Agendamento ─────────────────────────────────────────────────────────
+  if (scheduledFor) {
+    const row: Record<string, unknown> = {
+      title: title.trim(),
+      body: bodyText.trim(),
+      type: "general",
+      sender_account_id: account.account_id,
+      scheduled_for: scheduledFor,
+      target_group_id: grupoUnico ?? (targetGroupIds !== "all" && targetGroupIds.length === 1 ? targetGroupIds[0] : null),
+      target_categoria_id: categoriaId ?? null,
+      target_ministerio_id: ministerioId ?? null,
+      target_account_ids: accountIds?.length ? accountIds : null,
+    };
 
-  if (targetGroupIds !== "all") {
-    if (targetGroupIds.length === 0) {
-      return NextResponse.json({ count: 0 });
-    }
-    recipientsQuery = recipientsQuery.in("group_id", targetGroupIds);
+    const { error } = await supabaseAdmin.from("scheduled_notifications").insert(row);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ scheduled: true });
   }
 
-  const { data: recipients } = await recipientsQuery;
+  // ── Envio imediato ───────────────────────────────────────────────────────
+  let recipientIds: string[];
 
-  if (!recipients?.length) {
-    return NextResponse.json({ count: 0 });
+  if (accountIds?.length) {
+    recipientIds = accountIds;
+  } else if (categoriaId || ministerioId) {
+    recipientIds = await resolverDestinatarios({
+      groupId: grupoUnico,
+      categoriaId,
+      ministerioId,
+    });
+  } else if (targetGroupIds === "all") {
+    const { data } = await supabaseAdmin
+      .from("accounts")
+      .select("id")
+      .eq("active", true);
+    recipientIds = (data ?? []).map((r) => r.id);
+  } else {
+    if (targetGroupIds.length === 0) return NextResponse.json({ count: 0 });
+    const { data } = await supabaseAdmin
+      .from("accounts")
+      .select("id")
+      .eq("active", true)
+      .in("group_id", targetGroupIds);
+    recipientIds = (data ?? []).map((r) => r.id);
   }
 
-  const rows = recipients.map((r) => ({
-    account_id: r.id,
-    title,
-    body: bodyText,
-    type: "general",
-    sender_account_id: account.account_id,
-  }));
+  if (!recipientIds.length) return NextResponse.json({ count: 0 });
 
-  await supabaseAdmin.from("notifications").insert(rows);
-
-  await sendPushToAccounts(
-    recipients.map((r) => r.id),
-    { title, body: bodyText, url: "/notificacoes" }
+  await supabaseAdmin.from("notifications").insert(
+    recipientIds.map((id) => ({
+      account_id: id,
+      title: title.trim(),
+      body: bodyText.trim(),
+      type: "general",
+      sender_account_id: account.account_id,
+    }))
   );
 
-  return NextResponse.json({ count: recipients.length });
+  await sendPushToAccounts(recipientIds, {
+    title: title.trim(),
+    body: bodyText.trim(),
+    url: "/notificacoes",
+  });
+
+  return NextResponse.json({ count: recipientIds.length });
 }

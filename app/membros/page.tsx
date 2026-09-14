@@ -4,14 +4,21 @@ import { getActiveGroupId } from "@/lib/active-group-server";
 import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../components/shell/Header";
 import MembroItem from "./MembroItem";
+import { Paginacao } from "../components/Paginacao";
+
+const PP_DEFAULT = 25;
 
 export default async function MembrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ inativos?: string }>;
+  searchParams: Promise<{ inativos?: string; p?: string; pp?: string }>;
 }) {
-  const { inativos } = await searchParams;
+  const { inativos, p: pParam, pp: ppParam } = await searchParams;
   const mostrarInativos = inativos === "1";
+  const pp = Math.max(10, Math.min(50, Number(ppParam ?? PP_DEFAULT)));
+  const p = Math.max(1, Number(pParam ?? 1));
+  const de = (p - 1) * pp;
+  const ate = de + pp - 1;
 
   const supabase = await createClient();
   const activeGroupId = await getActiveGroupId();
@@ -25,43 +32,53 @@ export default async function MembrosPage({
   let query = supabase
     .from("accounts")
     .select(
-      "id, profile, active, suspended_until, suspension_reason, user:users(id, name, email, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data), group:groups(name)"
-    );
+      "id, profile, active, suspended_until, suspension_reason, user:users(id, name, email, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data), group:groups(name)",
+      { count: "exact" }
+    )
+    .order("name" as never, { referencedTable: "users" } as never);
+
   if (activeGroupId) query = query.eq("group_id", activeGroupId);
   if (!mostrarInativos) query = query.eq("active", true);
-  const { data: accounts, error } = await query;
 
-  const pessoas = (accounts ?? [])
-    .map((a) => {
-      const u = Array.isArray(a.user) ? a.user[0] : a.user;
-      const g = Array.isArray(a.group) ? a.group[0] : a.group;
-      const ux = u as typeof u & {
-        birth_date?: string | null;
-        responsavel_nome?: string | null;
-        responsavel_telefone?: string | null;
-        responsavel_email?: string | null;
-        termo_consentimento_assinado?: boolean;
-        termo_consentimento_data?: string | null;
-      };
-      return {
-        id: a.id,
-        userId: ux?.id ?? "",
-        nome: ux?.name ?? "—",
-        email: ux?.email ?? "",
-        perfil: a.profile as "admin" | "coordinator" | "member",
-        grupoNome: g?.name ?? "Sem grupo",
-        active: a.active,
-        suspensoAte: a.suspended_until as string | null,
-        motivoSuspensao: a.suspension_reason as string | null,
-        birthDate: ux?.birth_date ?? null,
-        responsavelNome: ux?.responsavel_nome ?? null,
-        responsavelTelefone: ux?.responsavel_telefone ?? null,
-        responsavelEmail: ux?.responsavel_email ?? null,
-        termoAssinado: ux?.termo_consentimento_assinado ?? false,
-        termoData: ux?.termo_consentimento_data ?? null,
-      };
-    })
-    .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
+  const { data: accounts, count, error } = await query.range(de, ate);
+
+  const totalItens = count ?? 0;
+  const paginaAtual = Math.max(1, Math.min(p, Math.ceil(totalItens / pp) || 1));
+
+  const pessoas = (accounts ?? []).map((a) => {
+    const u = Array.isArray(a.user) ? a.user[0] : a.user;
+    const g = Array.isArray(a.group) ? a.group[0] : a.group;
+    const ux = u as typeof u & {
+      birth_date?: string | null;
+      responsavel_nome?: string | null;
+      responsavel_telefone?: string | null;
+      responsavel_email?: string | null;
+      termo_consentimento_assinado?: boolean;
+      termo_consentimento_data?: string | null;
+    };
+    return {
+      id: a.id,
+      userId: ux?.id ?? "",
+      nome: ux?.name ?? "—",
+      email: ux?.email ?? "",
+      perfil: a.profile as "admin" | "coordinator" | "member",
+      grupoNome: g?.name ?? "Sem grupo",
+      active: a.active,
+      suspensoAte: a.suspended_until as string | null,
+      motivoSuspensao: a.suspension_reason as string | null,
+      birthDate: ux?.birth_date ?? null,
+      responsavelNome: ux?.responsavel_nome ?? null,
+      responsavelTelefone: ux?.responsavel_telefone ?? null,
+      responsavelEmail: ux?.responsavel_email ?? null,
+      termoAssinado: ux?.termo_consentimento_assinado ?? false,
+      termoData: ux?.termo_consentimento_data ?? null,
+    };
+  });
+
+  // Link do toggle inativos preserva pp mas reseta para página 1
+  const toggleHref = mostrarInativos
+    ? `/membros${pp !== PP_DEFAULT ? `?pp=${pp}` : ""}`
+    : `/membros?inativos=1${pp !== PP_DEFAULT ? `&pp=${pp}` : ""}`;
 
   return (
     <>
@@ -69,7 +86,7 @@ export default async function MembrosPage({
       <main className="flex flex-1 flex-col gap-4 px-[18px] pb-6 pt-0.5 md:gap-5 md:p-0">
         <div className="flex items-center justify-between">
           <div className="text-[13px] text-muted">
-            {pessoas.length} pessoa{pessoas.length !== 1 ? "s" : ""}
+            {totalItens} pessoa{totalItens !== 1 ? "s" : ""}
           </div>
           {podeGerenciar && (
             <Link
@@ -102,7 +119,7 @@ export default async function MembrosPage({
                 : "Apenas pessoas ativas"}
             </div>
             <Link
-              href={mostrarInativos ? "/membros" : "/membros?inativos=1"}
+              href={toggleHref}
               scroll={false}
               className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
             >
@@ -139,6 +156,14 @@ export default async function MembrosPage({
             />
           ))}
         </div>
+
+        {totalItens > pp && (
+          <Paginacao
+            paginaAtual={paginaAtual}
+            totalItens={totalItens}
+            itensPorPagina={pp}
+          />
+        )}
       </main>
     </>
   );

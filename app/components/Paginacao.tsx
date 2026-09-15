@@ -3,35 +3,30 @@
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-type PaginacaoProps = {
+type BaseProps = {
   paginaAtual: number;
   totalItens: number;
   itensPorPagina: number;
+  sufixo?: string;
 };
 
-function PaginacaoInner({ paginaAtual, totalItens, itensPorPagina }: PaginacaoProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const totalPaginas = Math.ceil(totalItens / itensPorPagina);
-  if (totalItens === 0 || totalPaginas <= 1) return null;
-
+function NavPaginas({
+  paginaAtual,
+  totalPaginas,
+  totalItens,
+  itensPorPagina,
+  sufixo,
+  irPara,
+}: {
+  paginaAtual: number;
+  totalPaginas: number;
+  totalItens: number;
+  itensPorPagina: number;
+  sufixo?: string;
+  irPara: (p: number) => void;
+}) {
   const inicio = (paginaAtual - 1) * itensPorPagina + 1;
   const fim = Math.min(paginaAtual * itensPorPagina, totalItens);
-
-  function irPara(pagina: number) {
-    if (pagina < 1 || pagina > totalPaginas) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("p", String(pagina));
-    router.push(`?${params.toString()}`, { scroll: false });
-  }
-
-  function mudarPP(pp: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("pp", String(pp));
-    params.set("p", "1");
-    router.push(`?${params.toString()}`, { scroll: false });
-  }
 
   function gerarNumeracao(): (number | "…")[] {
     if (totalPaginas <= 7) {
@@ -53,84 +48,140 @@ function PaginacaoInner({ paginaAtual, totalItens, itensPorPagina }: PaginacaoPr
     return result;
   }
 
-  const btnBase =
+  const btn =
     "flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold transition-colors";
 
   return (
-    <div className="flex flex-col items-center gap-3 pt-1 md:flex-row md:justify-between">
-      {/* Itens por página */}
-      <div className="flex items-center gap-2 text-[13px] text-muted">
-        <div className="relative">
-          <select
-            value={itensPorPagina}
-            onChange={(e) => mudarPP(Number(e.target.value))}
-            className="appearance-none rounded-[10px] border border-black/10 bg-paper py-1.5 pl-3 pr-7 text-[13px] text-ink outline-none"
+    <div className="border-t border-black/[0.06]">
+      {/* Desktop */}
+      <div className="hidden items-center justify-between px-5 py-3 md:flex">
+        <span className="text-[13px] text-muted">
+          Mostrando {inicio}–{fim} de {totalItens}
+          {sufixo ? ` ${sufixo}` : ""}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => irPara(paginaAtual - 1)}
+            disabled={paginaAtual === 1}
+            className={`${btn} border border-black/10 bg-paper text-ink disabled:pointer-events-none disabled:opacity-30`}
+            aria-label="Página anterior"
           >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted">
-            ▾
-          </span>
+            ‹
+          </button>
+          {gerarNumeracao().map((n, i) =>
+            n === "…" ? (
+              <span
+                key={`e-${i}`}
+                className="flex h-8 w-8 items-center justify-center text-[13px] text-faint"
+              >
+                …
+              </span>
+            ) : (
+              <button
+                key={n}
+                onClick={() => irPara(n as number)}
+                className={`${btn} ${
+                  n === paginaAtual
+                    ? "bg-primary text-white"
+                    : "border border-black/10 bg-paper text-ink hover:bg-surface"
+                }`}
+              >
+                {n}
+              </button>
+            )
+          )}
+          <button
+            onClick={() => irPara(paginaAtual + 1)}
+            disabled={paginaAtual === totalPaginas}
+            className={`${btn} border border-black/10 bg-paper text-ink disabled:pointer-events-none disabled:opacity-30`}
+            aria-label="Próxima página"
+          >
+            ›
+          </button>
         </div>
-        <span>por página</span>
       </div>
 
-      {/* Números */}
-      <div className="flex items-center gap-1">
+      {/* Mobile */}
+      <div className="flex items-center justify-between md:hidden">
         <button
           onClick={() => irPara(paginaAtual - 1)}
           disabled={paginaAtual === 1}
-          className={`${btnBase} border border-black/10 bg-paper text-ink disabled:pointer-events-none disabled:opacity-30`}
+          className="flex h-12 w-14 items-center justify-center text-[22px] text-ink-soft disabled:opacity-30"
           aria-label="Página anterior"
         >
           ‹
         </button>
-        {gerarNumeracao().map((n, i) =>
-          n === "…" ? (
-            <span
-              key={`e-${i}`}
-              className="flex h-8 w-8 items-center justify-center text-[13px] text-faint"
-            >
-              …
-            </span>
-          ) : (
-            <button
-              key={n}
-              onClick={() => irPara(n)}
-              className={`${btnBase} ${
-                n === paginaAtual
-                  ? "bg-primary text-white"
-                  : "border border-black/10 bg-paper text-ink hover:bg-surface"
-              }`}
-            >
-              {n}
-            </button>
-          )
-        )}
+        <span className="text-[13px] font-medium text-ink">
+          Página {paginaAtual} de {totalPaginas}
+        </span>
         <button
           onClick={() => irPara(paginaAtual + 1)}
           disabled={paginaAtual === totalPaginas}
-          className={`${btnBase} border border-black/10 bg-paper text-ink disabled:pointer-events-none disabled:opacity-30`}
+          className="flex h-12 w-14 items-center justify-center text-[22px] text-ink-soft disabled:opacity-30"
           aria-label="Próxima página"
         >
           ›
         </button>
       </div>
-
-      {/* Contagem */}
-      <span className="text-[13px] text-muted">
-        {inicio}–{fim} de {totalItens}
-      </span>
     </div>
   );
 }
 
-export function Paginacao(props: PaginacaoProps) {
+function PaginacaoInner({ paginaAtual, totalItens, itensPorPagina, sufixo }: BaseProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const totalPaginas = Math.ceil(totalItens / itensPorPagina);
+  if (totalItens === 0 || totalPaginas <= 1) return null;
+
+  function irPara(pagina: number) {
+    if (pagina < 1 || pagina > totalPaginas) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("p", String(pagina));
+    router.push(`?${params.toString()}`, { scroll: false });
+  }
+
+  return (
+    <NavPaginas
+      paginaAtual={paginaAtual}
+      totalPaginas={totalPaginas}
+      totalItens={totalItens}
+      itensPorPagina={itensPorPagina}
+      sufixo={sufixo}
+      irPara={irPara}
+    />
+  );
+}
+
+/** Paginação server-side: usa URL params (?p=N). Requer Suspense internamente. */
+export function Paginacao(props: BaseProps) {
   return (
     <Suspense>
       <PaginacaoInner {...props} />
     </Suspense>
+  );
+}
+
+/** Paginação client-side: chama onMudar(página) em vez de atualizar a URL. */
+export function PaginacaoCliente({
+  paginaAtual,
+  totalItens,
+  itensPorPagina,
+  sufixo,
+  onMudar,
+}: BaseProps & { onMudar: (p: number) => void }) {
+  const totalPaginas = Math.ceil(totalItens / itensPorPagina);
+  if (totalItens === 0 || totalPaginas <= 1) return null;
+
+  return (
+    <NavPaginas
+      paginaAtual={paginaAtual}
+      totalPaginas={totalPaginas}
+      totalItens={totalItens}
+      itensPorPagina={itensPorPagina}
+      sufixo={sufixo}
+      irPara={(p) => {
+        if (p >= 1 && p <= totalPaginas) onMudar(p);
+      }}
+    />
   );
 }

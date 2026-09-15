@@ -178,7 +178,7 @@ export default function MembroItem({
   return (
     <>
       <div
-        className={`group rounded-2xl border border-black/[0.06] bg-paper shadow-card px-[15px] py-3 ${
+        className={`group px-[15px] py-3 md:px-5 ${
           !membro.active ? "opacity-55" : ""
         }`}
       >

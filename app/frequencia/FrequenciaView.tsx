@@ -3,6 +3,9 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { PaginacaoCliente } from "@/app/components/Paginacao";
+
+const PP_REL = 20;
 
 type RecordEntry = {
   id: string;
@@ -97,6 +100,7 @@ export default function FrequenciaView({
   const [loadingRel, setLoadingRel] = useState(false);
   const [excluindo, setExcluindo] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
+  const [paginaRel, setPaginaRel] = useState(1);
 
   const fetchRelatorio = useCallback(
     async (p: "todo" | "30" | "90") => {
@@ -118,6 +122,7 @@ export default function FrequenciaView({
 
   const handlePeriodoChange = (p: "todo" | "30" | "90") => {
     setPeriodo(p);
+    setPaginaRel(1);
     fetchRelatorio(p);
   };
 
@@ -389,49 +394,112 @@ export default function FrequenciaView({
             <p className="text-[13px] text-muted">
               Nenhum dado no período selecionado.
             </p>
-          ) : (
-            <>
-              {/* Tabela desktop */}
-              <div className="hidden overflow-hidden rounded-[10px] border border-[#E3D2B6] md:block">
-                <div className="grid grid-cols-[1fr_110px_130px_150px] border-b border-[#E3D2B6] bg-[#FAF6EC] px-[18px] py-3">
-                  {["Membro", "Presenças", "Chamadas", "Frequência"].map(
-                    (h) => (
+          ) : (() => {
+            const relPage = relatorio.slice((paginaRel - 1) * PP_REL, paginaRel * PP_REL);
+            return (
+              <>
+                {/* Tabela desktop */}
+                <div className="hidden overflow-hidden rounded-[10px] border border-[#E3D2B6] md:block">
+                  <div className="grid grid-cols-[1fr_110px_130px_150px] border-b border-[#E3D2B6] bg-[#FAF6EC] px-[18px] py-3">
+                    {["Membro", "Presenças", "Chamadas", "Frequência"].map(
+                      (h) => (
+                        <div
+                          key={h}
+                          className="text-[11.5px] font-semibold uppercase tracking-wider text-muted"
+                        >
+                          {h}
+                        </div>
+                      )
+                    )}
+                  </div>
+                  {relPage.map((r) => {
+                    const pct =
+                      r.total_count > 0
+                        ? Math.round((r.present_count / r.total_count) * 1000) /
+                          10
+                        : null;
+                    return (
                       <div
-                        key={h}
-                        className="text-[11.5px] font-semibold uppercase tracking-wider text-muted"
+                        key={r.account_id}
+                        className="grid grid-cols-[1fr_110px_130px_150px] items-center border-b border-[#F5F5F5] px-[18px] py-3.5 last:border-0 hover:bg-[#FAF6EC]"
                       >
-                        {h}
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#F2E7D4] text-[11.5px] font-bold text-[#4A2415]">
+                            {ini(r.member_name)}
+                          </div>
+                          <div className="truncate text-[14px] font-semibold text-ink">
+                            {r.member_name}
+                          </div>
+                        </div>
+                        <div className="text-[14px] text-[#404040]">
+                          {pct === null ? "—" : r.present_count}
+                        </div>
+                        <div className="text-[14px] text-muted">
+                          {pct === null ? "—" : r.total_count}
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F2E7D4]">
+                            {pct !== null && (
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${pct}%`,
+                                  background: barColor(pct),
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div
+                            className="w-14 text-right text-[13px] font-semibold"
+                            style={{
+                              color: pct === null ? "#8A7466" : pctColor(pct),
+                            }}
+                          >
+                            {pct === null ? "—" : `${pct}%`}
+                          </div>
+                        </div>
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
-                {relatorio.map((r) => {
-                  const pct =
-                    r.total_count > 0
-                      ? Math.round((r.present_count / r.total_count) * 1000) /
-                        10
-                      : null;
-                  return (
-                    <div
-                      key={r.account_id}
-                      className="grid grid-cols-[1fr_110px_130px_150px] items-center border-b border-[#F5F5F5] px-[18px] py-3.5 last:border-0 hover:bg-[#FAF6EC]"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#F2E7D4] text-[11.5px] font-bold text-[#4A2415]">
-                          {ini(r.member_name)}
+
+                {/* Cards mobile */}
+                <div className="flex flex-col gap-2 md:hidden">
+                  {relPage.map((r) => {
+                    const pct =
+                      r.total_count > 0
+                        ? Math.round((r.present_count / r.total_count) * 1000) /
+                          10
+                        : null;
+                    return (
+                      <div
+                        key={r.account_id}
+                        className="rounded-[10px] border border-[#E3D2B6] bg-paper p-3.5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#F2E7D4] text-[11.5px] font-bold text-[#4A2415]">
+                            {ini(r.member_name)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[13.5px] font-semibold text-ink">
+                              {r.member_name}
+                            </div>
+                            <div className="mt-0.5 text-[11.5px] text-muted">
+                              {pct === null
+                                ? "—"
+                                : `${r.present_count} de ${r.total_count} chamadas`}
+                            </div>
+                          </div>
+                          <div
+                            className="flex-none text-[14px] font-bold"
+                            style={{
+                              color: pct === null ? "#8A7466" : pctColor(pct),
+                            }}
+                          >
+                            {pct === null ? "—" : `${pct}%`}
+                          </div>
                         </div>
-                        <div className="truncate text-[14px] font-semibold text-ink">
-                          {r.member_name}
-                        </div>
-                      </div>
-                      <div className="text-[14px] text-[#404040]">
-                        {pct === null ? "—" : r.present_count}
-                      </div>
-                      <div className="text-[14px] text-muted">
-                        {pct === null ? "—" : r.total_count}
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#F2E7D4]">
+                        <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-[#F2E7D4]">
                           {pct !== null && (
                             <div
                               className="h-full rounded-full"
@@ -442,76 +510,27 @@ export default function FrequenciaView({
                             />
                           )}
                         </div>
-                        <div
-                          className="w-14 text-right text-[13px] font-semibold"
-                          style={{
-                            color: pct === null ? "#8A7466" : pctColor(pct),
-                          }}
-                        >
-                          {pct === null ? "—" : `${pct}%`}
-                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
 
-              {/* Cards mobile */}
-              <div className="flex flex-col gap-2 md:hidden">
-                {relatorio.map((r) => {
-                  const pct =
-                    r.total_count > 0
-                      ? Math.round((r.present_count / r.total_count) * 1000) /
-                        10
-                      : null;
-                  return (
-                    <div
-                      key={r.account_id}
-                      className="rounded-[10px] border border-[#E3D2B6] bg-paper p-3.5"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#F2E7D4] text-[11.5px] font-bold text-[#4A2415]">
-                          {ini(r.member_name)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-[13.5px] font-semibold text-ink">
-                            {r.member_name}
-                          </div>
-                          <div className="mt-0.5 text-[11.5px] text-muted">
-                            {pct === null
-                              ? "—"
-                              : `${r.present_count} de ${r.total_count} chamadas`}
-                          </div>
-                        </div>
-                        <div
-                          className="flex-none text-[14px] font-bold"
-                          style={{
-                            color: pct === null ? "#8A7466" : pctColor(pct),
-                          }}
-                        >
-                          {pct === null ? "—" : `${pct}%`}
-                        </div>
-                      </div>
-                      <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-[#F2E7D4]">
-                        {pct !== null && (
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${pct}%`,
-                              background: barColor(pct),
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="mt-3 text-[12.5px] text-muted">
-                Membros sem chamadas no período aparecem como —, nunca 0%.
-              </p>
-            </>
-          )}
+                <p className="mt-3 text-[12.5px] text-muted">
+                  Membros sem chamadas no período aparecem como —, nunca 0%.
+                </p>
+
+                <div className="mt-4 overflow-hidden rounded-[10px] border border-[#E3D2B6] bg-paper">
+                  <PaginacaoCliente
+                    paginaAtual={paginaRel}
+                    totalItens={relatorio.length}
+                    itensPorPagina={PP_REL}
+                    sufixo="membros"
+                    onMudar={setPaginaRel}
+                  />
+                </div>
+              </>
+            );
+          })()}
         </div>
       )}
     </div>

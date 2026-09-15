@@ -11,7 +11,7 @@ import MembroSelect from "./MembroSelect";
 import EventosHeader from "./EventosHeader";
 import { Paginacao } from "../components/Paginacao";
 
-const PP_DEFAULT = 25;
+const PP_DEFAULT = 10;
 
 const iconeLapis = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -349,6 +349,8 @@ export default async function EventosPage({
     gruposPorMes[i].eventos.push(e);
   });
 
+  const MESES_ABREV = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+
   function renderEventoCard(evento: RawEvento, roleName?: string) {
     const g = Array.isArray(evento.groups) ? evento.groups[0] : evento.groups;
     const total = totalPorEvento.get(evento.id) ?? 0;
@@ -357,93 +359,58 @@ export default async function EventosPage({
 
     const eventoExt = evento as RawEvento & { ministerio?: { name?: string } | null };
     const ministerioNome = eventoExt.ministerio?.name ?? null;
+    const grupoNome = g?.name ?? "Sem grupo";
+    const subtitulo = roleName
+      ? `${grupoNome} · ${roleName}`
+      : [grupoNome, evento.liturgical_name].filter(Boolean).join(" · ");
 
-    const subtituloMobile = roleName ? `${g?.name ?? "Sem grupo"} · ${roleName}` : g?.name ?? "Sem grupo";
-    const subtituloDesktop = roleName
-      ? `${g?.name ?? "Sem grupo"} · ${roleName}`
-      : [g?.name ?? "Sem grupo", evento.liturgical_name].filter(Boolean).join(" · ");
+    const [, m, d] = evento.date.split("-").map(Number);
+    const diaStr = String(d).padStart(2, "0");
+    const mesStr = MESES_ABREV[m - 1];
 
     return (
-      <div key={evento.id} id={`evento-${evento.id}`} className="scroll-mt-20 rounded-[18px] border border-black/[0.06] bg-paper shadow-card md:rounded-2xl">
-        {/* Mobile */}
-        <div className="flex items-stretch md:hidden">
-          <Link href={`/eventos/${evento.id}`} className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-[18px] pr-3">
-            <div className="flex items-start justify-between gap-2.5">
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 text-[18px] font-semibold leading-tight text-ink">
-                  <LiturgicalDot color={evento.liturgical_color} />
-                  {evento.name}
-                </div>
-                {evento.liturgical_name && !roleName && (
-                  <div className="mt-0.5 text-[12px] text-muted">{evento.liturgical_name}</div>
-                )}
-                {ministerioNome && (
-                  <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-surface px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
-                    ♪ {ministerioNome}
-                  </div>
-                )}
-              </div>
-              <div className="whitespace-nowrap pt-0.5 text-[12px] font-semibold text-ink-soft">
-                {rotuloData(evento.date)} · {rotuloHora(evento.time)}
-              </div>
-            </div>
-            <div className="text-[12px] text-muted">{subtituloMobile}</div>
-            {!roleName && (
-              <div className="flex items-center gap-2.5">
-                <div className="h-[5px] flex-1 overflow-hidden rounded-[3px] bg-surface">
-                  <div className="h-full rounded-[3px] bg-primary" style={{ width: `${pct}%` }} />
-                </div>
-                <div className="text-[11.5px] font-semibold text-ink-soft">{atribuidas}/{total}</div>
-              </div>
-            )}
-          </Link>
-          {podeGerenciar && (
-            <div className="flex flex-none items-center gap-0.5 pr-2">
-              <Link href={`/eventos/editar/${evento.id}`} className="flex h-9 w-9 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink" title="Editar evento">
-                {iconeLapis}
-              </Link>
-              <DeleteEventoButton eventId={evento.id} titulo={evento.name} accountId={accountIdLogado ?? undefined} />
-            </div>
-          )}
+      <div key={evento.id} id={`evento-${evento.id}`} className="scroll-mt-20 flex items-center gap-3 px-[15px] py-3 md:px-5">
+        {/* Coluna de data */}
+        <div className="flex w-[38px] flex-none flex-col items-center leading-none">
+          <span className="text-[18px] font-bold text-ink">{diaStr}</span>
+          <span className="text-[11px] text-muted">{mesStr}</span>
         </div>
 
-        {/* Desktop */}
-        <div className="hidden items-center gap-3 py-[18px] pl-[22px] pr-3 md:flex">
-          <Link href={`/eventos/${evento.id}`} className="flex min-w-0 flex-1 items-center gap-6">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 text-[18px] font-semibold text-ink">
-                <LiturgicalDot color={evento.liturgical_color} />
-                {evento.name}
-              </div>
-              <div className="mt-1 text-[12.5px] text-muted">{subtituloDesktop}</div>
-              {ministerioNome && (
-                <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-surface px-2.5 py-0.5 text-[11px] font-medium text-ink-soft">
-                  ♪ {ministerioNome}
-                </div>
-              )}
-            </div>
-            <div className="w-[120px] flex-none text-[13px] font-semibold text-ink-soft">
-              {rotuloData(evento.date)} · {rotuloHora(evento.time)}
-            </div>
-            {!roleName && (
-              <div className="flex w-[170px] flex-none items-center gap-2.5">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-surface">
-                  <div className="h-full rounded-[3px] bg-primary" style={{ width: `${pct}%` }} />
-                </div>
-                <div className="whitespace-nowrap text-[12px] font-semibold text-ink-soft">{atribuidas}/{total}</div>
-              </div>
-            )}
-            <div className="flex-none text-[20px] text-[#9ca3af]">›</div>
-          </Link>
-          {podeGerenciar && (
-            <div className="flex items-center gap-0.5">
-              <Link href={`/eventos/editar/${evento.id}`} className="flex h-9 w-9 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink" title="Editar evento">
-                {iconeLapis}
-              </Link>
-              <DeleteEventoButton eventId={evento.id} titulo={evento.name} accountId={accountIdLogado ?? undefined} />
+        {/* Conteúdo */}
+        <Link href={`/eventos/${evento.id}`} className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <LiturgicalDot color={evento.liturgical_color} />
+            <span className="truncate text-[15px] font-semibold text-ink">{evento.name}</span>
+          </div>
+          <div className="flex min-w-0 items-center gap-1 text-[12.5px] text-muted">
+            <span className="flex-none">{rotuloHora(evento.time)}</span>
+            <span className="flex-none">·</span>
+            <span className="truncate">{subtitulo}</span>
+          </div>
+          {ministerioNome && (
+            <div className="mt-0.5 inline-flex w-fit items-center gap-1 rounded-full border border-black/[0.08] bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-soft">
+              ♪ {ministerioNome}
             </div>
           )}
-        </div>
+          {!roleName && total > 0 && (
+            <div className="mt-1 flex items-center gap-2">
+              <div className="h-[4px] w-16 flex-none overflow-hidden rounded-full bg-surface">
+                <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="text-[11px] text-ink-soft">{atribuidas}/{total}</span>
+            </div>
+          )}
+        </Link>
+
+        {/* Ações */}
+        {podeGerenciar && (
+          <div className="flex flex-none items-center gap-0.5">
+            <Link href={`/eventos/editar/${evento.id}`} className="flex h-9 w-9 items-center justify-center rounded-full text-faint hover:bg-black/[0.04] hover:text-ink" title="Editar evento">
+              {iconeLapis}
+            </Link>
+            <DeleteEventoButton eventId={evento.id} titulo={evento.name} accountId={accountIdLogado ?? undefined} />
+          </div>
+        )}
       </div>
     );
   }
@@ -523,61 +490,91 @@ export default async function EventosPage({
         )}
 
         {totalBase > 0 && totalEventos === 0 && (
-          <p className="text-[13px] text-muted">
-            {membroFiltro
-              ? "Este membro não está escalado em nenhum evento."
-              : mesFiltro
-              ? "Nenhum evento neste mês."
-              : `Nenhum evento próximo.${
-                  totalPassados > 0
-                    ? ` Há ${totalPassados} evento${totalPassados > 1 ? "s" : ""} passado${totalPassados > 1 ? "s" : ""} — use o botão abaixo para mostrá-${totalPassados > 1 ? "los" : "lo"}.`
-                    : ""
-                }`}
-          </p>
+          <div className="overflow-hidden rounded-[18px] border border-black/[0.06] bg-paper px-5 py-8">
+            <p className="text-[13px] text-muted">
+              {membroFiltro
+                ? "Este membro não está escalado em nenhum evento."
+                : mesFiltro
+                ? "Nenhum evento neste mês."
+                : `Nenhum evento próximo.${
+                    totalPassados > 0
+                      ? ` Há ${totalPassados} evento${totalPassados > 1 ? "s" : ""} passado${totalPassados > 1 ? "s" : ""}.`
+                      : ""
+                  }`}
+            </p>
+            {!mesFiltro && totalPassados > 0 && (
+              <Link
+                href={montarHref({ passados: true })}
+                scroll={false}
+                className="mt-3 inline-flex items-center gap-2 text-[13px] font-semibold text-primary"
+              >
+                Mostrar passados ›
+              </Link>
+            )}
+          </div>
         )}
 
         {totalEventos > 0 && (
           <>
             {scrollTargetId && <ScrollToEvento targetId={scrollTargetId} />}
 
-            {/* Toggle de passados — oculto quando mês selecionado */}
-            {!mesFiltro && (
-              <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
-                <div className="text-[12px] text-muted">
-                  {mostrarPassados ? "Mostrando todos os eventos" : "Apenas próximos eventos"}
-                </div>
-                <Link href={montarHref({ passados: !mostrarPassados })} scroll={false}
-                  className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft">
-                  <span className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${mostrarPassados ? "bg-primary" : "bg-black/15"}`}>
-                    <span className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${mostrarPassados ? "left-[14px]" : "left-[2px]"}`} />
-                  </span>
-                  Mostrar passados
-                </Link>
+            <div className="overflow-hidden rounded-[18px] border border-black/[0.06] bg-paper">
+              {/* Header desktop */}
+              <div className="hidden items-center justify-between border-b border-black/[0.06] px-5 py-4 md:flex">
+                <span className="text-[17px] font-semibold text-ink">Eventos</span>
+                {!mesFiltro && (
+                  <Link
+                    href={montarHref({ passados: !mostrarPassados })}
+                    scroll={false}
+                    className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
+                  >
+                    <span className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${mostrarPassados ? "bg-primary" : "bg-black/15"}`}>
+                      <span className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${mostrarPassados ? "left-[14px]" : "left-[2px]"}`} />
+                    </span>
+                    Mostrar passados
+                  </Link>
+                )}
               </div>
-            )}
 
-            <div className="flex flex-col gap-5 md:gap-6">
-              {gruposPorMes.map((g) => (
-                <div key={g.chave} className="flex flex-col gap-2.5">
-                  {!mesFiltro && (
-                    <div className="px-1 text-[11px] font-semibold uppercase tracking-[1.2px] text-faint md:px-0">
-                      {g.rotulo}
-                    </div>
-                  )}
-                  {g.eventos.map((e) =>
-                    renderEventoCard(e, membroFuncaoPorEvento?.get(e.id))
-                  )}
+              {/* Toggle mobile */}
+              {!mesFiltro && (
+                <div className="flex items-center justify-end border-b border-black/[0.06] px-[15px] py-2.5 md:hidden">
+                  <Link
+                    href={montarHref({ passados: !mostrarPassados })}
+                    scroll={false}
+                    className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
+                  >
+                    <span className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${mostrarPassados ? "bg-primary" : "bg-black/15"}`}>
+                      <span className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${mostrarPassados ? "left-[14px]" : "left-[2px]"}`} />
+                    </span>
+                    Mostrar passados
+                  </Link>
                 </div>
-              ))}
-            </div>
+              )}
 
-            {totalEventos > pp && (
+              {/* Lista de eventos */}
+              <div className="flex flex-col divide-y divide-black/[0.06]">
+                {gruposPorMes.map((g) => (
+                  <div key={g.chave}>
+                    {!mesFiltro && (
+                      <div className="px-[15px] pb-1 pt-4 text-[11px] font-semibold uppercase tracking-[1.2px] text-faint md:px-5">
+                        {g.rotulo}
+                      </div>
+                    )}
+                    {g.eventos.map((e) =>
+                      renderEventoCard(e, membroFuncaoPorEvento?.get(e.id))
+                    )}
+                  </div>
+                ))}
+              </div>
+
               <Paginacao
                 paginaAtual={paginaAtual}
                 totalItens={totalEventos}
                 itensPorPagina={pp}
+                sufixo={mostrarPassados ? "eventos passados" : undefined}
               />
-            )}
+            </div>
           </>
         )}
       </main>

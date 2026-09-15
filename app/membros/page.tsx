@@ -6,7 +6,7 @@ import Header from "../components/shell/Header";
 import MembroItem from "./MembroItem";
 import { Paginacao } from "../components/Paginacao";
 
-const PP_DEFAULT = 25;
+const PP_DEFAULT = 10;
 
 export default async function MembrosPage({
   searchParams,
@@ -83,87 +83,111 @@ export default async function MembrosPage({
   return (
     <>
       <Header variant="root" title="Membros" />
-      <main className="flex flex-1 flex-col gap-4 px-[18px] pb-6 pt-0.5 md:gap-5 md:p-0">
-        <div className="flex items-center justify-between">
-          <div className="text-[13px] text-muted">
-            {totalItens} pessoa{totalItens !== 1 ? "s" : ""}
-          </div>
+      <main className="flex flex-1 flex-col gap-3 px-[18px] pb-6 pt-0.5 md:gap-4 md:p-0">
+        {/* Controles mobile — acima do card */}
+        <div className="flex flex-col gap-2.5 md:hidden">
           {podeGerenciar && (
             <Link
               href="/membros/novo"
-              className="hidden flex-none items-center gap-2 rounded-[14px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover md:inline-flex"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink"
             >
               + Cadastrar pessoa
             </Link>
           )}
-        </div>
 
-        {podeGerenciar && (
-          <Link
-            href="/membros/novo"
-            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 p-3.5 text-[13.5px] font-semibold text-ink md:hidden"
-          >
-            + Cadastrar pessoa
-          </Link>
-        )}
+          {podeGerenciar && (
+            <div className="flex items-center justify-between gap-3 px-0.5">
+              <div className="text-[12px] text-muted">
+                {mostrarInativos ? "Ativos e inativos" : "Apenas ativos"}
+              </div>
+              <Link
+                href={toggleHref}
+                scroll={false}
+                className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
+              >
+                <span
+                  className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
+                    mostrarInativos ? "bg-primary" : "bg-black/15"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
+                      mostrarInativos ? "left-[14px]" : "left-[2px]"
+                    }`}
+                  />
+                </span>
+                Mostrar inativos
+              </Link>
+            </div>
+          )}
+        </div>
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>
         )}
 
-        {podeGerenciar && (
-          <div className="flex items-center justify-between gap-3 px-0.5 md:px-0">
-            <div className="text-[12px] text-muted">
-              {mostrarInativos
-                ? "Mostrando ativos e inativos"
-                : "Apenas pessoas ativas"}
+        {/* Card container */}
+        <div className="overflow-hidden rounded-[18px] border border-black/[0.06] bg-paper">
+          {/* Header — desktop only */}
+          <div className="hidden items-center justify-between border-b border-black/[0.06] px-5 py-4 md:flex">
+            <span className="text-[17px] font-semibold text-ink">Membros</span>
+            <div className="flex items-center gap-4">
+              {podeGerenciar && (
+                <Link
+                  href={toggleHref}
+                  scroll={false}
+                  className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
+                >
+                  <span
+                    className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
+                      mostrarInativos ? "bg-primary" : "bg-black/15"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
+                        mostrarInativos ? "left-[14px]" : "left-[2px]"
+                      }`}
+                    />
+                  </span>
+                  Mostrar inativos
+                </Link>
+              )}
+              {podeGerenciar && (
+                <Link
+                  href="/membros/novo"
+                  className="flex-none rounded-[14px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-primary-hover"
+                >
+                  + Cadastrar membro
+                </Link>
+              )}
             </div>
-            <Link
-              href={toggleHref}
-              scroll={false}
-              className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-soft"
-            >
-              <span
-                className={`relative h-[18px] w-[30px] flex-none rounded-full transition-colors ${
-                  mostrarInativos ? "bg-primary" : "bg-black/15"
-                }`}
-              >
-                <span
-                  className={`absolute top-[2px] h-[14px] w-[14px] rounded-full bg-paper transition-all ${
-                    mostrarInativos ? "left-[14px]" : "left-[2px]"
-                  }`}
-                />
-              </span>
-              Mostrar inativos
-            </Link>
           </div>
-        )}
 
-        {pessoas.length === 0 && (
-          <p className="text-[13px] text-muted">
-            Nenhuma pessoa cadastrada ainda.
-          </p>
-        )}
+          {/* Lista */}
+          {pessoas.length === 0 ? (
+            <p className="px-5 py-8 text-[13px] text-muted">
+              Nenhuma pessoa cadastrada ainda.
+            </p>
+          ) : (
+            <div className="flex flex-col divide-y divide-black/[0.06]">
+              {pessoas.map((pessoa) => (
+                <MembroItem
+                  key={pessoa.id}
+                  membro={pessoa}
+                  podeGerenciar={podeGerenciar}
+                  podeVerPerfil={podeVerPerfil}
+                  currentAccountId={currentAccountId}
+                />
+              ))}
+            </div>
+          )}
 
-        <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 md:items-start md:gap-3.5">
-          {pessoas.map((pessoa) => (
-            <MembroItem
-              key={pessoa.id}
-              membro={pessoa}
-              podeGerenciar={podeGerenciar}
-              podeVerPerfil={podeVerPerfil}
-              currentAccountId={currentAccountId}
-            />
-          ))}
-        </div>
-
-        {totalItens > pp && (
           <Paginacao
             paginaAtual={paginaAtual}
             totalItens={totalItens}
             itensPorPagina={pp}
           />
-        )}
+        </div>
       </main>
     </>
   );

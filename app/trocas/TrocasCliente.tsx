@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PaginacaoCliente } from "@/app/components/Paginacao";
+
+const PP_HIST = 15;
 
 type SwapItem = {
   id: string;
@@ -57,7 +60,7 @@ function SwapCard({
   const isBusy = busy === swap.id;
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-4 py-3.5">
+    <div className="flex flex-col gap-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -160,6 +163,7 @@ export default function TrocasCliente({
   const [resolved, setResolved] = useState<SwapItem[]>(initialResolved);
   const [busy, setBusy] = useState<string | null>(null);
   const [erro, setErro] = useState("");
+  const [paginaHist, setPaginaHist] = useState(1);
   const router = useRouter();
 
   // Realtime: atualiza lista ao vivo quando outro membro aceita/cancela
@@ -218,11 +222,15 @@ export default function TrocasCliente({
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setResolved(initialResolved); }, [initialResolved]);
 
-  const lista = filtro === "pendentes" ? pending : resolved;
+  // Reset da página do histórico ao trocar de aba
+  useEffect(() => { setPaginaHist(1); }, [filtro]);
+
+  const resolvedPage = resolved.slice((paginaHist - 1) * PP_HIST, paginaHist * PP_HIST);
+  const lista = filtro === "pendentes" ? pending : resolvedPage;
 
   return (
-    <main className="flex flex-1 flex-col gap-5 px-[18px] pb-10 pt-3 md:p-0">
-      {/* CTA para membros solicitarem troca via Minha Escala (mobile) */}
+    <main className="flex flex-1 flex-col gap-3 px-[18px] pb-10 pt-3 md:gap-4 md:p-0">
+      {/* CTA para membros (mobile) */}
       {profile === "member" && (
         <Link
           href="/minha-escala"
@@ -233,64 +241,81 @@ export default function TrocasCliente({
         </Link>
       )}
 
-      {/* Filtro */}
-      <div className="flex gap-2">
-        {(["pendentes", "resolvidas"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFiltro(f)}
-            className={`rounded-full px-4 py-1.5 text-[13px] font-semibold capitalize transition-colors ${
-              filtro === f
-                ? "bg-primary text-white"
-                : "bg-surface text-muted hover:bg-border"
-            }`}
-          >
-            {f === "pendentes" ? `Pendentes${pending.length > 0 ? ` (${pending.length})` : ""}` : "Histórico"}
-          </button>
-        ))}
-      </div>
-
       {erro && (
         <div className="rounded-[12px] border border-danger/30 bg-danger/5 px-4 py-3 text-[13px] text-danger">
           {erro}
         </div>
       )}
 
-      {lista.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-16 text-center">
-          <p className="text-[15px] font-semibold text-ink">
-            {filtro === "pendentes" ? "Nenhuma troca pendente" : "Nenhuma troca resolvida"}
-          </p>
-          <p className="text-[13px] text-muted">
-            {filtro === "pendentes"
-              ? profile === "member"
-                ? "Para solicitar uma troca, vá em Minha Escala e toque em 'Solicitar troca' no evento desejado."
-                : "Quando alguém solicitar uma troca, vai aparecer aqui."
-              : "O histórico de trocas vai aparecer aqui."}
-          </p>
-          {filtro === "pendentes" && profile === "member" && (
-            <Link
-              href="/minha-escala"
-              className="mt-2 rounded-[12px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white"
+      {/* Card container */}
+      <div className="overflow-hidden rounded-[18px] border border-black/[0.06] bg-paper">
+        {/* Header com tabs */}
+        <div className="flex items-center gap-1 border-b border-black/[0.06] px-[15px] py-3 md:px-5">
+          {(["pendentes", "resolvidas"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFiltro(f)}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition-colors ${
+                filtro === f
+                  ? "bg-primary text-white"
+                  : "bg-surface text-muted hover:bg-border"
+              }`}
             >
-              Ir para Minha Escala
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {lista.map((s) => (
-            <SwapCard
-              key={s.id}
-              swap={s}
-              onAccept={accept}
-              onCancel={cancel}
-              busy={busy}
-              canCancel={s.isOwn || profile === "admin" || profile === "coordinator"}
-            />
+              {f === "pendentes"
+                ? `Pendentes${pending.length > 0 ? ` ${pending.length}` : ""}`
+                : "Histórico"}
+            </button>
           ))}
         </div>
-      )}
+
+        {/* Conteúdo */}
+        {lista.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 px-5 py-12 text-center">
+            <p className="text-[15px] font-semibold text-ink">
+              {filtro === "pendentes" ? "Nenhuma troca pendente" : "Nenhuma troca no histórico"}
+            </p>
+            <p className="text-[13px] text-muted">
+              {filtro === "pendentes"
+                ? profile === "member"
+                  ? "Para solicitar uma troca, vá em Minha Escala e toque em 'Solicitar troca' no evento desejado."
+                  : "Quando alguém solicitar uma troca, vai aparecer aqui."
+                : "O histórico de trocas vai aparecer aqui."}
+            </p>
+            {filtro === "pendentes" && profile === "member" && (
+              <Link
+                href="/minha-escala"
+                className="mt-2 rounded-[12px] bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white"
+              >
+                Ir para Minha Escala
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col divide-y divide-black/[0.06]">
+            {lista.map((s) => (
+              <div key={s.id} className="px-[15px] py-3 md:px-5">
+                <SwapCard
+                  swap={s}
+                  onAccept={accept}
+                  onCancel={cancel}
+                  busy={busy}
+                  canCancel={s.isOwn || profile === "admin" || profile === "coordinator"}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Paginação do histórico */}
+        {filtro === "resolvidas" && (
+          <PaginacaoCliente
+            paginaAtual={paginaHist}
+            totalItens={resolved.length}
+            itensPorPagina={PP_HIST}
+            onMudar={setPaginaHist}
+          />
+        )}
+      </div>
     </main>
   );
 }

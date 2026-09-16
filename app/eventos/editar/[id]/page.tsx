@@ -20,7 +20,7 @@ export default async function EditarEventoPage({
 
   const { data: evento } = await supabase
     .from("events")
-    .select("id, name, date, time, group_id, liturgical_name, liturgical_color, ministerio_id")
+    .select("id, name, date, time, group_id, liturgical_name, liturgical_color, ministerio_id, observacoes")
     .eq("id", id)
     .single();
 
@@ -51,7 +51,7 @@ export default async function EditarEventoPage({
     }
   }
 
-  const eventoComMin = evento as typeof evento & { ministerio_id?: string | null };
+  const eventoComExt = evento as typeof evento & { ministerio_id?: string | null; observacoes?: string | null };
 
   return (
     <>
@@ -65,7 +65,8 @@ export default async function EditarEventoPage({
           grupoIdInicial={evento.group_id}
           liturgicalNameInicial={evento.liturgical_name}
           liturgicalColorInicial={evento.liturgical_color}
-          ministerioIdInicial={eventoComMin.ministerio_id ?? null}
+          ministerioIdInicial={eventoComExt.ministerio_id ?? null}
+          observacoesInicial={eventoComExt.observacoes ?? null}
           grupos={gruposResult.data ?? []}
           ministeriosPorGrupo={ministeriosPorGrupo}
           podeGerenciarMinisterios={podeGerenciarMinisterios}

@@ -26,6 +26,7 @@ export default function EditarEventoForm({
   liturgicalNameInicial,
   liturgicalColorInicial,
   ministerioIdInicial,
+  observacoesInicial,
   grupos,
   ministeriosPorGrupo,
   podeGerenciarMinisterios,
@@ -39,6 +40,7 @@ export default function EditarEventoForm({
   liturgicalNameInicial: string | null;
   liturgicalColorInicial: string | null;
   ministerioIdInicial: string | null;
+  observacoesInicial?: string | null;
   grupos: Grupo[];
   ministeriosPorGrupo: Record<string, Ministerio[]>;
   podeGerenciarMinisterios: boolean;
@@ -61,6 +63,8 @@ export default function EditarEventoForm({
   const [novoMinNome, setNovoMinNome] = useState("");
   const [mostrarNovoMin, setMostrarNovoMin] = useState(false);
   const [criandoMin, setCriandoMin] = useState(false);
+  const [observacoes, setObservacoes] = useState(observacoesInicial ?? "");
+  const [avisarEscalados, setAvisarEscalados] = useState(false);
 
   const router = useRouter();
 
@@ -138,6 +142,7 @@ export default function EditarEventoForm({
         liturgical_name: liturgicalName.trim() || null,
         liturgical_color: liturgicalColor,
         ministerio_id: ministerioId || null,
+        observacoes: observacoes.trim() || null,
       })
       .eq("id", id);
     if (error) {
@@ -146,6 +151,14 @@ export default function EditarEventoForm({
       return;
     }
     if (accountId) logAccess(accountId, "editar_evento", { event_id: id });
+    if (avisarEscalados && observacoes.trim()) {
+      await fetch(`/api/events/${id}/notify-observacao`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ observacoes: observacoes.trim() }),
+        credentials: "include",
+      }).catch(() => {});
+    }
     router.back();
     router.refresh();
   }
@@ -278,6 +291,33 @@ export default function EditarEventoForm({
           )}
         </div>
       )}
+
+      <div>
+        <div className="mb-2 flex items-baseline justify-between">
+          <span className={labelInput}>OBSERVAÇÕES PARA O DIA</span>
+          <span className={`text-[11.5px] tabular-nums ${observacoes.length > 2000 ? "text-amber-500" : "text-faint"}`}>
+            {observacoes.length}/2000
+          </span>
+        </div>
+        <textarea
+          value={observacoes}
+          onChange={(e) => setObservacoes(e.target.value)}
+          placeholder="Ex.: Trazer cadeiras extras, missa ao ar livre…"
+          rows={3}
+          className={`${baseInput} resize-none px-4 py-3 text-[14px] leading-relaxed`}
+        />
+        {observacoes.trim().length > 0 && (
+          <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
+            <input
+              type="checkbox"
+              checked={avisarEscalados}
+              onChange={(e) => setAvisarEscalados(e.target.checked)}
+              className="h-4 w-4 rounded accent-primary"
+            />
+            Avisar quem está escalado
+          </label>
+        )}
+      </div>
 
       <div>
         <div className={labelInput}>NOME LITÚRGICO</div>

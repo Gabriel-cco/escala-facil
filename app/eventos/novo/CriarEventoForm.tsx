@@ -50,6 +50,8 @@ export default function CriarEventoForm({
   const [novoMinNome, setNovoMinNome] = useState("");
   const [mostrarNovoMin, setMostrarNovoMin] = useState(false);
   const [criandoMin, setCriandoMin] = useState(false);
+  const [observacoes, setObservacoes] = useState("");
+  const [avisarEscalados, setAvisarEscalados] = useState(false);
 
   const router = useRouter();
 
@@ -141,6 +143,7 @@ export default function CriarEventoForm({
       liturgical_name: liturgico?.name ?? null,
       liturgical_color: liturgico?.color ?? null,
       ministerio_id: grupoIdUnico === gid ? (ministerioId || null) : null,
+      observacoes: observacoes.trim() || null,
     }));
 
     const supabase = createClient();
@@ -174,6 +177,19 @@ export default function CriarEventoForm({
     }
 
     if (accountId) logAccess(accountId, "criar_evento", { count: criados.length });
+
+    if (avisarEscalados && observacoes.trim()) {
+      await Promise.all(
+        criados.map((ev) =>
+          fetch(`/api/events/${ev.id}/notify-observacao`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ observacoes: observacoes.trim() }),
+            credentials: "include",
+          }).catch(() => {})
+        )
+      );
+    }
 
     if (criados.length === 1) {
       window.location.replace(`/eventos/${criados[0].id}`);
@@ -340,6 +356,33 @@ export default function CriarEventoForm({
           )}
         </div>
       )}
+
+      <div>
+        <div className="mb-2 flex items-baseline justify-between">
+          <span className={labelInput}>OBSERVAÇÕES PARA O DIA</span>
+          <span className={`text-[11.5px] tabular-nums ${observacoes.length > 2000 ? "text-amber-500" : "text-faint"}`}>
+            {observacoes.length}/2000
+          </span>
+        </div>
+        <textarea
+          value={observacoes}
+          onChange={(e) => setObservacoes(e.target.value)}
+          placeholder="Ex.: Trazer cadeiras extras, missa ao ar livre…"
+          rows={3}
+          className={`${baseInput} resize-none px-4 py-3 text-[14px] leading-relaxed`}
+        />
+        {observacoes.trim().length > 0 && (
+          <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
+            <input
+              type="checkbox"
+              checked={avisarEscalados}
+              onChange={(e) => setAvisarEscalados(e.target.checked)}
+              className="h-4 w-4 rounded accent-primary"
+            />
+            Avisar quem está escalado
+          </label>
+        )}
+      </div>
 
       {erro && <p className="text-[13px] text-danger">{erro}</p>}
 

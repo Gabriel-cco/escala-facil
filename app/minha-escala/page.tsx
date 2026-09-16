@@ -10,6 +10,7 @@ import { getAuthUser, getCurrentAccount } from "@/lib/current-user";
 import SolicitarTrocaButton from "./SolicitarTrocaButton";
 import SolicitarTrocaMinisterioButton from "./SolicitarTrocaMinisterioButton";
 import ScrollToProximoEvento from "./ScrollToProximoEvento";
+import AvisoObservacoes from "@/app/components/AvisoObservacoes";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -101,7 +102,7 @@ export default async function MinhaEscalaPage({
   const { data: rawEventos } = await supabase
     .from("events")
     .select(`
-      id, name, date, time, liturgical_name, liturgical_color, ministerio_id,
+      id, name, date, time, liturgical_name, liturgical_color, ministerio_id, observacoes,
       ministerio:ministerios(id, name),
       assignments(
         id,
@@ -125,7 +126,7 @@ export default async function MinhaEscalaPage({
   type Evento = {
     id: string; name: string; date: string; time: string;
     liturgical_name: string | null; liturgical_color: string | null;
-    ministerio_id: string | null;
+    ministerio_id: string | null; observacoes: string | null;
     ministerio: { id: string; name: string } | { id: string; name: string }[] | null;
     assignments: Assignment[] | null;
   };
@@ -324,6 +325,12 @@ export default async function MinhaEscalaPage({
                     <p className="mt-1 text-[12px] text-muted">
                       Nenhuma função atribuída ainda.
                     </p>
+                  )}
+
+                  {evento.observacoes && (
+                    <div className="mt-3">
+                      <AvisoObservacoes texto={evento.observacoes} />
+                    </div>
                   )}
 
                   {euEstouEscalado && minhaAtribuicao && evento.date >= hoje && (() => {

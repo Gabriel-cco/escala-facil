@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AvisoObservacoes from "@/app/components/AvisoObservacoes";
 import { liturgicalEmoji } from "@/app/components/LiturgicalDot";
 import AtribuicoesManager from "./AtribuicoesManager";
 
@@ -44,6 +45,7 @@ export default function EscalaEventoView({
   liturgicalName,
   liturgicalColor,
   ministerioNome,
+  observacoes,
   podeGerenciar,
   currentAccountId,
   atribuicoesLeitura,
@@ -63,6 +65,7 @@ export default function EscalaEventoView({
   liturgicalName: string | null;
   liturgicalColor: string | null;
   ministerioNome?: string | null;
+  observacoes?: string | null;
   podeGerenciar: boolean;
   currentAccountId: string | null;
   atribuicoesLeitura: AtribuicaoLeitura[];
@@ -145,6 +148,8 @@ export default function EscalaEventoView({
           <p className="text-[12.5px] text-faint">Nenhuma função definida ainda.</p>
         )}
       </div>
+
+      {observacoes && <AvisoObservacoes texto={observacoes} />}
 
       {podeGerenciar && (
         <button

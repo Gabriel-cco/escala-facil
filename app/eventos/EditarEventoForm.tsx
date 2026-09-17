@@ -327,8 +327,31 @@ export default function EditarEventoForm({
           placeholder="Ex.: 18º Domingo do Tempo Comum"
           className={`${baseInput} px-4 py-3.5 text-[15px]`}
         />
-        <p className="mt-1.5 text-[12px] text-faint">
-          Preenchido automaticamente pelo calendário litúrgico. Recalculado se
+        <div className="mt-3">
+          <div className={labelInput}>COR LITÚRGICA</div>
+          <div className="flex flex-wrap gap-2">
+            {(["green", "white", "purple", "red"] as const).map((cor) => {
+              const labels = { green: "Verde", white: "Branco", purple: "Roxo", red: "Vermelho" };
+              const dots = { green: "bg-green-500", white: "bg-gray-300 border border-gray-400", purple: "bg-purple-500", red: "bg-red-500" };
+              const sel = liturgicalColor === cor;
+              return (
+                <button
+                  key={cor}
+                  type="button"
+                  onClick={() => setLiturgicalColor(sel ? null : cor)}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-[13.5px] font-medium transition-colors ${
+                    sel ? "border-primary bg-primary/10 text-primary" : "border-black/10 bg-paper text-ink hover:bg-surface"
+                  }`}
+                >
+                  <span className={`inline-block h-2.5 w-2.5 flex-none rounded-full ${dots[cor]}`} />
+                  {labels[cor]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <p className="mt-2 text-[12px] text-faint">
+          Nome e cor são preenchidos automaticamente pelo calendário litúrgico. Recalculados se
           a data mudar — edite se quiser personalizar.
         </p>
       </div>

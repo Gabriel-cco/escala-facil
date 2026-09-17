@@ -53,7 +53,7 @@ export default async function EventoDetalhePage({
     .select("role_id, role:roles(id, name, required_qualification_id, assignment_type)")
     .eq("event_id", id);
 
-  const funcoes = (eventRolesData ?? [])
+  const eventRolesValid = (eventRolesData ?? [])
     .map((er) => {
       const role = Array.isArray(er.role) ? er.role[0] : er.role;
       const r = role as { id: string; name: string; required_qualification_id?: string | null; assignment_type?: string | null } | null;
@@ -64,8 +64,25 @@ export default async function EventoDetalhePage({
         assignmentType: ((r?.assignment_type ?? "pessoa") as "pessoa" | "ministerio"),
       };
     })
-    .filter((f) => f.id)
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    .filter((f) => f.id);
+
+  // Fallback: se o evento não tem event_roles configurados, usa todas as funções ativas do grupo
+  let funcoes = eventRolesValid;
+  if (funcoes.length === 0) {
+    const { data: groupRoles } = await supabase
+      .from("roles")
+      .select("id, name, required_qualification_id, assignment_type")
+      .eq("group_id", evento.group_id)
+      .eq("active", true);
+    funcoes = (groupRoles ?? []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      requiredQualificationId: (r as { required_qualification_id?: string | null }).required_qualification_id ?? null,
+      assignmentType: (((r as { assignment_type?: string | null }).assignment_type ?? "pessoa") as "pessoa" | "ministerio"),
+    }));
+  }
+
+  funcoes = funcoes.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
   const { data: accounts } = await supabase
     .from("accounts")

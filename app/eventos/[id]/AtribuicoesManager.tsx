@@ -53,6 +53,7 @@ export default function AtribuicoesManager({
   atribuicoes: Atribuicao[];
 }) {
   const [sheetRoleId, setSheetRoleId] = useState<string | null>(null);
+  const [buscaMembro, setBuscaMembro] = useState("");
   const [swapRoleId, setSwapRoleId] = useState<string | null>(null);
   const [swapMotivo, setSwapMotivo] = useState("");
   const [swapBusy, setSwapBusy] = useState(false);
@@ -64,7 +65,7 @@ export default function AtribuicoesManager({
 
   useEffect(() => {
     const isOpen = !!sheetRoleId || !!swapRoleId;
-    if (!isOpen) return;
+    if (!isOpen) { setBuscaMembro(""); return; }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setSheetRoleId(null);
@@ -357,6 +358,15 @@ export default function AtribuicoesManager({
               <div className="mb-3.5 text-[19px] font-semibold text-ink">
                 {grupoNome} · {funcaoSheet?.nome}
               </div>
+              {funcaoSheet?.assignmentType !== "ministerio" && (
+                <input
+                  value={buscaMembro}
+                  onChange={(e) => setBuscaMembro(e.target.value)}
+                  placeholder="Buscar membro..."
+                  autoFocus
+                  className="mb-2 w-full rounded-[12px] border border-black/10 bg-surface px-3.5 py-2.5 text-[13.5px] text-ink placeholder:text-faint outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              )}
               <div className="ef-scroll flex flex-col gap-2 overflow-y-auto overscroll-contain">
                 {funcaoSheet?.assignmentType === "ministerio" ? (
                   ministerios.length === 0 ? (
@@ -377,12 +387,19 @@ export default function AtribuicoesManager({
                     ))
                   )
                 ) : (() => {
-                  const membrosSheet = sheetRoleId && membrosElegiveisPorFuncao[sheetRoleId]
+                  const elegíveis = sheetRoleId && membrosElegiveisPorFuncao[sheetRoleId]
                     ? membros.filter((m) => membrosElegiveisPorFuncao[sheetRoleId].includes(m.id))
                     : membros;
+                  const termo = buscaMembro.trim().toLowerCase();
+                  const membrosSheet = termo
+                    ? elegíveis.filter((m) => m.nome.toLowerCase().includes(termo))
+                    : elegíveis;
+                  const semQualificacao = sheetRoleId && membrosElegiveisPorFuncao[sheetRoleId];
                   return membrosSheet.length === 0 ? (
                     <p className="py-2 text-[13px] text-muted">
-                      {sheetRoleId && membrosElegiveisPorFuncao[sheetRoleId]
+                      {termo
+                        ? "Nenhum membro encontrado."
+                        : semQualificacao
                         ? "Nenhum membro com a qualificação exigida."
                         : "Nenhum membro elegível neste grupo."}
                     </p>

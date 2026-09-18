@@ -15,7 +15,7 @@ export default async function EditarMembroModal({
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, profile, group_id, user:users(id, name, email, cpf, birth_date)")
+    .select("id, profile, group_id, disponivel_para_escala, user:users(id, name, email, cpf, birth_date)")
     .eq("id", id)
     .single();
 
@@ -71,6 +71,7 @@ export default async function EditarMembroModal({
         qualificacoesAtuais={(qualificacoesAtuaisResult.data ?? []).map((r) => (r as { qualification_id: string }).qualification_id)}
         ministeriosVinculados={ministeriosVinculados}
         ministeriosDisponiveis={groupId ? (ministeriosDisponiveisResult.data ?? []) : undefined}
+        disponivelParaEscalaInicial={(account as typeof account & { disponivel_para_escala?: boolean }).disponivel_para_escala ?? false}
       />
     </Modal>
   );

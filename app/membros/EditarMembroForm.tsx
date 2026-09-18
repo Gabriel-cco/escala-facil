@@ -37,6 +37,7 @@ export default function EditarMembroForm({
   responsavelEmailInicial = "",
   termoAssinadoInicial = false,
   termoDataInicial = "",
+  disponivelParaEscalaInicial = false,
 }: {
   accountId: string;
   userId: string;
@@ -58,6 +59,7 @@ export default function EditarMembroForm({
   responsavelEmailInicial?: string;
   termoAssinadoInicial?: boolean;
   termoDataInicial?: string;
+  disponivelParaEscalaInicial?: boolean;
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
@@ -72,6 +74,7 @@ export default function EditarMembroForm({
   const [responsavelEmail, setResponsavelEmail] = useState(responsavelEmailInicial);
   const [termoAssinado, setTermoAssinado] = useState(termoAssinadoInicial);
   const [termoData, setTermoData] = useState(termoDataInicial);
+  const [disponivelParaEscala, setDisponivelParaEscala] = useState(disponivelParaEscalaInicial);
 
   function ehMenorDeIdade(dataNascimento: string): boolean {
     const hoje = new Date();
@@ -189,9 +192,11 @@ export default function EditarMembroForm({
     if (isAdmin) {
       const groupId = precisaGrupo ? (grupoId || null) : null;
       const newProfile = ehContaPropria ? perfilInicial : profile;
+      const effectiveDisponivel =
+        newProfile === "coordinator" || newProfile === "admin" ? disponivelParaEscala : false;
       const { error: erroAccount } = await supabase
         .from("accounts")
-        .update({ profile: newProfile, group_id: groupId })
+        .update({ profile: newProfile, group_id: groupId, disponivel_para_escala: effectiveDisponivel })
         .eq("id", accountId);
 
       if (erroAccount) {
@@ -199,6 +204,11 @@ export default function EditarMembroForm({
         setErro("Erro ao atualizar: " + erroAccount.message);
         return;
       }
+    } else if (profile === "coordinator" || profile === "admin") {
+      await supabase
+        .from("accounts")
+        .update({ disponivel_para_escala: disponivelParaEscala })
+        .eq("id", accountId);
     }
 
     // Sincronizar qualificações via RPC (delete + insert em transação única)
@@ -387,6 +397,23 @@ export default function EditarMembroForm({
             </span>
           </div>
         </div>
+      )}
+
+      {(profile === "coordinator" || profile === "admin") && (
+        <label className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-black/10 px-4 py-3.5 hover:bg-surface">
+          <input
+            type="checkbox"
+            checked={disponivelParaEscala}
+            onChange={(e) => setDisponivelParaEscala(e.target.checked)}
+            className="mt-0.5 h-4 w-4 flex-none accent-primary"
+          />
+          <div>
+            <div className="text-[14px] font-medium text-ink">Disponível para escala</div>
+            <div className="mt-0.5 text-[12px] text-muted">
+              Esta pessoa também pode ser atribuída a funções, mesmo sendo coordenador(a)
+            </div>
+          </div>
+        </label>
       )}
 
       {qualificacoes.length > 0 && (

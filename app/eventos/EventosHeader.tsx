@@ -73,6 +73,21 @@ export default function EventosHeader({
                 </Link>
               )}
 
+              {podeGerenciar && (
+                <Link
+                  href="/eventos/auto"
+                  onClick={() => setAberto(false)}
+                  className="mt-2 flex w-full flex-col rounded-[16px] bg-surface px-4 py-3.5 text-left transition-colors hover:bg-black/[0.06]"
+                >
+                  <span className="text-[15px] font-semibold text-ink">
+                    Escala automática
+                  </span>
+                  <span className="mt-0.5 text-[13px] text-muted">
+                    Sorteio ponderado por presença e rotatividade
+                  </span>
+                </Link>
+              )}
+
               <button
                 onClick={() => setAberto(false)}
                 className="mt-3 w-full rounded-[16px] border border-black/10 py-3.5 text-[14.5px] font-medium text-muted"

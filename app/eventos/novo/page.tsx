@@ -15,10 +15,10 @@ export default async function NovoEventoPage() {
   ]);
 
   const podeGerenciarMinisterios = authUser?.email === OWNER_EMAIL;
+  const grupoIds = (grupos ?? []).map((g) => g.id);
 
   const ministeriosPorGrupo: Record<string, { id: string; name: string }[]> = {};
   if (podeGerenciarMinisterios) {
-    const grupoIds = (grupos ?? []).map((g) => g.id);
     const { data: ministeriosData } = grupoIds.length
       ? await supabase
           .from("ministerios")
@@ -32,6 +32,25 @@ export default async function NovoEventoPage() {
     }
   }
 
+  // Tipos de evento por grupo
+  const tiposPorGrupo: Record<string, { id: string; name: string; roleIds: string[] }[]> = {};
+  const { data: tiposData } = grupoIds.length
+    ? await supabase
+        .from("event_types")
+        .select("id, name, group_id, event_type_roles(role_id)")
+        .in("group_id", grupoIds)
+        .eq("active", true)
+        .order("name", { ascending: true })
+    : { data: [] };
+  for (const t of tiposData ?? []) {
+    if (!tiposPorGrupo[t.group_id]) tiposPorGrupo[t.group_id] = [];
+    tiposPorGrupo[t.group_id].push({
+      id: t.id,
+      name: t.name as string,
+      roleIds: ((t.event_type_roles ?? []) as { role_id: string }[]).map((r) => r.role_id),
+    });
+  }
+
   return (
     <>
       <Header variant="back" title="Criar evento" />
@@ -40,6 +59,7 @@ export default async function NovoEventoPage() {
           grupos={grupos ?? []}
           ministeriosPorGrupo={ministeriosPorGrupo}
           podeGerenciarMinisterios={podeGerenciarMinisterios}
+          tiposPorGrupo={tiposPorGrupo}
           accountId={conta?.account_id}
         />
       </main>

@@ -93,12 +93,9 @@ export default function SideMenu({
         onClick={onClose}
         className="ef-backdrop fixed inset-0 z-40 bg-black/30"
       />
-      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[440px]">
-        <div className="ef-sheet flex max-h-[85dvh] flex-col rounded-t-[26px] bg-[#ffffff] pt-3.5">
-          <div className="mx-auto mb-4 h-1 w-[38px] flex-none rounded-full bg-black/20" />
-
+      <div className="ef-drawer fixed inset-y-0 left-0 z-50 flex w-[300px] max-w-[85vw] flex-col rounded-r-[26px] bg-white shadow-xl">
           {/* Cabeçalho — não rola */}
-          <div className="flex-none px-[18px]">
+          <div className="flex-none px-[18px] pt-12">
             <div className="mb-2 flex items-center gap-3 border-b border-black/10 px-1 pb-4 pt-1.5">
               <Avatar url={user.avatarUrl} iniciais={user.iniciais} size={46} />
               <div>
@@ -148,7 +145,6 @@ export default function SideMenu({
               {saindo ? "Saindo..." : "Sair"}
             </button>
           </div>
-        </div>
       </div>
     </>
   );

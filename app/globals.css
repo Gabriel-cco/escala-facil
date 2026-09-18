@@ -96,6 +96,20 @@ textarea:focus-visible {
   }
 }
 
+/* Drawer lateral — entra da esquerda */
+@keyframes ef-slide-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.ef-drawer {
+  animation: ef-slide-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 @keyframes ef-fade {
   from {
     opacity: 0;

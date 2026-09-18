@@ -5,6 +5,7 @@ import Header from "../../components/shell/Header";
 import { iniciais } from "@/lib/iniciais";
 import CompartilharEscala from "./CompartilharEscala";
 import QualificacoesSection from "./QualificacoesSection";
+import TiposEventoSection from "./TiposEventoSection";
 
 const iconeLapis = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -56,6 +57,22 @@ export default async function GrupoDetalhePage({
     .select("id, name")
     .eq("group_id", id)
     .order("name", { ascending: true });
+
+  // Tipos de evento com suas funções
+  const { data: tiposRaw } = await supabase
+    .from("event_types")
+    .select("id, name, event_type_roles(role_id)")
+    .eq("group_id", id)
+    .eq("active", true)
+    .order("name", { ascending: true });
+
+  const tipos = (tiposRaw ?? []).map((t) => ({
+    id: t.id,
+    name: t.name as string,
+    roleIds: new Set<string>(
+      ((t.event_type_roles ?? []) as { role_id: string }[]).map((r) => r.role_id)
+    ),
+  }));
 
   const { data: qualificacoes } = await supabase
     .from("qualifications")
@@ -154,6 +171,15 @@ export default async function GrupoDetalhePage({
           <QualificacoesSection
             groupId={grupo.id}
             qualificacoes={qualificacoes ?? []}
+            podeGerenciar={podeEditarMembro}
+          />
+        </div>
+
+        <div className="col-span-2">
+          <TiposEventoSection
+            groupId={grupo.id}
+            roles={funcoes ?? []}
+            tipos={tipos}
             podeGerenciar={podeEditarMembro}
           />
         </div>

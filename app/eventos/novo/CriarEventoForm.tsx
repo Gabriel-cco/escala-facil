@@ -10,6 +10,7 @@ import { logAccess } from "@/lib/access-log";
 
 type Grupo = { id: string; name: string };
 type Ministerio = { id: string; name: string };
+type EventType = { id: string; name: string; roleIds: string[] };
 
 const labelInput = "mb-2 text-[12px] font-semibold text-muted";
 const baseInput =
@@ -29,17 +30,20 @@ export default function CriarEventoForm({
   grupos,
   ministeriosPorGrupo,
   podeGerenciarMinisterios,
+  tiposPorGrupo,
   accountId,
 }: {
   grupos: Grupo[];
   ministeriosPorGrupo: Record<string, Ministerio[]>;
   podeGerenciarMinisterios: boolean;
+  tiposPorGrupo: Record<string, EventType[]>;
   accountId?: string;
 }) {
   const [nome, setNome] = useState("");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
   const [grupoIds, setGrupoIds] = useState<Set<string>>(new Set());
+  const [tipoId, setTipoId] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [liturgico, setLiturgico] = useState<LiturgicalInfo | null>(null);
@@ -120,11 +124,13 @@ export default function CriarEventoForm({
       else next.add(id);
       return next;
     });
+    setTipoId("");
     clearMinisterio();
   }
 
   function toggleTodos() {
     setGrupoIds(todosSelecionados ? new Set() : new Set(grupos.map((g) => g.id)));
+    setTipoId("");
     clearMinisterio();
   }
 
@@ -167,6 +173,7 @@ export default function CriarEventoForm({
       liturgical_name: liturgico?.name ?? null,
       liturgical_color: liturgico?.color ?? null,
       ministerio_id: grupoIdUnico === gid ? (ministerioId || null) : null,
+      event_type_id: grupoIdUnico === gid ? (tipoId || null) : null,
       observacoes: observacoes.trim() || null,
     }));
 
@@ -182,23 +189,36 @@ export default function CriarEventoForm({
       return;
     }
 
-    const { data: grupoRoles } = await supabase
-      .from("roles")
-      .select("id, group_id")
-      .in("group_id", [...grupoIds])
-      .eq("active", true);
+    // Se há um tipo selecionado (e um único grupo), usa as funções do tipo.
+    // Caso contrário mantém comportamento atual: todas as funções ativas do grupo.
+    const tipoSelecionado = grupoIdUnico && tipoId
+      ? (tiposPorGrupo[grupoIdUnico] ?? []).find((t) => t.id === tipoId)
+      : null;
 
-    if (grupoRoles?.length) {
-      const erRows: { event_id: string; role_id: string }[] = [];
+    const erRows: { event_id: string; role_id: string }[] = [];
+
+    if (tipoSelecionado && tipoSelecionado.roleIds.length > 0) {
       for (const ev of criados) {
-        for (const r of grupoRoles) {
+        for (const roleId of tipoSelecionado.roleIds) {
+          erRows.push({ event_id: ev.id, role_id: roleId });
+        }
+      }
+    } else {
+      const { data: grupoRoles } = await supabase
+        .from("roles")
+        .select("id, group_id")
+        .in("group_id", [...grupoIds])
+        .eq("active", true);
+      for (const ev of criados) {
+        for (const r of grupoRoles ?? []) {
           if (r.group_id === ev.group_id) {
             erRows.push({ event_id: ev.id, role_id: r.id });
           }
         }
       }
-      if (erRows.length) await supabase.from("event_roles").insert(erRows);
     }
+
+    if (erRows.length) await supabase.from("event_roles").insert(erRows);
 
     if (accountId) logAccess(accountId, "criar_evento", { count: criados.length });
 
@@ -316,6 +336,45 @@ export default function CriarEventoForm({
           </p>
         )}
       </div>
+
+      {/* Tipo de evento — visível quando há exatamente 1 grupo selecionado com tipos cadastrados */}
+      {grupoIdUnico && (tiposPorGrupo[grupoIdUnico] ?? []).length > 0 && (
+        <div>
+          <div className={labelInput}>TIPO DE EVENTO</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setTipoId("")}
+              className={`rounded-full border px-4 py-2 text-[13.5px] font-semibold transition-colors ${
+                !tipoId
+                  ? "border-primary bg-primary text-white"
+                  : "border-black/10 bg-paper text-ink hover:bg-surface"
+              }`}
+            >
+              Personalizado
+            </button>
+            {(tiposPorGrupo[grupoIdUnico] ?? []).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTipoId(t.id)}
+                className={`rounded-full border px-4 py-2 text-[13.5px] font-semibold transition-colors ${
+                  tipoId === t.id
+                    ? "border-primary bg-primary text-white"
+                    : "border-black/10 bg-paper text-ink hover:bg-surface"
+                }`}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+          {tipoId && (
+            <p className="mt-1.5 text-[12px] text-muted">
+              Funções pré-definidas pelo tipo serão aplicadas ao evento.
+            </p>
+          )}
+        </div>
+      )}
 
       {mostrarCampoMinisterio && (
         <div>

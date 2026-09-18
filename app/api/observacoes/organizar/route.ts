@@ -23,9 +23,10 @@ export async function POST(request: Request) {
     const textoOrganizado =
       resposta.content[0].type === "text" ? resposta.content[0].text : texto;
     return Response.json({ textoOrganizado });
-  } catch {
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     return Response.json(
-      { error: "Não foi possível organizar agora — tente de novo." },
+      { error: `Erro: ${msg}` },
       { status: 500 }
     );
   }

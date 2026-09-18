@@ -210,6 +210,22 @@ export async function POST(request: NextRequest) {
     const qualifiedSet = new Set((qualified ?? []).map((q) => q.account_id));
     eligibleIds = eligibleIds.filter((id) => qualifiedSet.has(id));
   }
+
+  // Remove quem tem qualificação excludente da escala (ex.: Mirim)
+  const { data: excluiQuals } = await admin
+    .from("qualifications")
+    .select("id")
+    .eq("group_id", evento.group_id)
+    .eq("exclui_de_escala", true);
+  if (excluiQuals?.length) {
+    const { data: excluidos } = await admin
+      .from("account_qualifications")
+      .select("account_id")
+      .in("qualification_id", excluiQuals.map((q) => q.id));
+    const idsExcluidos = new Set((excluidos ?? []).map((e) => e.account_id));
+    eligibleIds = eligibleIds.filter((id) => !idsExcluidos.has(id));
+  }
+
   const dataLabel = rotuloData(evento.date);
 
   if (eligibleIds.length > 0) {

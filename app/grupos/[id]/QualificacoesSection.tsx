@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-type Qualificacao = { id: string; name: string };
+type Qualificacao = { id: string; name: string; exclui_de_escala: boolean };
 
 export default function QualificacoesSection({
   groupId,
@@ -17,7 +17,9 @@ export default function QualificacoesSection({
 }) {
   const [lista, setLista] = useState(inicial);
   const [novoNome, setNovoNome] = useState("");
+  const [novoExclui, setNovoExclui] = useState(false);
   const [criando, setCriando] = useState(false);
+  const [atualizando, setAtualizando] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState<string | null>(null);
   const [confirmar, setConfirmar] = useState<string | null>(null);
   const [erro, setErro] = useState("");
@@ -31,8 +33,8 @@ export default function QualificacoesSection({
     const supabase = createClient();
     const { data, error } = await supabase
       .from("qualifications")
-      .insert({ group_id: groupId, name: nome })
-      .select("id, name")
+      .insert({ group_id: groupId, name: nome, exclui_de_escala: novoExclui })
+      .select("id, name, exclui_de_escala")
       .single();
     setCriando(false);
     if (error) {
@@ -44,10 +46,27 @@ export default function QualificacoesSection({
       return;
     }
     setLista((prev) =>
-      [...prev, data].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+      [...prev, data as Qualificacao].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
     );
     setNovoNome("");
+    setNovoExclui(false);
     router.refresh();
+  }
+
+  async function toggleExclui(id: string, valorAtual: boolean) {
+    if (atualizando) return;
+    setAtualizando(id);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("qualifications")
+      .update({ exclui_de_escala: !valorAtual })
+      .eq("id", id);
+    setAtualizando(null);
+    if (!error) {
+      setLista((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, exclui_de_escala: !valorAtual } : q))
+      );
+    }
   }
 
   async function excluir(id: string) {
@@ -73,6 +92,32 @@ export default function QualificacoesSection({
             className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-3.5 py-2.5"
           >
             <span className="flex-1 text-[14px] text-ink">{q.name}</span>
+
+            {podeGerenciar && (
+              <button
+                onClick={() => toggleExclui(q.id, q.exclui_de_escala)}
+                disabled={atualizando === q.id}
+                title={q.exclui_de_escala ? "Clique para remover exclusão da escala" : "Clique para excluir da escala"}
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                  q.exclui_de_escala
+                    ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "border-black/10 text-muted hover:bg-surface"
+                }`}
+              >
+                {atualizando === q.id
+                  ? "..."
+                  : q.exclui_de_escala
+                  ? "Exclui da escala"
+                  : "Não exclui"}
+              </button>
+            )}
+
+            {!podeGerenciar && q.exclui_de_escala && (
+              <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
+                Exclui da escala
+              </span>
+            )}
+
             {podeGerenciar &&
               (confirmar === q.id ? (
                 <div className="flex gap-1.5">
@@ -119,23 +164,39 @@ export default function QualificacoesSection({
           </p>
         )}
         {podeGerenciar && (
-          <div className="mt-0.5 flex gap-2">
-            <input
-              value={novoNome}
-              onChange={(e) => setNovoNome(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") criar();
-              }}
-              placeholder="Nova qualificação (ex.: Acólito)"
-              className="flex-1 rounded-[12px] border border-black/10 bg-paper px-3.5 py-2.5 text-[14px] text-ink outline-none"
-            />
-            <button
-              onClick={criar}
-              disabled={!novoNome.trim() || criando}
-              className="rounded-[12px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-40"
-            >
-              {criando ? "..." : "Adicionar"}
-            </button>
+          <div className="mt-0.5 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                value={novoNome}
+                onChange={(e) => setNovoNome(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") criar();
+                }}
+                placeholder="Nova qualificação (ex.: Acólito)"
+                className="flex-1 rounded-[12px] border border-black/10 bg-paper px-3.5 py-2.5 text-[14px] text-ink outline-none"
+              />
+              <button
+                onClick={criar}
+                disabled={!novoNome.trim() || criando}
+                className="rounded-[12px] bg-primary px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-40"
+              >
+                {criando ? "..." : "Adicionar"}
+              </button>
+            </div>
+            <label className="flex cursor-pointer items-center gap-2.5 px-0.5">
+              <input
+                type="checkbox"
+                checked={novoExclui}
+                onChange={(e) => setNovoExclui(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="text-[13px] text-ink">
+                Esta categoria exclui da escala
+              </span>
+              <span className="text-[12px] text-muted">
+                — pessoas com essa tag nunca aparecem para atribuição
+              </span>
+            </label>
           </div>
         )}
         {erro && <p className="text-[12.5px] text-danger">{erro}</p>}

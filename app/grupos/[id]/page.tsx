@@ -59,7 +59,7 @@ export default async function GrupoDetalhePage({
 
   const { data: qualificacoes } = await supabase
     .from("qualifications")
-    .select("id, name")
+    .select("id, name, exclui_de_escala")
     .eq("group_id", id)
     .order("name", { ascending: true });
 

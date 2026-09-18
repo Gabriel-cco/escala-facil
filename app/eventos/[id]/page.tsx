@@ -92,12 +92,27 @@ export default async function EventoDetalhePage({
     .eq("active", true)
     .or(`suspended_until.is.null,suspended_until.lt.${evento.date}`);
 
-  const membros = (accounts ?? [])
+  let membros = (accounts ?? [])
     .map((a) => {
       const u = Array.isArray(a.user) ? a.user[0] : a.user;
       return { id: a.id, nome: u?.name ?? "—" };
     })
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
+
+  // Filtra membros com qualificação excludente (ex.: Mirim)
+  const { data: excluiQuals } = await supabase
+    .from("qualifications")
+    .select("id")
+    .eq("group_id", evento.group_id)
+    .eq("exclui_de_escala", true);
+  if (excluiQuals?.length) {
+    const { data: excluidos } = await supabase
+      .from("account_qualifications")
+      .select("account_id")
+      .in("qualification_id", excluiQuals.map((q) => q.id));
+    const idsExcluidos = new Set((excluidos ?? []).map((e) => e.account_id));
+    membros = membros.filter((m) => !idsExcluidos.has(m.id));
+  }
 
   // Ministérios do grupo (para funções do tipo "ministerio")
   const { data: ministerios } = await supabase

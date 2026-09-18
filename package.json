@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.126.0",
     "@react-email/components": "^1.0.12",
     "@romcal/calendar.brazil": "^3.0.0-dev.125",
     "@supabase/ssr": "^0.12.0",

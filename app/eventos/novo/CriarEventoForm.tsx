@@ -52,10 +52,34 @@ export default function CriarEventoForm({
   const [criandoMin, setCriandoMin] = useState(false);
   const [observacoes, setObservacoes] = useState("");
   const [avisarEscalados, setAvisarEscalados] = useState(false);
+  const [sugestaoIA, setSugestaoIA] = useState("");
+  const [carregandoIA, setCarregandoIA] = useState(false);
+  const [erroIA, setErroIA] = useState("");
 
   const router = useRouter();
 
   const dataEfetiva = data || hojeStr();
+
+  async function organizarTexto() {
+    if (!observacoes.trim() || carregandoIA) return;
+    setCarregandoIA(true);
+    setErroIA("");
+    setSugestaoIA("");
+    try {
+      const res = await fetch("/api/observacoes/organizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: observacoes }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro");
+      setSugestaoIA(data.textoOrganizado);
+    } catch {
+      setErroIA("Não foi possível organizar agora — tente de novo.");
+    } finally {
+      setCarregandoIA(false);
+    }
+  }
 
   useEffect(() => {
     let cancelado = false;
@@ -372,15 +396,52 @@ export default function CriarEventoForm({
           className={`${baseInput} resize-none px-4 py-3 text-[14px] leading-relaxed`}
         />
         {observacoes.trim().length > 0 && (
-          <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
-            <input
-              type="checkbox"
-              checked={avisarEscalados}
-              onChange={(e) => setAvisarEscalados(e.target.checked)}
-              className="h-4 w-4 rounded accent-primary"
-            />
-            Avisar quem está escalado
-          </label>
+          <>
+            <button
+              type="button"
+              onClick={organizarTexto}
+              disabled={carregandoIA}
+              className="mt-2 text-[12.5px] font-semibold text-primary hover:underline disabled:opacity-50"
+            >
+              {carregandoIA ? "Organizando…" : "✦ Organizar com IA"}
+            </button>
+            {erroIA && <p className="mt-1 text-[12px] text-danger">{erroIA}</p>}
+            {sugestaoIA && (
+              <div className="mt-3 rounded-[14px] border border-primary/20 bg-primary/5 p-4">
+                <div className="mb-2 text-[11.5px] font-semibold uppercase tracking-wide text-primary">
+                  Sugestão da IA
+                </div>
+                <p className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-ink">
+                  {sugestaoIA}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setObservacoes(sugestaoIA); setSugestaoIA(""); }}
+                    className="rounded-[10px] bg-primary px-4 py-2 text-[13px] font-semibold text-white"
+                  >
+                    Usar esta versão
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSugestaoIA("")}
+                    className="rounded-[10px] border border-black/10 px-4 py-2 text-[13px] font-semibold text-ink"
+                  >
+                    Manter original
+                  </button>
+                </div>
+              </div>
+            )}
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
+              <input
+                type="checkbox"
+                checked={avisarEscalados}
+                onChange={(e) => setAvisarEscalados(e.target.checked)}
+                className="h-4 w-4 rounded accent-primary"
+              />
+              Avisar quem está escalado
+            </label>
+          </>
         )}
       </div>
 

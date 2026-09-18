@@ -319,8 +319,8 @@ export default function EditarEventoForm({
       <div>
         <div className="mb-2 flex items-baseline justify-between">
           <span className={labelInput}>OBSERVAÇÕES PARA O DIA</span>
-          <span className={`text-[11.5px] tabular-nums ${observacoes.length > 2000 ? "text-amber-500" : "text-faint"}`}>
-            {observacoes.length}/2000
+          <span className={`text-[11.5px] tabular-nums ${observacoes.length > 4000 ? "text-amber-500" : "text-faint"}`}>
+            {observacoes.length}/4000
           </span>
         </div>
         <textarea

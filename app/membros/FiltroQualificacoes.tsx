@@ -25,7 +25,7 @@ function FiltroInner({
     ? qualificacoes.filter((q) =>
         normalizarBusca(q.name).includes(normalizarBusca(texto.trim()))
       )
-    : [];
+    : qualificacoes;
 
   function selecionar(id: string) {
     const params = new URLSearchParams(searchParams.toString());

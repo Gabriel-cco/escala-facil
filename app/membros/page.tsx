@@ -5,15 +5,17 @@ import { getCurrentAccount } from "@/lib/current-user";
 import Header from "../components/shell/Header";
 import MembroItem from "./MembroItem";
 import { Paginacao } from "../components/Paginacao";
+import { BuscaInput } from "./BuscaInput";
+import { FiltroQualificacoes } from "./FiltroQualificacoes";
 
 const PP_DEFAULT = 10;
 
 export default async function MembrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ inativos?: string; p?: string; pp?: string }>;
+  searchParams: Promise<{ inativos?: string; p?: string; pp?: string; busca?: string; qual?: string }>;
 }) {
-  const { inativos, p: pParam, pp: ppParam } = await searchParams;
+  const { inativos, p: pParam, pp: ppParam, busca = "", qual = "" } = await searchParams;
   const mostrarInativos = inativos === "1";
   const pp = Math.max(10, Math.min(50, Number(ppParam ?? PP_DEFAULT)));
   const p = Math.max(1, Number(pParam ?? 1));
@@ -37,8 +39,35 @@ export default async function MembrosPage({
     )
     .order("name" as never, { referencedTable: "users" } as never);
 
+  // Carrega qualificações do grupo para os chips de filtro
+  const qualificacoes: { id: string; name: string }[] = [];
+  if (activeGroupId) {
+    const { data: qData } = await supabase
+      .from("qualifications")
+      .select("id, name")
+      .eq("group_id", activeGroupId)
+      .order("name");
+    qualificacoes.push(...(qData ?? []));
+  }
+
+  // Validação: qualificação selecionada deve pertencer ao grupo atual
+  const qualId = qualificacoes.some((q) => q.id === qual) ? qual : "";
+
   if (activeGroupId) query = query.eq("group_id", activeGroupId);
   if (!mostrarInativos) query = query.eq("active", true);
+  if (busca.trim()) query = query.ilike("users.name" as never, `%${busca.trim()}%`);
+
+  // Filtro por qualificação: busca account_ids na tabela de vínculo
+  if (qualId) {
+    const { data: aqData } = await supabase
+      .from("account_qualifications")
+      .select("account_id")
+      .eq("qualification_id", qualId);
+    const accountIds = (aqData ?? []).map((r) => (r as { account_id: string }).account_id);
+    query = accountIds.length > 0
+      ? query.in("id", accountIds)
+      : query.in("id", ["00000000-0000-0000-0000-000000000000"]);
+  }
 
   const { data: accounts, count, error } = await query.range(de, ate);
 
@@ -75,10 +104,16 @@ export default async function MembrosPage({
     };
   });
 
-  // Link do toggle inativos preserva pp mas reseta para página 1
+  // Link do toggle inativos preserva pp e busca mas reseta para página 1
+  const baseParams = new URLSearchParams();
+  if (pp !== PP_DEFAULT) baseParams.set("pp", String(pp));
+  if (busca.trim()) baseParams.set("busca", busca.trim());
+  if (qualId) baseParams.set("qual", qualId);
+  const onParams = new URLSearchParams(baseParams);
+  onParams.set("inativos", "1");
   const toggleHref = mostrarInativos
-    ? `/membros${pp !== PP_DEFAULT ? `?pp=${pp}` : ""}`
-    : `/membros?inativos=1${pp !== PP_DEFAULT ? `&pp=${pp}` : ""}`;
+    ? `/membros${baseParams.size > 0 ? `?${baseParams}` : ""}`
+    : `/membros?${onParams}`;
 
   return (
     <>
@@ -93,6 +128,12 @@ export default async function MembrosPage({
             >
               + Cadastrar pessoa
             </Link>
+          )}
+
+          <BuscaInput valorInicial={busca} />
+
+          {qualificacoes.length > 0 && (
+            <FiltroQualificacoes qualificacoes={qualificacoes} selecionada={qualId} />
           )}
 
           {podeGerenciar && (
@@ -132,6 +173,7 @@ export default async function MembrosPage({
           <div className="hidden items-center justify-between border-b border-black/[0.06] px-5 py-4 md:flex">
             <span className="text-[17px] font-semibold text-ink">Membros</span>
             <div className="flex items-center gap-4">
+              <BuscaInput valorInicial={busca} />
               {podeGerenciar && (
                 <Link
                   href={toggleHref}
@@ -162,6 +204,13 @@ export default async function MembrosPage({
               )}
             </div>
           </div>
+
+          {/* Faixa de filtro por qualificação — somente desktop (mobile está fora do card) */}
+          {qualificacoes.length > 0 && (
+            <div className="hidden border-b border-black/[0.06] px-5 py-3 md:flex">
+              <FiltroQualificacoes qualificacoes={qualificacoes} selecionada={qualId} />
+            </div>
+          )}
 
           {/* Lista */}
           {pessoas.length === 0 ? (

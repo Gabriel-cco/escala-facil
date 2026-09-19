@@ -2,15 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect, Suspense } from "react";
+import { normalizarBusca } from "@/lib/normalizar-busca";
 
 type Qualificacao = { id: string; name: string };
-
-function normalizar(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-}
 
 function FiltroInner({
   qualificacoes,
@@ -29,7 +23,7 @@ function FiltroInner({
 
   const sugestoes = texto.trim()
     ? qualificacoes.filter((q) =>
-        normalizar(q.name).includes(normalizar(texto.trim()))
+        normalizarBusca(q.name).includes(normalizarBusca(texto.trim()))
       )
     : [];
 

@@ -48,6 +48,15 @@ const iconeArquivar = (
   </svg>
 );
 
+const iconeLixeira = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </svg>
+);
+
 const BTN_TEXTO = "whitespace-nowrap rounded-full border border-black/10 px-2.5 py-1 text-[11.5px] font-medium text-ink disabled:opacity-50";
 
 function badgePerfil(perfil: "admin" | "coordinator" | "member") {
@@ -75,6 +84,7 @@ export default function MembroItem({
   const [motivoSuspensao, setMotivoSuspensao] = useState("");
   const [confirmandoSuspensao, setConfirmandoSuspensao] = useState(false);
   const [confirmandoInativar, setConfirmandoInativar] = useState(false);
+  const [confirmandoDeletar, setConfirmandoDeletar] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erroData, setErroData] = useState("");
   const router = useRouter();
@@ -130,6 +140,19 @@ export default function MembroItem({
     await supabase.from("accounts").update({ active: false }).eq("id", membro.id);
     setProcessando(false);
     setConfirmandoInativar(false);
+    router.refresh();
+  }
+
+  async function deletar() {
+    setProcessando(true);
+    const supabase = createClient();
+    await supabase.from("assignments").delete().eq("account_id", membro.id);
+    await supabase.from("account_qualifications").delete().eq("account_id", membro.id);
+    await supabase.from("ministerio_members").delete().eq("account_id", membro.id);
+    await supabase.from("swap_requests").delete().or(`requester_account_id.eq.${membro.id},accepter_account_id.eq.${membro.id}`);
+    await supabase.from("accounts").delete().eq("id", membro.id);
+    setProcessando(false);
+    setConfirmandoDeletar(false);
     router.refresh();
   }
 
@@ -240,6 +263,14 @@ export default function MembroItem({
                   {iconeArquivar}
                 </button>
               )}
+              <button
+                onClick={() => !ehContaPropria && setConfirmandoDeletar(true)}
+                disabled={ehContaPropria}
+                title={ehContaPropria ? "Não é possível deletar a própria conta" : "Deletar membro permanentemente"}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-faint hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                {iconeLixeira}
+              </button>
             </div>
           )}
         </div>
@@ -248,6 +279,14 @@ export default function MembroItem({
         {podeGerenciar && temBotoesTexto && (
           <div className="mt-2 flex flex-wrap gap-1.5 md:hidden">
             {botoesTexto()}
+            {!ehContaPropria && (
+              <button
+                onClick={() => setConfirmandoDeletar(true)}
+                className="whitespace-nowrap rounded-full border border-danger/30 px-2.5 py-1 text-[11.5px] font-medium text-danger"
+              >
+                Deletar
+              </button>
+            )}
           </div>
         )}
 
@@ -392,6 +431,41 @@ export default function MembroItem({
                   className="rounded-[14px] bg-[#8a6200] py-3.5 text-[14px] font-semibold text-paper disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
                 >
                   {processando ? "Inativando..." : "Inativar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {confirmandoDeletar && (
+        <>
+          <div
+            onClick={() => !processando && setConfirmandoDeletar(false)}
+            className="ef-backdrop fixed inset-0 z-40 bg-black/30"
+          />
+          <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
+            <div className="ef-sheet mx-auto mt-auto w-full max-w-[440px] rounded-t-[26px] bg-[#ffffff] px-[18px] pb-9 pt-3.5 md:mt-0 md:max-w-[420px] md:animate-[ef-pop_0.26s_cubic-bezier(0.2,0.8,0.2,1)] md:rounded-[22px] md:p-6">
+              <div className="mx-auto mb-3.5 h-1 w-[38px] rounded-full bg-black/20 md:hidden" />
+              <div className="mb-1 text-[12px] tracking-[0.4px] text-danger">DELETAR</div>
+              <div className="mb-2 text-[19px] font-semibold text-ink">Deletar permanentemente?</div>
+              <p className="mb-5 text-[13.5px] leading-relaxed text-[#6E5A4E]">
+                &ldquo;{membro.nome}&rdquo; será removido do sistema junto com todas as suas atribuições. <span className="font-semibold text-danger">Esta ação não pode ser desfeita.</span>
+              </p>
+              <div className="flex flex-col gap-2.5 md:flex-row md:justify-end">
+                <button
+                  onClick={() => setConfirmandoDeletar(false)}
+                  disabled={processando}
+                  className="rounded-[14px] border border-black/10 py-3.5 text-[14px] font-semibold text-ink disabled:opacity-50 md:rounded-[11px] md:px-5 md:py-3"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={deletar}
+                  disabled={processando}
+                  className="rounded-[14px] bg-danger py-3.5 text-[14px] font-semibold text-white disabled:opacity-50 md:rounded-[11px] md:px-6 md:py-3"
+                >
+                  {processando ? "Deletando..." : "Deletar"}
                 </button>
               </div>
             </div>

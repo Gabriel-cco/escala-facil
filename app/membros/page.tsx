@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveGroupId } from "@/lib/active-group-server";
 import { getCurrentAccount } from "@/lib/current-user";
+import { normalizarBusca } from "@/lib/normalizar-busca";
 import Header from "../components/shell/Header";
 import MembroItem from "./MembroItem";
 import { Paginacao } from "../components/Paginacao";
@@ -34,7 +35,7 @@ export default async function MembrosPage({
   let query = supabase
     .from("accounts")
     .select(
-      "id, profile, active, suspended_until, suspension_reason, user:users(id, name, email, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data), group:groups(name)",
+      "id, profile, active, suspended_until, suspension_reason, user:users!inner(id, name, email, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data), group:groups(name)",
       { count: "exact" }
     )
     .order("name" as never, { referencedTable: "users" } as never);
@@ -55,7 +56,8 @@ export default async function MembrosPage({
 
   if (activeGroupId) query = query.eq("group_id", activeGroupId);
   if (!mostrarInativos) query = query.eq("active", true);
-  if (busca.trim()) query = query.ilike("users.name" as never, `%${busca.trim()}%`);
+  const termoBusca = normalizarBusca(busca);
+  if (termoBusca) query = query.ilike("users.name_normalized" as never, `%${termoBusca}%`);
 
   // Filtro por qualificação: busca account_ids na tabela de vínculo
   if (qualId) {

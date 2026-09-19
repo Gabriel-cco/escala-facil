@@ -7,7 +7,7 @@ import { iniciais } from "@/lib/iniciais";
 import { LiturgicalDot } from "@/app/components/LiturgicalDot";
 import { logAccess } from "@/lib/access-log";
 
-type Funcao = { id: string; nome: string; assignmentType: "pessoa" | "ministerio" };
+type Funcao = { id: string; nome: string; assignmentType: "pessoa" | "ministerio"; isPontual?: boolean };
 type Membro = { id: string; nome: string; iniciais: string };
 type Ministerio = { id: string; name: string };
 type Atribuicao = {
@@ -25,11 +25,13 @@ type Atribuicao = {
 export default function AtribuicoesManager({
   eventId,
   eventDate,
+  groupId,
   grupoNome,
   dataLabel,
   horaLabel,
   liturgicalName,
   liturgicalColor,
+  podeGerenciar = true,
   currentAccountId,
   funcoes,
   membros,
@@ -45,6 +47,7 @@ export default function AtribuicoesManager({
   horaLabel: string;
   liturgicalName: string | null;
   liturgicalColor: string | null;
+  podeGerenciar?: boolean;
   currentAccountId: string | null;
   funcoes: Funcao[];
   membros: Membro[];
@@ -61,6 +64,10 @@ export default function AtribuicoesManager({
   const [ocupado, setOcupado] = useState(false);
   const [notificando, setNotificando] = useState(false);
   const [notifyErro, setNotifyErro] = useState("");
+  const [adicionandoPontual, setAdicionandoPontual] = useState(false);
+  const [nomePontual, setNomePontual] = useState("");
+  const [salvandoPontual, setSalvandoPontual] = useState(false);
+  const [erroPontual, setErroPontual] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -182,6 +189,40 @@ export default function AtribuicoesManager({
     router.back();
   }
 
+  async function criarFuncaoPontual() {
+    const nome = nomePontual.trim();
+    if (!nome || salvandoPontual) return;
+    setSalvandoPontual(true);
+    setErroPontual("");
+    const supabase = createClient();
+    const { data: novaFuncao, error } = await supabase
+      .from("roles")
+      .insert({ group_id: groupId, name: nome, pontual_event_id: eventId })
+      .select("id")
+      .single();
+    if (error || !novaFuncao) {
+      setErroPontual("Erro ao criar: " + (error?.message ?? "tente novamente"));
+      setSalvandoPontual(false);
+      return;
+    }
+    await supabase.from("event_roles").insert({ event_id: eventId, role_id: novaFuncao.id });
+    setSalvandoPontual(false);
+    setNomePontual("");
+    setAdicionandoPontual(false);
+    router.refresh();
+  }
+
+  async function removerFuncaoPontual(roleId: string) {
+    if (ocupado) return;
+    setOcupado(true);
+    const supabase = createClient();
+    await supabase.from("assignments").delete().eq("event_id", eventId).eq("role_id", roleId);
+    await supabase.from("event_roles").delete().eq("event_id", eventId).eq("role_id", roleId);
+    await supabase.from("roles").delete().eq("id", roleId);
+    setOcupado(false);
+    router.refresh();
+  }
+
   const completo = total > 0 && atribuidas >= total;
 
   return (
@@ -232,10 +273,13 @@ export default function AtribuicoesManager({
             return (
               <div
                 key={f.id}
-                className="flex items-center gap-3 rounded-[14px] border border-black/[0.06] bg-paper shadow-card px-4 py-3"
+                className={`flex items-center gap-3 rounded-[14px] border bg-paper shadow-card px-4 py-3 ${f.isPontual ? "border-primary/25" : "border-black/[0.06]"}`}
               >
-                <div className="w-[74px] flex-none text-[13.5px] font-semibold text-ink md:w-28">
-                  {f.nome}
+                <div className="w-[74px] flex-none md:w-28">
+                  <div className="text-[13.5px] font-semibold text-ink">{f.nome}</div>
+                  {f.isPontual && (
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/60">extra</div>
+                  )}
                 </div>
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   {atribuido ? (
@@ -310,10 +354,68 @@ export default function AtribuicoesManager({
                       Atribuir
                     </button>
                   )}
+                  {/* Remover função extra do evento */}
+                  {f.isPontual && podeGerenciar && (
+                    <button
+                      onClick={() => removerFuncaoPontual(f.id)}
+                      disabled={ocupado}
+                      title="Remover função extra do evento"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-faint hover:bg-danger/10 hover:text-danger disabled:opacity-40"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Adicionar função extra pontual */}
+      {podeGerenciar && (
+        <div>
+          {adicionandoPontual ? (
+            <div className="flex flex-col gap-2 rounded-[14px] border border-primary/20 bg-primary/[0.03] px-4 py-3">
+              <div className="text-[11.5px] font-semibold uppercase tracking-wide text-primary/70">
+                Função extra — só para este evento
+              </div>
+              <input
+                type="text"
+                value={nomePontual}
+                onChange={(e) => setNomePontual(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") criarFuncaoPontual(); if (e.key === "Escape") { setAdicionandoPontual(false); setNomePontual(""); } }}
+                placeholder="Ex.: Fotógrafo, Leitor extra..."
+                autoFocus
+                className="rounded-[10px] border border-black/10 bg-paper px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary"
+              />
+              {erroPontual && <p className="text-[12px] text-danger">{erroPontual}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setAdicionandoPontual(false); setNomePontual(""); setErroPontual(""); }}
+                  className="rounded-[10px] border border-black/10 px-4 py-2 text-[13px] font-semibold text-ink"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={criarFuncaoPontual}
+                  disabled={!nomePontual.trim() || salvandoPontual}
+                  className="rounded-[10px] bg-primary px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+                >
+                  {salvandoPontual ? "..." : "Adicionar"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAdicionandoPontual(true)}
+              className="w-full rounded-[14px] border border-dashed border-black/15 py-2.5 text-[13px] font-semibold text-muted hover:border-primary/40 hover:text-primary"
+            >
+              + Função extra para este evento
+            </button>
+          )}
         </div>
       )}
 

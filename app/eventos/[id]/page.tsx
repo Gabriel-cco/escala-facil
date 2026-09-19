@@ -50,35 +50,38 @@ export default async function EventoDetalhePage({
 
   const { data: eventRolesData } = await supabase
     .from("event_roles")
-    .select("role_id, role:roles(id, name, required_qualification_id, assignment_type)")
+    .select("role_id, role:roles(id, name, required_qualification_id, assignment_type, pontual_event_id)")
     .eq("event_id", id);
 
   const eventRolesValid = (eventRolesData ?? [])
     .map((er) => {
       const role = Array.isArray(er.role) ? er.role[0] : er.role;
-      const r = role as { id: string; name: string; required_qualification_id?: string | null; assignment_type?: string | null } | null;
+      const r = role as { id: string; name: string; required_qualification_id?: string | null; assignment_type?: string | null; pontual_event_id?: string | null } | null;
       return {
         id: r?.id ?? "",
         name: r?.name ?? "",
         requiredQualificationId: r?.required_qualification_id ?? null,
         assignmentType: ((r?.assignment_type ?? "pessoa") as "pessoa" | "ministerio"),
+        isPontual: !!r?.pontual_event_id,
       };
     })
     .filter((f) => f.id);
 
-  // Fallback: se o evento não tem event_roles configurados, usa todas as funções ativas do grupo
+  // Fallback: se o evento não tem event_roles configurados, usa todas as funções ativas do grupo (exceto as pontuais de outros eventos)
   let funcoes = eventRolesValid;
   if (funcoes.length === 0) {
     const { data: groupRoles } = await supabase
       .from("roles")
       .select("id, name, required_qualification_id, assignment_type")
       .eq("group_id", evento.group_id)
-      .eq("active", true);
+      .eq("active", true)
+      .is("pontual_event_id", null);
     funcoes = (groupRoles ?? []).map((r) => ({
       id: r.id,
       name: r.name,
       requiredQualificationId: (r as { required_qualification_id?: string | null }).required_qualification_id ?? null,
       assignmentType: (((r as { assignment_type?: string | null }).assignment_type ?? "pessoa") as "pessoa" | "ministerio"),
+      isPontual: false,
     }));
   }
 
@@ -239,7 +242,7 @@ export default async function EventoDetalhePage({
           podeGerenciar={podeGerenciar}
           currentAccountId={currentAccountId}
           atribuicoesLeitura={atribuicoesLeitura}
-          funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name, assignmentType: f.assignmentType }))}
+          funcoes={(funcoes ?? []).map((f) => ({ id: f.id, nome: f.name, assignmentType: f.assignmentType, isPontual: f.isPontual ?? false }))}
           membros={membros.map((m) => ({
             id: m.id,
             nome: m.nome,

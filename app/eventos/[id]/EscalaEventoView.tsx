@@ -19,7 +19,7 @@ export type AtribuicaoLeitura = {
   memberName: string | null;
 };
 
-type Funcao = { id: string; nome: string; assignmentType: "pessoa" | "ministerio" };
+type Funcao = { id: string; nome: string; assignmentType: "pessoa" | "ministerio"; isPontual?: boolean };
 type Membro = { id: string; nome: string; iniciais: string };
 type Ministerio = { id: string; name: string };
 type AtribuicaoEdicao = {
@@ -95,6 +95,7 @@ export default function EscalaEventoView({
           horaLabel={horaLabel}
           liturgicalName={liturgicalName}
           liturgicalColor={liturgicalColor}
+          podeGerenciar={podeGerenciar}
           currentAccountId={currentAccountId}
           funcoes={funcoes}
           membros={membros}

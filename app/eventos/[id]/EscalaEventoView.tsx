@@ -146,7 +146,9 @@ export default function EscalaEventoView({
           </div>
         )}
         {atribuicoesLeitura.length === 0 && !ministerioNome && (
-          <p className="text-[12.5px] text-faint">Nenhuma função definida ainda.</p>
+          <p className="text-[12.5px] text-faint">
+            {funcoes.length === 0 ? "Nenhuma função definida ainda." : "Ninguém escalado ainda."}
+          </p>
         )}
       </div>
 

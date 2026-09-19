@@ -189,8 +189,11 @@ export default function CriarEventoForm({
       return;
     }
 
-    // Se há um tipo selecionado (e um único grupo), usa as funções do tipo.
-    // Caso contrário mantém comportamento atual: todas as funções ativas do grupo.
+    // Se há um tipo selecionado (e um único grupo), usa as funções pré-definidas do tipo.
+    // Um grupo só sem tipo ("Personalizado", ou grupo ainda sem tipos cadastrados)
+    // nasce sem nenhuma função — quem precisar, adiciona na mão ("+ Função extra").
+    // Vários grupos ao mesmo tempo não têm seletor de tipo: mantém o comportamento
+    // de sempre, cada evento nasce com as funções ativas do seu próprio grupo.
     const tipoSelecionado = grupoIdUnico && tipoId
       ? (tiposPorGrupo[grupoIdUnico] ?? []).find((t) => t.id === tipoId)
       : null;
@@ -203,7 +206,7 @@ export default function CriarEventoForm({
           erRows.push({ event_id: ev.id, role_id: roleId });
         }
       }
-    } else {
+    } else if (!grupoIdUnico) {
       const { data: grupoRoles } = await supabase
         .from("roles")
         .select("id, group_id")
@@ -371,6 +374,11 @@ export default function CriarEventoForm({
           {tipoId && (
             <p className="mt-1.5 text-[12px] text-muted">
               Funções pré-definidas pelo tipo serão aplicadas ao evento.
+            </p>
+          )}
+          {!tipoId && (
+            <p className="mt-1.5 text-[12px] text-muted">
+              Nenhuma função pré-definida — adicione as que quiser depois de criar o evento.
             </p>
           )}
         </div>

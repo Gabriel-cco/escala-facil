@@ -67,25 +67,11 @@ export default async function EventoDetalhePage({
     })
     .filter((f) => f.id);
 
-  // Fallback: se o evento não tem event_roles configurados, usa todas as funções ativas do grupo (exceto as pontuais de outros eventos)
-  let funcoes = eventRolesValid;
-  if (funcoes.length === 0) {
-    const { data: groupRoles } = await supabase
-      .from("roles")
-      .select("id, name, required_qualification_id, assignment_type")
-      .eq("group_id", evento.group_id)
-      .eq("active", true)
-      .is("pontual_event_id", null);
-    funcoes = (groupRoles ?? []).map((r) => ({
-      id: r.id,
-      name: r.name,
-      requiredQualificationId: (r as { required_qualification_id?: string | null }).required_qualification_id ?? null,
-      assignmentType: (((r as { assignment_type?: string | null }).assignment_type ?? "pessoa") as "pessoa" | "ministerio"),
-      isPontual: false,
-    }));
-  }
-
-  funcoes = funcoes.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  // Funções do evento vêm só de event_roles — todo evento novo já nasce com essa
+  // tabela preenchida (pelo tipo escolhido, ou vazia se "Personalizado"). Sem
+  // fallback para "todas as funções ativas do grupo": isso reintroduziria
+  // funções não escolhidas para eventos "Personalizado" sem nenhuma função.
+  const funcoes = eventRolesValid.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
   const { data: accounts } = await supabase
     .from("accounts")
@@ -198,14 +184,19 @@ export default async function EventoDetalhePage({
     });
   });
 
-  const atribuicoesLeitura = (funcoes ?? []).map((f) => {
-    const a = porFuncao.get(f.id);
-    return {
-      roleId: f.id,
-      roleName: f.name,
-      memberName: a?.ministerioName ?? a?.accountName ?? null,
-    };
-  });
+  // Visualização (card de resumo): só quem está escalado — sem vazios pendurados.
+  // A tela de editar escala usa atribuicoesEdicao, abaixo, que continua trazendo
+  // todas as funções (inclusive as vazias, com "Atribuir").
+  const atribuicoesLeitura = (funcoes ?? [])
+    .map((f) => {
+      const a = porFuncao.get(f.id);
+      return {
+        roleId: f.id,
+        roleName: f.name,
+        memberName: a?.ministerioName ?? a?.accountName ?? null,
+      };
+    })
+    .filter((a) => a.memberName !== null);
 
   const atribuicoesEdicao = (funcoes ?? []).map((f) => {
     const a = porFuncao.get(f.id);

@@ -26,6 +26,7 @@ export default function EditarMembroForm({
   birthDateInicial,
   grupoIdInicial,
   perfilInicial,
+  tipoInicial = "",
   grupos,
   isAdmin,
   currentAccountId,
@@ -50,6 +51,7 @@ export default function EditarMembroForm({
   birthDateInicial: string;
   grupoIdInicial: string;
   perfilInicial: string;
+  tipoInicial?: string;
   grupos: Grupo[];
   isAdmin: boolean;
   currentAccountId?: string;
@@ -70,6 +72,7 @@ export default function EditarMembroForm({
   const [email, setEmail] = useState(emailInicial);
   const [cpf, setCpf] = useState(cpfInicial);
   const [birthDate, setBirthDate] = useState(birthDateInicial);
+  const [tipo, setTipo] = useState(tipoInicial);
   const [grupoId, setGrupoId] = useState(grupoIdInicial);
   const [profile, setProfile] = useState(perfilInicial);
   const [qualificacoesSel, setQualificacoesSel] = useState<string[]>(qualificacoesAtuais);
@@ -203,7 +206,7 @@ export default function EditarMembroForm({
         newProfile === "coordinator" || newProfile === "admin" ? disponivelParaEscala : false;
       const { error: erroAccount } = await supabase
         .from("accounts")
-        .update({ profile: newProfile, group_id: groupId, disponivel_para_escala: effectiveDisponivel })
+        .update({ profile: newProfile, group_id: groupId, disponivel_para_escala: effectiveDisponivel, tipo: tipo || null })
         .eq("id", accountId);
 
       if (erroAccount) {
@@ -214,7 +217,12 @@ export default function EditarMembroForm({
     } else if (profile === "coordinator" || profile === "admin") {
       await supabase
         .from("accounts")
-        .update({ disponivel_para_escala: disponivelParaEscala })
+        .update({ disponivel_para_escala: disponivelParaEscala, tipo: tipo || null })
+        .eq("id", accountId);
+    } else {
+      await supabase
+        .from("accounts")
+        .update({ tipo: tipo || null })
         .eq("id", accountId);
     }
 
@@ -281,6 +289,23 @@ export default function EditarMembroForm({
           onChange={(e) => setBirthDate(e.target.value)}
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
+      </div>
+
+      <div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">TIPO (OPCIONAL)</div>
+        <div className="relative">
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${tipo ? "text-ink" : "text-muted"}`}
+          >
+            <option value="">Não especificado</option>
+            <option value="acolito">Acólito</option>
+            <option value="coroinha">Coroinha</option>
+            <option value="mirim">Mirim</option>
+          </select>
+          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
+        </div>
       </div>
 
       {communities.length > 0 && (

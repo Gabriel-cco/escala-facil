@@ -10,6 +10,7 @@ export async function criarMembroAction(data: {
   email: string;
   cpf: string | null;
   birthDate: string | null;
+  tipo?: "acolito" | "coroinha" | "mirim" | null;
   profile: string;
   groupId: string | null;
   enviarBoasVindas: boolean;
@@ -75,6 +76,7 @@ export async function criarMembroAction(data: {
       user_id: userId,
       profile,
       group_id: groupId,
+      tipo: data.tipo ?? null,
     })
     .select("id")
     .single();

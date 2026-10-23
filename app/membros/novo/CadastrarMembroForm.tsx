@@ -34,6 +34,7 @@ export default function CadastrarMembroForm({
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [tipo, setTipo] = useState("");
   const [profile, setProfile] = useState("member");
   const [grupoId, setGrupoId] = useState(isAdmin ? "" : (grupoIdFixo ?? ""));
   const [communityId, setCommunityId] = useState("");
@@ -108,6 +109,7 @@ export default function CadastrarMembroForm({
       email: email.trim(),
       cpf: cpf.trim() || null,
       birthDate: birthDate || null,
+      tipo: (tipo as "acolito" | "coroinha" | "mirim") || null,
       profile: isAdmin ? profile : "member",
       groupId: precisaGrupo ? (grupoEfetivo || null) : null,
       enviarBoasVindas,
@@ -212,6 +214,23 @@ export default function CadastrarMembroForm({
           onChange={(e) => setBirthDate(e.target.value)}
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
+      </div>
+
+      <div>
+        <div className="mb-2 text-[12px] font-semibold text-muted">TIPO (OPCIONAL)</div>
+        <div className="relative">
+          <select
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value)}
+            className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${tipo ? "text-ink" : "text-muted"}`}
+          >
+            <option value="">Não especificado</option>
+            <option value="acolito">Acólito</option>
+            <option value="coroinha">Coroinha</option>
+            <option value="mirim">Mirim</option>
+          </select>
+          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
+        </div>
       </div>
 
       {communities.length > 0 && (

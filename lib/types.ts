@@ -21,6 +21,7 @@ export interface Account {
   groupId: string | null;
   active: boolean;
   suspendedUntil: string | null;
+  tipo: "acolito" | "coroinha" | "mirim" | null;
   createdAt: string;
   updatedAt: string;
   user?: User; // preenchido quando a query faz JOIN em users

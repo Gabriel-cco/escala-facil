@@ -22,6 +22,7 @@ type Membro = {
   responsavelEmail: string | null;
   termoAssinado: boolean;
   termoData: string | null;
+  tipo: "acolito" | "coroinha" | "mirim" | null;
 };
 
 function ehMenorDeIdade(dataNascimento: string): boolean {
@@ -218,6 +219,15 @@ export default function MembroItem({
             <div className="text-[11.5px] text-faint">{membro.grupoNome}</div>
             <div className="flex flex-wrap gap-1.5 pt-0.5">
               {podeVerPerfil && badgePerfil(membro.perfil)}
+              {membro.tipo === "acolito" && (
+                <span className="rounded-full bg-[#dbeafe] px-2 py-0.5 text-[10.5px] font-semibold text-[#1e40af]">Acólito</span>
+              )}
+              {membro.tipo === "coroinha" && (
+                <span className="rounded-full bg-[#dcfce7] px-2 py-0.5 text-[10.5px] font-semibold text-[#166534]">Coroinha</span>
+              )}
+              {membro.tipo === "mirim" && (
+                <span className="rounded-full bg-[#fce7f3] px-2 py-0.5 text-[10.5px] font-semibold text-[#9d174d]">Mirim</span>
+              )}
               {!membro.active && (
                 <span className="rounded-full bg-[#E3D2B6] px-2 py-0.5 text-[10.5px] font-semibold text-[#6E5A4E]">
                   Inativo

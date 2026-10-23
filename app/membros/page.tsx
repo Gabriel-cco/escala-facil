@@ -36,7 +36,7 @@ export default async function MembrosPage({
   let query = supabase
     .from("accounts")
     .select(
-      "id, profile, active, suspended_until, suspension_reason, user:users!inner(id, name, email, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data), group:groups(name)",
+      "id, profile, active, suspended_until, suspension_reason, tipo, user:users!inner(id, name, email, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data), group:groups(name)",
       { count: "exact" }
     )
     .order("name" as never, { referencedTable: "users" } as never);
@@ -114,6 +114,7 @@ export default async function MembrosPage({
       responsavelEmail: ux?.responsavel_email ?? null,
       termoAssinado: ux?.termo_consentimento_assinado ?? false,
       termoData: ux?.termo_consentimento_data ?? null,
+      tipo: (a as typeof a & { tipo?: "acolito" | "coroinha" | "mirim" | null }).tipo ?? null,
     };
   });
 

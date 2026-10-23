@@ -75,7 +75,7 @@ export default async function EventoDetalhePage({
 
   const { data: accounts } = await supabase
     .from("accounts")
-    .select("id, user:users(name)")
+    .select("id, tipo, user:users(name)")
     .eq("group_id", evento.group_id)
     .or("profile.eq.member,disponivel_para_escala.eq.true")
     .eq("active", true)
@@ -84,11 +84,13 @@ export default async function EventoDetalhePage({
   let membros = (accounts ?? [])
     .map((a) => {
       const u = Array.isArray(a.user) ? a.user[0] : a.user;
-      return { id: a.id, nome: u?.name ?? "—" };
+      const acc = a as typeof a & { tipo?: string | null };
+      return { id: a.id, nome: u?.name ?? "—", tipo: acc.tipo ?? null };
     })
     .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
 
-  // Filtra membros com qualificação excludente (ex.: Mirim)
+  // Exclui mirins (tipo = 'mirim') e membros com qualificação excludente
+  membros = membros.filter((m) => m.tipo !== "mirim");
   const { data: excluiQuals } = await supabase
     .from("qualifications")
     .select("id")
@@ -131,12 +133,23 @@ export default async function EventoDetalhePage({
       qualificadosPorQualId.get(row.qualification_id)!.add(row.account_id);
     }
   }
-  // membrosElegiveisPorFuncao: roleId → accountIds qualificados (somente funções pessoa com exigência)
+  // membrosElegiveisPorFuncao: roleId → accountIds elegíveis (qualificação + restrição de tipo)
   const membrosElegiveisPorFuncao: Record<string, string[]> = {};
   for (const f of funcoes) {
-    if (!f.requiredQualificationId || f.assignmentType !== "pessoa") continue;
+    if (f.assignmentType !== "pessoa") continue;
+    if (!f.requiredQualificationId) continue;
     const qualSet = qualificadosPorQualId.get(f.requiredQualificationId) ?? new Set<string>();
     membrosElegiveisPorFuncao[f.id] = membros.filter((m) => qualSet.has(m.id)).map((m) => m.id);
+  }
+
+  // Coroinhas não podem servir em certas funções (filtra por nome da função)
+  const FUNCOES_VEDADAS_COROINHA = new Set(["Turíbulo", "Naveta", "Missal", "Acólito responsável"]);
+  for (const f of funcoes) {
+    if (!FUNCOES_VEDADAS_COROINHA.has(f.name) || f.assignmentType !== "pessoa") continue;
+    const base = membrosElegiveisPorFuncao[f.id]
+      ? membros.filter((m) => membrosElegiveisPorFuncao[f.id].includes(m.id))
+      : membros;
+    membrosElegiveisPorFuncao[f.id] = base.filter((m) => m.tipo !== "coroinha").map((m) => m.id);
   }
 
   const conta = await getCurrentAccount();

@@ -15,7 +15,7 @@ export default async function EditarMembroPage({
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, profile, group_id, disponivel_para_escala, user:users(id, name, email, cpf, birth_date, community_id, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data)")
+    .select("id, profile, group_id, disponivel_para_escala, tipo, user:users(id, name, email, cpf, birth_date, community_id, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data)")
     .eq("id", id)
     .single();
 
@@ -88,6 +88,7 @@ export default async function EditarMembroPage({
           termoAssinadoInicial={user.termo_consentimento_assinado ?? false}
           termoDataInicial={user.termo_consentimento_data ?? ""}
           disponivelParaEscalaInicial={(account as typeof account & { disponivel_para_escala?: boolean }).disponivel_para_escala ?? false}
+          tipoInicial={(account as typeof account & { tipo?: string | null }).tipo ?? ""}
           communities={communitiesResult.data ?? []}
           communityIdInicial={user.community_id ?? ""}
         />

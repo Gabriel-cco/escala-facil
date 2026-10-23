@@ -15,19 +15,20 @@ export default async function EditarMembroModal({
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, profile, group_id, disponivel_para_escala, user:users(id, name, email, cpf, birth_date)")
+    .select("id, profile, group_id, disponivel_para_escala, user:users(id, name, email, cpf, birth_date, community_id)")
     .eq("id", id)
     .single();
 
   if (!account) notFound();
 
-  const user = Array.isArray(account.user) ? account.user[0] : account.user;
-  if (!user) notFound();
+  const userRaw = Array.isArray(account.user) ? account.user[0] : account.user;
+  if (!userRaw) notFound();
+  const user = userRaw as typeof userRaw & { community_id?: string | null };
 
   const isAdmin = conta?.profile === "admin";
   const groupId = account.group_id;
 
-  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult, ministeriosResult, ministeriosDisponiveisResult] =
+  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult, ministeriosResult, ministeriosDisponiveisResult, communitiesResult] =
     await Promise.all([
       isAdmin
         ? supabase.from("groups").select("id, name").eq("active", true).order("name")
@@ -45,6 +46,7 @@ export default async function EditarMembroModal({
       groupId
         ? supabase.from("ministerios").select("id, name").eq("group_id", groupId).order("name")
         : Promise.resolve({ data: [] }),
+      supabase.from("communities").select("id, name, regiao").order("name").order("regiao"),
     ]);
 
   const ministeriosVinculados = (ministeriosResult.data ?? []).map((r) => {
@@ -72,6 +74,8 @@ export default async function EditarMembroModal({
         ministeriosVinculados={ministeriosVinculados}
         ministeriosDisponiveis={groupId ? (ministeriosDisponiveisResult.data ?? []) : undefined}
         disponivelParaEscalaInicial={(account as typeof account & { disponivel_para_escala?: boolean }).disponivel_para_escala ?? false}
+        communities={communitiesResult.data ?? []}
+        communityIdInicial={user.community_id ?? ""}
       />
     </Modal>
   );

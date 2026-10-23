@@ -7,6 +7,7 @@ import { criarMembroAction } from "./actions";
 
 type Grupo = { id: string; name: string };
 type Ministerio = { id: string; name: string };
+type Community = { id: string; name: string; regiao: string };
 
 const PERFIS = [
   { value: "member", label: "Membro" },
@@ -20,12 +21,14 @@ export default function CadastrarMembroForm({
   isAdmin,
   grupoIdFixo,
   ministerios = [],
+  communities = [],
 }: {
   grupos: Grupo[];
   accountId?: string;
   isAdmin: boolean;
   grupoIdFixo?: string;
   ministerios?: Ministerio[];
+  communities?: Community[];
 }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -33,6 +36,7 @@ export default function CadastrarMembroForm({
   const [birthDate, setBirthDate] = useState("");
   const [profile, setProfile] = useState("member");
   const [grupoId, setGrupoId] = useState(isAdmin ? "" : (grupoIdFixo ?? ""));
+  const [communityId, setCommunityId] = useState("");
   const [ministeriosSel, setMinisteriosSel] = useState<string[]>([]);
   const [ministeriosDinamicos, setMinisteriosDinamicos] = useState<Ministerio[]>([]);
   const [enviarBoasVindas, setEnviarBoasVindas] = useState(true);
@@ -115,6 +119,7 @@ export default function CadastrarMembroForm({
       responsavelEmail: menor && responsavelEmail.trim() ? responsavelEmail.trim() : null,
       termoAssinado: menor ? termoAssinado : false,
       termoData: menor && termoAssinado && termoData ? termoData : null,
+      communityId: communityId || null,
     });
 
     if ("error" in resultado) {
@@ -208,6 +213,32 @@ export default function CadastrarMembroForm({
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
       </div>
+
+      {communities.length > 0 && (
+        <div>
+          <div className="mb-2 text-[12px] font-semibold text-muted">COMUNIDADE VINCULADA (OPCIONAL)</div>
+          <div className="relative">
+            <select
+              value={communityId}
+              onChange={(e) => setCommunityId(e.target.value)}
+              className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${communityId ? "text-ink" : "text-muted"}`}
+            >
+              <option value="">Selecione uma comunidade…</option>
+              {communities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {c.regiao}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
+          </div>
+          {communityId && (
+            <p className="mt-1.5 text-[11.5px] text-muted">
+              Região: {communities.find((c) => c.id === communityId)?.regiao}
+            </p>
+          )}
+        </div>
+      )}
 
       {menor && (
         <div className="flex flex-col gap-4 rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-4">

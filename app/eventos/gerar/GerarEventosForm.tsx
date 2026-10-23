@@ -25,6 +25,41 @@ type ScheduleTemplate = {
   name: string;
   patterns: Array<{ nome: string; diaSemana: number; horario: string; ocorrencia?: number | null }>;
 };
+
+// Preset fixo com todos os dias tradicionais de missa da paróquia
+const PRESET_DIAS_TRADICIONAIS: Array<Omit<Padrao, "id">> = [
+  // Quarta (missas nas comunidades, por semana)
+  { nome: "Missa Com. N.S. das Graças (Renato Ribeiro)", diaSemana: 3, horario: "19:00", ocorrencia: 1 },
+  { nome: "Missa Com. N.S. da Guia (Renato Ribeiro)",   diaSemana: 3, horario: "19:00", ocorrencia: 2 },
+  { nome: "Missa Com. São Francisco",                    diaSemana: 3, horario: "19:00", ocorrencia: 3 },
+  { nome: "Missa Com. São Sebastião (Açude do Mato)",   diaSemana: 3, horario: "19:00", ocorrencia: 4 },
+  // Quinta (Matriz — toda semana)
+  { nome: "Missa Matriz",                                diaSemana: 4, horario: "19:00" },
+  // Sexta
+  { nome: "Missa Matriz",                                diaSemana: 5, horario: "19:00", ocorrencia: 1 },
+  { nome: "Missa Com. São João Batista (Mutirão I)",    diaSemana: 5, horario: "19:00", ocorrencia: 2 },
+  { nome: "Missa Com. N.S. da Conceição (Sapucaia)",    diaSemana: 5, horario: "19:00", ocorrencia: 3 },
+  { nome: "Missa Com. Santa Helena",                     diaSemana: 5, horario: "19:00", ocorrencia: 4 },
+  // Sábado
+  { nome: "Batismo Matriz",                              diaSemana: 6, horario: "09:00", ocorrencia: 1 },
+  { nome: "Missa Com. N.S. da Conceição (Estivas)",     diaSemana: 6, horario: "19:00", ocorrencia: 1 },
+  { nome: "Missa Com. São João Batista (São João)",     diaSemana: 6, horario: "16:00", ocorrencia: 2 },
+  { nome: "Missa Com. Rainha dos Anjos (Cuité)",        diaSemana: 6, horario: "19:00", ocorrencia: 2 },
+  { nome: "Missa Matriz com as crianças",                diaSemana: 6, horario: "09:00", ocorrencia: 3 },
+  { nome: "Missa Com. N.S. Aparecida (Moreno)",         diaSemana: 6, horario: "16:00", ocorrencia: 3 },
+  { nome: "Batismo Matriz",                              diaSemana: 0, horario: "09:00", ocorrencia: 3 },
+  { nome: "Missa N.S. da Luz (Tucuns)",                  diaSemana: 6, horario: "16:00", ocorrencia: 4 },
+  { nome: "Missa Com. N.S. da Conceição (Boa Vista)",   diaSemana: 6, horario: "19:00", ocorrencia: 4 },
+  // Domingo
+  { nome: "Missa Matriz",                                diaSemana: 0, horario: "07:00" },
+  { nome: "Missa Matriz",                                diaSemana: 0, horario: "19:00" },
+  { nome: "Missa Com. N.S. da Guia (Carnaúba)",         diaSemana: 0, horario: "10:00", ocorrencia: 1 },
+  { nome: "Missa São José (Renascença)",                 diaSemana: 0, horario: "16:00", ocorrencia: 1 },
+  { nome: "Missa Com. N.S. de Fátima (Souza)",          diaSemana: 0, horario: "10:00", ocorrencia: 2 },
+  { nome: "Missa São José (Renascença)",                 diaSemana: 0, horario: "16:00", ocorrencia: 2 },
+  { nome: "Missa Com. Santo Antônio (Juvenal)",          diaSemana: 0, horario: "17:00", ocorrencia: 3 },
+  { nome: "Missa São José (Renascença)",                 diaSemana: 0, horario: "16:00", ocorrencia: 4 },
+];
 type EventoPreview = {
   key: string;
   nome: string;
@@ -106,6 +141,7 @@ export default function GerarEventosForm({
   const [templateSelecionadoId, setTemplateSelecionadoId] = useState("");
   const [mostrarSalvarTemplate, setMostrarSalvarTemplate] = useState(false);
   const [templateNome, setTemplateNome] = useState("");
+  const [templateEditandoId, setTemplateEditandoId] = useState("");
   const [salvandoTemplate, setSalvandoTemplate] = useState(false);
   const [templateMensagem, setTemplateMensagem] = useState("");
 
@@ -148,28 +184,59 @@ export default function GerarEventosForm({
     if (templateSelecionadoId === id) setTemplateSelecionadoId("");
   }
 
+  function iniciarEdicaoTemplate() {
+    const tpl = templates.find((t) => t.id === templateSelecionadoId);
+    if (!tpl) return;
+    setPadroes(
+      tpl.patterns.map((p) => ({
+        id: Math.random().toString(36).slice(2),
+        nome: p.nome,
+        diaSemana: p.diaSemana,
+        horario: p.horario,
+        ocorrencia: p.ocorrencia ?? null,
+      }))
+    );
+    setTemplateNome(tpl.name);
+    setTemplateEditandoId(tpl.id);
+    setMostrarSalvarTemplate(true);
+    setTemplateSelecionadoId("");
+    setTemplateMensagem("");
+  }
+
   async function salvarTemplate() {
     if (!templateNome.trim() || !grupoId || salvandoTemplate) return;
     setSalvandoTemplate(true);
     setTemplateMensagem("");
     const supabase = createClient();
-    const { error } = await supabase.from("schedule_templates").insert({
-      group_id: grupoId,
-      name: templateNome.trim(),
-      patterns: padroes.map((p) => ({
-        nome: p.nome.trim(),
-        diaSemana: p.diaSemana,
-        horario: p.horario,
-        ocorrencia: p.ocorrencia ?? null,
-      })),
-      created_by: accountId,
-    });
+    const patterns = padroes.map((p) => ({
+      nome: p.nome.trim(),
+      diaSemana: p.diaSemana,
+      horario: p.horario,
+      ocorrencia: p.ocorrencia ?? null,
+    }));
+
+    let error;
+    if (templateEditandoId) {
+      ({ error } = await supabase
+        .from("schedule_templates")
+        .update({ name: templateNome.trim(), patterns })
+        .eq("id", templateEditandoId));
+    } else {
+      ({ error } = await supabase.from("schedule_templates").insert({
+        group_id: grupoId,
+        name: templateNome.trim(),
+        patterns,
+        created_by: accountId,
+      }));
+    }
+
     setSalvandoTemplate(false);
     if (error) {
       setTemplateMensagem("Erro ao salvar: " + error.message);
     } else {
-      setTemplateMensagem("Template salvo com sucesso!");
+      setTemplateMensagem(templateEditandoId ? "Template atualizado!" : "Template salvo com sucesso!");
       setTemplateNome("");
+      setTemplateEditandoId("");
       setMostrarSalvarTemplate(false);
       const { data } = await supabase
         .from("schedule_templates")
@@ -400,6 +467,30 @@ export default function GerarEventosForm({
           </div>
         )}
 
+        {/* Preset dias tradicionais */}
+        {grupoId && (
+          <div>
+            <div className={lb}>PRESET</div>
+            <button
+              type="button"
+              onClick={() => {
+                setPadroes(
+                  PRESET_DIAS_TRADICIONAIS.map((p) => ({
+                    id: Math.random().toString(36).slice(2),
+                    ...p,
+                  }))
+                );
+              }}
+              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3 text-left text-[13.5px] font-semibold text-ink hover:bg-surface"
+            >
+              Dias tradicionais de missa ↗
+            </button>
+            <p className="mt-1.5 text-[11.5px] text-faint">
+              Preenche os padrões com o calendário semanal completo da paróquia.
+            </p>
+          </div>
+        )}
+
         {/* Templates salvos */}
         {grupoId && templates.length > 0 && (
           <div>
@@ -433,13 +524,22 @@ export default function GerarEventosForm({
                 Carregar
               </button>
               {templateSelecionadoId && (
-                <button
-                  type="button"
-                  onClick={() => excluirTemplate(templateSelecionadoId)}
-                  className="flex-none rounded-[14px] border border-danger/30 px-4 py-3 text-[13.5px] font-semibold text-danger hover:bg-danger/5"
-                >
-                  Excluir
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={iniciarEdicaoTemplate}
+                    className="flex-none rounded-[14px] border border-black/10 px-4 py-3 text-[13.5px] font-semibold text-ink hover:bg-surface"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => excluirTemplate(templateSelecionadoId)}
+                    className="flex-none rounded-[14px] border border-danger/30 px-4 py-3 text-[13.5px] font-semibold text-danger hover:bg-danger/5"
+                  >
+                    Excluir
+                  </button>
+                </>
               )}
             </div>
             <p className="mt-1.5 text-[11.5px] text-faint">
@@ -565,7 +665,7 @@ export default function GerarEventosForm({
           </button>
         </div>
 
-        {/* Salvar padrões como template */}
+        {/* Salvar / atualizar template */}
         {grupoId && (
           <div className="rounded-[14px] border border-black/[0.07] bg-paper px-4 py-3.5">
             {!mostrarSalvarTemplate ? (
@@ -581,7 +681,7 @@ export default function GerarEventosForm({
             ) : (
               <div className="flex flex-col gap-3">
                 <div className="text-[12px] font-semibold text-muted">
-                  NOME DO TEMPLATE
+                  {templateEditandoId ? "EDITAR TEMPLATE" : "NOME DO TEMPLATE"}
                 </div>
                 <input
                   value={templateNome}
@@ -598,6 +698,7 @@ export default function GerarEventosForm({
                     onClick={() => {
                       setMostrarSalvarTemplate(false);
                       setTemplateNome("");
+                      setTemplateEditandoId("");
                       setTemplateMensagem("");
                     }}
                     className="flex-1 rounded-[12px] border border-black/10 py-2.5 text-[13px] font-semibold text-ink"
@@ -610,7 +711,11 @@ export default function GerarEventosForm({
                     disabled={!templateNome.trim() || salvandoTemplate}
                     className="flex-1 rounded-[12px] bg-primary py-2.5 text-[13px] font-semibold text-paper disabled:opacity-40"
                   >
-                    {salvandoTemplate ? "Salvando..." : "Salvar template"}
+                    {salvandoTemplate
+                      ? "Salvando..."
+                      : templateEditandoId
+                      ? "Atualizar template"
+                      : "Salvar template"}
                   </button>
                 </div>
               </div>

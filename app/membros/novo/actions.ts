@@ -21,6 +21,7 @@ export async function criarMembroAction(data: {
   responsavelEmail?: string | null;
   termoAssinado?: boolean;
   termoData?: string | null;
+  communityId?: string | null;
 }): Promise<{ success: true } | { error: string }> {
   const supabase = await createClient();
 
@@ -57,6 +58,7 @@ export async function criarMembroAction(data: {
         responsavel_email: data.responsavelEmail ?? null,
         termo_consentimento_assinado: data.termoAssinado ?? false,
         termo_consentimento_data: data.termoData ?? null,
+        community_id: data.communityId ?? null,
       })
       .select("id")
       .single();

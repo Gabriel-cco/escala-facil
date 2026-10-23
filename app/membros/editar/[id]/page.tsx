@@ -15,7 +15,7 @@ export default async function EditarMembroPage({
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, profile, group_id, disponivel_para_escala, user:users(id, name, email, cpf, birth_date, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data)")
+    .select("id, profile, group_id, disponivel_para_escala, user:users(id, name, email, cpf, birth_date, community_id, responsavel_nome, responsavel_telefone, responsavel_email, termo_consentimento_assinado, termo_consentimento_data)")
     .eq("id", id)
     .single();
 
@@ -24,6 +24,7 @@ export default async function EditarMembroPage({
   const userRaw = Array.isArray(account.user) ? account.user[0] : account.user;
   if (!userRaw) notFound();
   const user = userRaw as typeof userRaw & {
+    community_id?: string | null;
     responsavel_nome?: string | null;
     responsavel_telefone?: string | null;
     responsavel_email?: string | null;
@@ -34,7 +35,7 @@ export default async function EditarMembroPage({
   const isAdmin = conta?.profile === "admin";
   const groupId = account.group_id;
 
-  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult, ministeriosResult, ministeriosDisponiveisResult] =
+  const [gruposResult, qualificacoesResult, qualificacoesAtuaisResult, ministeriosResult, ministeriosDisponiveisResult, communitiesResult] =
     await Promise.all([
       isAdmin
         ? supabase.from("groups").select("id, name").eq("active", true).order("name")
@@ -52,6 +53,7 @@ export default async function EditarMembroPage({
       groupId
         ? supabase.from("ministerios").select("id, name").eq("group_id", groupId).order("name")
         : Promise.resolve({ data: [] }),
+      supabase.from("communities").select("id, name, regiao").order("name").order("regiao"),
     ]);
 
   const ministeriosVinculados = (ministeriosResult.data ?? []).map((r) => {
@@ -86,6 +88,8 @@ export default async function EditarMembroPage({
           termoAssinadoInicial={user.termo_consentimento_assinado ?? false}
           termoDataInicial={user.termo_consentimento_data ?? ""}
           disponivelParaEscalaInicial={(account as typeof account & { disponivel_para_escala?: boolean }).disponivel_para_escala ?? false}
+          communities={communitiesResult.data ?? []}
+          communityIdInicial={user.community_id ?? ""}
         />
       </main>
     </>

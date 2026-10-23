@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
 
         // member: só pode acessar /minha-escala e rotas de sistema
         if (perfil === 'member') {
-            const rotasMember = ['/minha-escala', '/notificacoes', '/trocas', '/perfil', '/api/swap-requests', '/auth', '/acesso-pendente', '/login', '/selecionar-grupo', '/escala']
+            const rotasMember = ['/minha-escala', '/notificacoes', '/trocas', '/perfil', '/api/swap-requests', '/api/push/sync', '/auth', '/acesso-pendente', '/login', '/selecionar-grupo', '/selecionar-conta', '/escala', '/frequencia/avulsa', '/api/frequencia/avulsa']
             const ehRotaMember = rotasMember.some(r => pathname === r || pathname.startsWith(r + '/'))
             if (!ehRotaMember) {
                 const url = request.nextUrl.clone()

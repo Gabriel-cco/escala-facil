@@ -9,6 +9,7 @@ type Grupo = { id: string; name: string };
 type Qualificacao = { id: string; name: string };
 type MinisterioVinculado = { ministerio_id: string; name: string };
 type MinisterioDisponivel = { id: string; name: string };
+type Community = { id: string; name: string; regiao: string };
 
 const PERFIS = [
   { value: "member", label: "Membro" },
@@ -38,6 +39,8 @@ export default function EditarMembroForm({
   termoAssinadoInicial = false,
   termoDataInicial = "",
   disponivelParaEscalaInicial = false,
+  communities = [],
+  communityIdInicial = "",
 }: {
   accountId: string;
   userId: string;
@@ -60,6 +63,8 @@ export default function EditarMembroForm({
   termoAssinadoInicial?: boolean;
   termoDataInicial?: string;
   disponivelParaEscalaInicial?: boolean;
+  communities?: Community[];
+  communityIdInicial?: string;
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [email, setEmail] = useState(emailInicial);
@@ -75,6 +80,7 @@ export default function EditarMembroForm({
   const [termoAssinado, setTermoAssinado] = useState(termoAssinadoInicial);
   const [termoData, setTermoData] = useState(termoDataInicial);
   const [disponivelParaEscala, setDisponivelParaEscala] = useState(disponivelParaEscalaInicial);
+  const [communityId, setCommunityId] = useState(communityIdInicial);
 
   function ehMenorDeIdade(dataNascimento: string): boolean {
     const hoje = new Date();
@@ -173,6 +179,7 @@ export default function EditarMembroForm({
         email: email.trim(),
         cpf: cpf.trim() || null,
         birth_date: birthDate || null,
+        community_id: communityId || null,
         ...(menor ? {
           responsavel_nome: responsavelNome.trim() || null,
           responsavel_telefone: responsavelTelefone.trim() || null,
@@ -275,6 +282,32 @@ export default function EditarMembroForm({
           className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 text-[15px] text-ink outline-none"
         />
       </div>
+
+      {communities.length > 0 && (
+        <div>
+          <div className="mb-2 text-[12px] font-semibold text-muted">COMUNIDADE VINCULADA (OPCIONAL)</div>
+          <div className="relative">
+            <select
+              value={communityId}
+              onChange={(e) => setCommunityId(e.target.value)}
+              className={`w-full appearance-none rounded-[14px] border border-black/10 bg-paper px-4 py-3.5 pr-10 text-[15px] outline-none ${communityId ? "text-ink" : "text-muted"}`}
+            >
+              <option value="">Selecione uma comunidade…</option>
+              {communities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {c.regiao}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-muted">▾</span>
+          </div>
+          {communityId && (
+            <p className="mt-1.5 text-[11.5px] text-muted">
+              Região: {communities.find((c) => c.id === communityId)?.regiao}
+            </p>
+          )}
+        </div>
+      )}
 
       {menor && (
         <div className="flex flex-col gap-4 rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-4">

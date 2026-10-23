@@ -26,40 +26,6 @@ type ScheduleTemplate = {
   patterns: Array<{ nome: string; diaSemana: number; horario: string; ocorrencia?: number | null }>;
 };
 
-// Preset fixo com todos os dias tradicionais de missa da paróquia
-const PRESET_DIAS_TRADICIONAIS: Array<Omit<Padrao, "id">> = [
-  // Quarta (missas nas comunidades, por semana)
-  { nome: "Missa Com. N.S. das Graças (Renato Ribeiro)", diaSemana: 3, horario: "19:00", ocorrencia: 1 },
-  { nome: "Missa Com. N.S. da Guia (Renato Ribeiro)",   diaSemana: 3, horario: "19:00", ocorrencia: 2 },
-  { nome: "Missa Com. São Francisco",                    diaSemana: 3, horario: "19:00", ocorrencia: 3 },
-  { nome: "Missa Com. São Sebastião (Açude do Mato)",   diaSemana: 3, horario: "19:00", ocorrencia: 4 },
-  // Quinta (Matriz — toda semana)
-  { nome: "Missa Matriz",                                diaSemana: 4, horario: "19:00" },
-  // Sexta
-  { nome: "Missa Matriz",                                diaSemana: 5, horario: "19:00", ocorrencia: 1 },
-  { nome: "Missa Com. São João Batista (Mutirão I)",    diaSemana: 5, horario: "19:00", ocorrencia: 2 },
-  { nome: "Missa Com. N.S. da Conceição (Sapucaia)",    diaSemana: 5, horario: "19:00", ocorrencia: 3 },
-  { nome: "Missa Com. Santa Helena",                     diaSemana: 5, horario: "19:00", ocorrencia: 4 },
-  // Sábado
-  { nome: "Batismo Matriz",                              diaSemana: 6, horario: "09:00", ocorrencia: 1 },
-  { nome: "Missa Com. N.S. da Conceição (Estivas)",     diaSemana: 6, horario: "19:00", ocorrencia: 1 },
-  { nome: "Missa Com. São João Batista (São João)",     diaSemana: 6, horario: "16:00", ocorrencia: 2 },
-  { nome: "Missa Com. Rainha dos Anjos (Cuité)",        diaSemana: 6, horario: "19:00", ocorrencia: 2 },
-  { nome: "Missa Matriz com as crianças",                diaSemana: 6, horario: "09:00", ocorrencia: 3 },
-  { nome: "Missa Com. N.S. Aparecida (Moreno)",         diaSemana: 6, horario: "16:00", ocorrencia: 3 },
-  { nome: "Batismo Matriz",                              diaSemana: 0, horario: "09:00", ocorrencia: 3 },
-  { nome: "Missa N.S. da Luz (Tucuns)",                  diaSemana: 6, horario: "16:00", ocorrencia: 4 },
-  { nome: "Missa Com. N.S. da Conceição (Boa Vista)",   diaSemana: 6, horario: "19:00", ocorrencia: 4 },
-  // Domingo
-  { nome: "Missa Matriz",                                diaSemana: 0, horario: "07:00" },
-  { nome: "Missa Matriz",                                diaSemana: 0, horario: "19:00" },
-  { nome: "Missa Com. N.S. da Guia (Carnaúba)",         diaSemana: 0, horario: "10:00", ocorrencia: 1 },
-  { nome: "Missa São José (Renascença)",                 diaSemana: 0, horario: "16:00", ocorrencia: 1 },
-  { nome: "Missa Com. N.S. de Fátima (Souza)",          diaSemana: 0, horario: "10:00", ocorrencia: 2 },
-  { nome: "Missa São José (Renascença)",                 diaSemana: 0, horario: "16:00", ocorrencia: 2 },
-  { nome: "Missa Com. Santo Antônio (Juvenal)",          diaSemana: 0, horario: "17:00", ocorrencia: 3 },
-  { nome: "Missa São José (Renascença)",                 diaSemana: 0, horario: "16:00", ocorrencia: 4 },
-];
 type EventoPreview = {
   key: string;
   nome: string;
@@ -464,30 +430,6 @@ export default function GerarEventosForm({
                 </span>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Preset dias tradicionais */}
-        {grupoId && (
-          <div>
-            <div className={lb}>PRESET</div>
-            <button
-              type="button"
-              onClick={() => {
-                setPadroes(
-                  PRESET_DIAS_TRADICIONAIS.map((p) => ({
-                    id: Math.random().toString(36).slice(2),
-                    ...p,
-                  }))
-                );
-              }}
-              className="w-full rounded-[14px] border border-black/10 bg-paper px-4 py-3 text-left text-[13.5px] font-semibold text-ink hover:bg-surface"
-            >
-              Dias tradicionais de missa ↗
-            </button>
-            <p className="mt-1.5 text-[11.5px] text-faint">
-              Preenche os padrões com o calendário semanal completo da paróquia.
-            </p>
           </div>
         )}
 

@@ -5,9 +5,10 @@ import CadastrarMembroForm from "@/app/membros/novo/CadastrarMembroForm";
 
 export default async function CadastrarMembroModal() {
   const supabase = await createClient();
-  const [{ data: grupos }, conta] = await Promise.all([
+  const [{ data: grupos }, conta, { data: communities }] = await Promise.all([
     supabase.from("groups").select("id, name").eq("active", true).order("name"),
     getCurrentAccount(),
+    supabase.from("communities").select("id, name, regiao").order("name").order("regiao"),
   ]);
 
   const isAdmin = conta?.profile === "admin";
@@ -25,6 +26,7 @@ export default async function CadastrarMembroModal() {
         isAdmin={isAdmin}
         grupoIdFixo={grupoIdFixo}
         ministerios={ministerios ?? []}
+        communities={communities ?? []}
       />
     </Modal>
   );

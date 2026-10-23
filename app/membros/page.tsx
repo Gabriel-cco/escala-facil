@@ -14,10 +14,11 @@ const PP_DEFAULT = 10;
 export default async function MembrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ inativos?: string; p?: string; pp?: string; busca?: string; qual?: string }>;
+  searchParams: Promise<{ inativos?: string; p?: string; pp?: string; busca?: string; qual?: string; suspensos?: string }>;
 }) {
-  const { inativos, p: pParam, pp: ppParam, busca = "", qual = "" } = await searchParams;
+  const { inativos, p: pParam, pp: ppParam, busca = "", qual = "", suspensos } = await searchParams;
   const mostrarInativos = inativos === "1";
+  const filtrarSuspensos = suspensos === "1";
   const pp = Math.max(10, Math.min(50, Number(ppParam ?? PP_DEFAULT)));
   const p = Math.max(1, Number(pParam ?? 1));
   const de = (p - 1) * pp;
@@ -58,6 +59,16 @@ export default async function MembrosPage({
   if (!mostrarInativos) query = query.eq("active", true);
   const termoBusca = normalizarBusca(busca);
   if (termoBusca) query = query.ilike("users.name_normalized" as never, `%${termoBusca}%`);
+
+  const agora = new Date();
+  const hojeStr = agora.toISOString().slice(0, 10);
+  const em7DiasStr = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (filtrarSuspensos) {
+    query = query
+      .not("suspended_until", "is", null)
+      .gte("suspended_until", hojeStr)
+      .lte("suspended_until", em7DiasStr);
+  }
 
   // Filtro por qualificação: busca account_ids na tabela de vínculo
   if (qualId) {
@@ -111,6 +122,7 @@ export default async function MembrosPage({
   if (pp !== PP_DEFAULT) baseParams.set("pp", String(pp));
   if (busca.trim()) baseParams.set("busca", busca.trim());
   if (qualId) baseParams.set("qual", qualId);
+  if (filtrarSuspensos) baseParams.set("suspensos", "1");
   const onParams = new URLSearchParams(baseParams);
   onParams.set("inativos", "1");
   const toggleHref = mostrarInativos
@@ -164,6 +176,20 @@ export default async function MembrosPage({
             </div>
           )}
         </div>
+
+        {filtrarSuspensos && (
+          <div className="flex items-center justify-between gap-3 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-[13px] font-medium text-amber-800">
+              Mostrando suspensões que terminam nos próximos 7 dias
+            </p>
+            <Link
+              href="/membros"
+              className="flex-none text-[12.5px] font-semibold text-amber-700 underline underline-offset-2"
+            >
+              Ver todos
+            </Link>
+          </div>
+        )}
 
         {error && (
           <p className="text-[13px] text-danger">Erro: {error.message}</p>

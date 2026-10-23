@@ -242,7 +242,7 @@ export default async function Home() {
           : "suspensões terminando essa semana",
       sublabel: "Membros",
       count: suspensoesTotal,
-      href: "/membros",
+      href: "/membros?suspensos=1",
       icon: "person" as const,
     },
   ].filter((a) => a.count > 0);

@@ -570,10 +570,10 @@ export default function GerarEventosForm({
                         className="w-full appearance-none rounded-[12px] border border-black/10 bg-paper px-3 py-2.5 pr-8 text-[13.5px] text-ink outline-none"
                       >
                         <option value="">Toda semana</option>
-                        <option value="1">1ª vez no mês</option>
-                        <option value="2">2ª vez no mês</option>
-                        <option value="3">3ª vez no mês</option>
-                        <option value="4">4ª vez no mês</option>
+                        <option value="1">1ª semana do mês</option>
+                        <option value="2">2ª semana do mês</option>
+                        <option value="3">3ª semana do mês</option>
+                        <option value="4">4ª semana do mês</option>
                       </select>
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted">
                         ▾

@@ -25,6 +25,7 @@ type ScheduleTemplate = {
   name: string;
   patterns: Array<{ nome: string; diaSemana: number; horario: string; ocorrencia?: number | null }>;
 };
+type EventType = { id: string; name: string; roleIds: string[] };
 
 type EventoPreview = {
   key: string;
@@ -86,17 +87,20 @@ export default function GerarEventosForm({
   grupos,
   grupoIdInicial,
   accountId,
+  tiposPorGrupo = {},
 }: {
   perfil: string;
   grupos: Grupo[];
   grupoIdInicial: string | null;
   accountId: string;
+  tiposPorGrupo?: Record<string, EventType[]>;
 }) {
   const [step, setStep] = useState<"configurar" | "preview">("configurar");
   const [mesAno, setMesAno] = useState(proxMes);
   const [grupoId, setGrupoId] = useState(
     grupoIdInicial ?? (grupos.length === 1 ? grupos[0].id : "")
   );
+  const [tipoId, setTipoId] = useState("");
   const [padroes, setPadroes] = useState<Padrao[]>([novoPadrao()]);
   const [previewEventos, setPreviewEventos] = useState<EventoPreview[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -116,8 +120,11 @@ export default function GerarEventosForm({
   const grupoFixo = perfil === "coordinator";
   const grupoNome = grupos.find((g) => g.id === grupoId)?.name ?? "";
 
+  const tiposDoGrupo: EventType[] = grupoId ? (tiposPorGrupo[grupoId] ?? []) : [];
+
   // Carrega templates do grupo sempre que o grupo muda
   useEffect(() => {
+    setTipoId("");
     if (!grupoId) return;
     const supabase = createClient();
     supabase
@@ -365,17 +372,26 @@ export default function GerarEventosForm({
       return;
     }
 
-    // Popula event_roles com todas as funções ativas do grupo.
+    // Popula event_roles: usa as funções do tipo selecionado; se não há tipo,
+    // usa todas as funções ativas do grupo.
     if (criadosGerar?.length) {
-      const { data: grupoRolesGerar } = await supabase
-        .from("roles")
-        .select("id")
-        .eq("group_id", grupoId)
-        .eq("active", true);
+      const tipoSelecionado = tipoId ? tiposDoGrupo.find((t) => t.id === tipoId) : null;
 
-      if (grupoRolesGerar?.length) {
+      let roleIds: string[] = [];
+      if (tipoSelecionado && tipoSelecionado.roleIds.length > 0) {
+        roleIds = tipoSelecionado.roleIds;
+      } else {
+        const { data: grupoRolesGerar } = await supabase
+          .from("roles")
+          .select("id")
+          .eq("group_id", grupoId)
+          .eq("active", true);
+        roleIds = (grupoRolesGerar ?? []).map((r) => r.id);
+      }
+
+      if (roleIds.length > 0) {
         const erRows = criadosGerar.flatMap((ev) =>
-          grupoRolesGerar.map((r) => ({ event_id: ev.id, role_id: r.id }))
+          roleIds.map((rid) => ({ event_id: ev.id, role_id: rid }))
         );
         await supabase.from("event_roles").insert(erRows);
       }
@@ -430,6 +446,45 @@ export default function GerarEventosForm({
                 </span>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tipo de evento */}
+        {grupoId && tiposDoGrupo.length > 0 && (
+          <div>
+            <div className={lb}>TIPO DE EVENTO</div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setTipoId("")}
+                className={`rounded-full border px-4 py-2 text-[13.5px] font-semibold transition-colors ${
+                  !tipoId
+                    ? "border-primary bg-primary text-white"
+                    : "border-black/10 bg-paper text-ink hover:bg-surface"
+                }`}
+              >
+                Todas as funções
+              </button>
+              {tiposDoGrupo.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTipoId(t.id)}
+                  className={`rounded-full border px-4 py-2 text-[13.5px] font-semibold transition-colors ${
+                    tipoId === t.id
+                      ? "border-primary bg-primary text-white"
+                      : "border-black/10 bg-paper text-ink hover:bg-surface"
+                  }`}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[12px] text-muted">
+              {tipoId
+                ? "Funções pré-definidas pelo tipo serão aplicadas a cada evento."
+                : "Todas as funções ativas do grupo serão aplicadas a cada evento."}
+            </p>
           </div>
         )}
 

@@ -49,7 +49,7 @@ export default async function EditarFrequenciaPage({
       .eq("group_id", groupId)
       .eq("active", true)
       .in("profile", ["member", "coordinator"])
-      .neq("tipo", "mirim"),
+      .or("tipo.neq.mirim,tipo.is.null"),
     supabase
       .from("events")
       .select("id, name, date, time")

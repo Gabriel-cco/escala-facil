@@ -69,7 +69,7 @@ export default async function EventosPage({
       .eq("group_id", activeGroupId)
       .eq("profile", "member")
       .eq("active", true)
-      .neq("tipo", "mirim");
+      .or("tipo.neq.mirim,tipo.is.null");
     (membrosData ?? []).forEach((a) => {
       const u = Array.isArray(a.user) ? a.user[0] : a.user;
       if (u?.name) membrosParaFiltro.push({ id: a.id, nome: u.name });

@@ -128,7 +128,7 @@ export default function FazerChamadaForm({
           .eq("group_id", novoGrupoId)
           .eq("active", true)
           .in("profile", ["member", "coordinator"])
-          .neq("tipo", "mirim"),
+          .or("tipo.neq.mirim,tipo.is.null"),
         supabase
           .from("events")
           .select("id, name, date, time")

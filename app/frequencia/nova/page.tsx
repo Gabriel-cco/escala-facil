@@ -38,7 +38,7 @@ export default async function NovaFrequenciaPage() {
         .eq("group_id", grupoId)
         .eq("active", true)
         .in("profile", ["member", "coordinator"])
-        .neq("tipo", "mirim"),
+        .or("tipo.neq.mirim,tipo.is.null"),
       supabase
         .from("events")
         .select("id, name, date, time")
